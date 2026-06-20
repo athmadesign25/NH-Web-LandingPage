@@ -1,0 +1,119 @@
+.section {
+  background: var(--color-primary-light);
+  overflow: hidden;
+  padding: var(--sp-12) 0;
+}
+
+.header {
+  text-align: center;
+  margin-bottom: var(--sp-6);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.header .section-subtitle {
+  text-align: center;
+}
+
+.carouselWrap {
+  width: 100%;
+  overflow: hidden;
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(calc(-50% - 12px));
+  }
+}
+
+.marqueeTrack {
+  display: flex;
+  width: max-content;
+  margin: 0;
+  padding: 20px 0 40px 0;
+  list-style-type: none;
+  gap: 24px;
+  animation: marquee 35s linear infinite;
+}
+
+.marqueeTrack:hover {
+  animation-play-state: paused;
+}
+
+.card {
+  flex-shrink: 0;
+  width: 420px;
+  background: rgb(255, 255, 255);
+  border-radius: 24px;
+  padding: 36px;
+  border: 1px solid var(--color-border-light);
+  box-shadow: rgba(0, 0, 0, 0.03) 0px 4px 20px;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  transition: transform 0.3s, box-shadow 0.3s;
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: rgba(0, 0, 0, 0.06) 0px 10px 30px;
+}
+
+.stars {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 20px;
+  color: rgb(245, 158, 11);
+}
+
+.quote {
+  font-size: 15px;
+  color: var(--color-text);
+  line-height: 1.6;
+  margin-bottom: 32px;
+}
+
+.patient {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.avatar {
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: rgb(232, 242, 252);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text);
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+}
+
+.patientName {
+  font-size: 15px;
+  font-weight: 700;
+  color: var(--color-text);
+  margin-bottom: 2px;
+}
+
+.patientMeta {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+}
+
+@media (max-width: 640px) {
+  .card {
+    width: 300px;
+    padding: 24px;
+  }
+}

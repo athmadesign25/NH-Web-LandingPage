@@ -1,4 +1,4 @@
-import HeroSection from "@/components/home/HeroSection";
+import HeroSearchFirst from "@/components/home/HeroSearchFirst";
 import CentreOfExcellence from "@/components/home/CentreOfExcellence";
 import WhyChooseNH from "@/components/home/WhyChooseNH";
 import HealthPackages from "@/components/home/HealthPackages";
@@ -15,7 +15,7 @@ export default function HomePage() {
       <FloatingQuickActions />
       
       {/* Hero section will be positioned fixed behind the document flow */}
-      <HeroSection />
+      <HeroSearchFirst />
       
       {/* Wrapper for the rest of the content */}
       <div 

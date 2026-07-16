@@ -913,7 +913,7 @@ export default function HeroSection() {
                                             <HighlightMatch text={t.name} query={searchQuery} />
                                           </div>
                                           <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                            Related to: <HighlightMatch text={t.speciality} query={searchQuery} />
+                                            Related to: <HighlightMatch text={t.speciality ?? ""} query={searchQuery} />
                                           </div>
                                         </div>
                                         <div className={styles.treatmentDesc}>{t.description}</div>

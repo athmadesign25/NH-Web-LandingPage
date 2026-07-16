@@ -1,0 +1,209 @@
+.section {
+  padding: clamp(84px, 10vw, 128px) 0;
+  background-image:
+    linear-gradient(180deg, rgba(245, 241, 232, 0.76) 0%, rgba(248, 251, 255, 0.7) 100%),
+    url('/leadership-bg.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.card {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(280px, 0.82fr);
+  align-items: center;
+  gap: clamp(26px, 3.2vw, 42px);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1.5px solid rgba(255, 255, 255, 0.22);
+  backdrop-filter: blur(16px) saturate(150%);
+  -webkit-backdrop-filter: blur(16px) saturate(150%);
+  border-radius: 26px;
+  box-shadow: 0 24px 60px rgba(17, 37, 73, 0.14), inset 0 1px 0 rgba(255, 255, 255, 0.62), inset 0 -1px 0 rgba(186, 220, 255, 0.3);
+  padding: clamp(24px, 3vw, 40px);
+  overflow: hidden;
+}
+
+.card::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: 6px;
+  background:
+    radial-gradient(120% 90% at 12% 4%, rgba(255, 255, 255, 0.74) 0%, rgba(255, 255, 255, 0.18) 44%, rgba(255, 255, 255, 0) 72%),
+    linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.92) 0%,
+      rgba(255, 255, 255, 0.48) 42%,
+      rgba(200, 229, 255, 0.52) 100%
+    );
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+}
+
+.content {
+  min-width: 0;
+}
+
+.eyebrow {
+  margin: 0 0 var(--sp-3);
+  color: var(--color-text);
+}
+
+.eyebrowQuote {
+  display: inline-block;
+  margin-left: 2px;
+  font-size: 1.15em;
+  line-height: 1;
+  color: var(--color-text-secondary);
+  vertical-align: text-top;
+}
+
+.eyebrow::after {
+  left: 0;
+  transform: none;
+  width: 34px;
+  bottom: -8px;
+  background: var(--color-emergency);
+}
+
+.quote {
+  font-size: clamp(30px, 3.1vw, 46px);
+  font-weight: 820;
+  color: var(--color-text);
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  margin: 0 0 var(--sp-3);
+  max-width: 16ch;
+}
+
+.body {
+  font-size: clamp(15px, 1.08vw, 17px);
+  color: var(--color-text-secondary);
+  line-height: 1.7;
+  max-width: 54ch;
+  margin: 0;
+}
+
+.imageWrap {
+  display: flex;
+  justify-content: center;
+}
+
+.imageFrame {
+  position: relative;
+  width: min(100%, 360px);
+  aspect-ratio: 4 / 5;
+  border-radius: 22px;
+  overflow: hidden;
+  background: linear-gradient(180deg, #ecf6ff 0%, #dcecff 100%);
+  border: 1px solid rgba(15, 42, 85, 0.08);
+  box-shadow: none;
+}
+
+.imageInner {
+  width: 100%;
+  height: 100%;
+  position: relative;
+}
+
+.image {
+  object-fit: cover;
+  object-position: center top;
+}
+
+.identityPill {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  width: fit-content;
+  max-width: calc(100% - 20px);
+  bottom: 14px;
+  border-radius: var(--radius-lg);
+  padding: 10px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  align-items: center;
+  text-align: center;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid rgba(15, 42, 85, 0.1);
+  box-shadow: 0 6px 18px rgba(17, 37, 73, 0.14);
+}
+
+.name {
+  font-size: 18px;
+  font-weight: 800;
+  color: var(--color-primary);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.title {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  line-height: 1.25;
+  white-space: nowrap;
+}
+
+@media (max-width: 1024px) {
+  .section {
+    padding: clamp(72px, 9vw, 104px) 0;
+  }
+
+  .card {
+    grid-template-columns: 1fr;
+    gap: var(--sp-4);
+    padding: clamp(20px, 3vw, 30px);
+  }
+
+  .quote,
+  .body {
+    max-width: none;
+  }
+
+  .imageWrap {
+    justify-content: flex-start;
+  }
+}
+
+@media (max-width: 640px) {
+  .section {
+    padding: clamp(60px, 8vw, 80px) 0;
+  }
+
+  .quote {
+    font-size: clamp(25px, 8vw, 34px);
+  }
+
+  .body {
+    font-size: 15px;
+  }
+
+  .imageFrame {
+    width: 100%;
+    max-width: 340px;
+  }
+
+  .identityPill {
+    left: 50%;
+    right: auto;
+    transform: translateX(-50%);
+    width: fit-content;
+    max-width: calc(100% - 16px);
+    bottom: 10px;
+    padding: 9px 12px;
+  }
+
+  .name {
+    font-size: 15px;
+  }
+
+  .title {
+    font-size: 12px;
+  }
+}

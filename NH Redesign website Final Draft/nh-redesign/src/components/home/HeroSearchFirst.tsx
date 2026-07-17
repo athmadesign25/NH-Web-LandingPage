@@ -119,6 +119,7 @@ export default function HeroSearchFirst() {
               <div className={styles.pulseTextUnit}>
                 <div className={styles.pulseTitle}>Ask Pulse AI</div>
                 <p className={styles.pulseDescription}>Describe your symptoms, or ask a question..</p>
+                <p className={styles.pulseVersion}>v1.0</p>
               </div>
             </div>
           </div>

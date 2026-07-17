@@ -33,7 +33,6 @@ export default function HomePage() {
         <WhyChooseNH />
         <ChairmanQuote />
         <AppDownloadBanner />
-        <Footer />
       </div>
     </>
   );

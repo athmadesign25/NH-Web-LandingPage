@@ -67,8 +67,8 @@
 .titleUnit {
   width: min(100%, calc(var(--hero-width) - 36px));
   text-align: center;
-  margin-bottom: 24px;
-  margin-top: -20px;
+  margin-bottom: 40px;
+  margin-top: -45px;
   transition: opacity 0.4s cubic-bezier(0.16, 1, 0.3, 1), transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 

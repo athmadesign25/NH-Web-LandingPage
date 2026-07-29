@@ -1,93 +1,149 @@
+/* Outer Section: #050F1C background, 16px padding on all sides */
 .section {
-  background: var(--color-primary-light);
+  background: #050F1C;
+  padding: 16px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
-.inner {
-  display: grid;
-  grid-template-columns: 1fr auto;
-  gap: var(--sp-5);
-  align-items: stretch;
-  background: var(--color-primary-dark);
-  border-radius: var(--radius-xl);
+/* Card Container: end-to-end inside 16px padding */
+.contentCard {
+  width: 100%;
+  max-width: 1320px;
+  margin: 0 auto;
+  border-radius: 24px;
   border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: var(--shadow-lg);
+  background: radial-gradient(120% 120% at 85% 50%, #0D57BD 0%, #0B4699 40%, #08295E 75%, #051A3B 100%);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.45);
+  display: grid;
+  grid-template-columns: 1.1fr 1fr;
+  align-items: center;
+  padding: clamp(32px, 5vw, 64px) clamp(24px, 4vw, 56px);
+  gap: 40px;
+  position: relative;
   overflow: hidden;
 }
 
-.contentCol {
-  max-width: 680px;
-  text-align: center;
-  padding: clamp(24px, 3vw, 40px);
+/* ─── Left Column ────────────────────────────────────────── */
+.leftCol {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  text-align: left;
+  z-index: 2;
 }
 
 .eyebrow {
-  color: rgba(255, 255, 255, 0.92);
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.85);
+  margin-bottom: 16px;
+}
+
+.eyebrowLine {
+  width: 18px;
+  height: 2px;
+  background: #F95B61;
+  border-radius: 2px;
 }
 
 .title {
   margin: 0;
-  font-size: clamp(28px, 4vw, 44px);
-  font-weight: 900;
-  color: var(--color-text-inverse);
+  font-size: clamp(32px, 3.8vw, 52px);
+  font-weight: 800;
+  color: #ffffff;
   line-height: 1.12;
-  letter-spacing: -0.024em;
+  letter-spacing: -0.025em;
+  text-align: left;
 }
 
-.title span {
-  color: var(--color-emergency);
+.titleHighlight {
+  color: #F95B61;
 }
 
 .subtitle {
-  margin-top: var(--sp-3);
-  max-width: 548px;
-  margin-left: auto;
-  margin-right: auto;
+  margin-top: 18px;
+  margin-bottom: 36px;
+  font-size: clamp(14px, 1.1vw, 16px);
+  line-height: 1.6;
+  color: rgba(255, 255, 255, 0.82);
+  max-width: 480px;
+  text-align: left;
 }
 
-.featuresWrap {
-  margin-top: var(--sp-3);
+/* Downloads Row: QR Box + App Stores */
+.downloadsRow {
   display: flex;
+  align-items: center;
+  gap: 20px;
   flex-wrap: wrap;
-  justify-content: center;
-  gap: 10px;
 }
 
-.featureChip {
-  display: inline-flex;
+/* User Prompt Specified QR Box Style */
+.qrBox {
+  border-radius: 14px;
+  border: 1px solid rgba(50, 176, 255, 0.30);
+  background: linear-gradient(166deg, rgba(11, 49, 100, 0.11) 39.14%, rgba(230, 239, 253, 0.11) 137.5%);
+  box-shadow: 10px -1px 74px 0 rgba(58, 139, 253, 0.70);
+  display: flex;
+  padding: 16px;
+  flex-direction: column;
+  justify-content: center;
   align-items: center;
   gap: 8px;
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.94);
-  border-radius: var(--radius-full);
-  padding: 8px 12px;
-  font-size: 12px;
-  font-weight: 600;
-  line-height: 1;
+  flex-shrink: 0;
 }
 
-.featureChip svg {
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.actionsRow {
-  margin-top: var(--sp-4);
+.qrImageWrap {
+  width: 120px;
+  height: 120px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-wrap: wrap;
-  gap: 10px;
+}
+
+.qrSvg {
+  width: 120px;
+  height: 120px;
+  object-fit: contain;
+}
+
+.qrLabel {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  color: #ffffff;
+  text-transform: uppercase;
+}
+
+/* App Store & Google Play Container (similar to QR box without shadow) */
+.storesContainer {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 12px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(50, 176, 255, 0.30);
+  background: linear-gradient(166deg, rgba(11, 49, 100, 0.11) 39.14%, rgba(230, 239, 253, 0.11) 137.5%);
+  flex-shrink: 0;
 }
 
 .storeBadge {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: transform var(--transition-fast), filter var(--transition-fast);
+  transition: transform 0.2s ease, filter 0.2s ease;
 }
 
 .storeBadge:hover {
-  transform: translateY(-1px);
-  filter: brightness(1.1);
+  transform: translateY(-2px);
+  filter: brightness(1.15);
 }
 
 .storeBadge img {
@@ -95,67 +151,182 @@
   object-fit: contain;
 }
 
-.qrBox {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  border-radius: var(--radius-lg);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.9);
-  padding: 10px 12px;
-  font-size: 12px;
-  font-weight: 700;
-  letter-spacing: 0.02em;
-  text-transform: uppercase;
-}
-
-.mockupContainer {
+/* ─── Right Column (Feature Carousel & Phone) ────────────── */
+.rightCol {
   display: flex;
-  justify-content: flex-end;
-  align-items: stretch;
-  height: 100%;
-}
-
-.mockupImg {
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  position: relative;
   width: 100%;
-  max-width: 425px;
-  height: 100%;
+}
+
+/* Feature Name Pill Wrapper (with Concentric Revolving Rings) */
+.pillWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 28px;
+}
+
+/* Concentric Rings */
+.concentricRing {
+  position: absolute;
+  border-radius: 999px;
+  border: 1.327px solid rgba(255, 255, 255, 0.18);
+  pointer-events: none;
+}
+
+.ring1 {
+  inset: -10px -16px;
+  opacity: 0.65;
+  animation: ringPulse 6s ease-in-out infinite alternate;
+}
+
+.ring2 {
+  inset: -20px -32px;
+  opacity: 0.32;
+  animation: ringPulse 6s ease-in-out 1.5s infinite alternate;
+}
+
+@keyframes ringPulse {
+  0% {
+    transform: scale(0.98);
+    opacity: 0.3;
+  }
+  100% {
+    transform: scale(1.03);
+    opacity: 0.7;
+  }
+}
+
+/* User Prompt Specified Feature Pill Style */
+.featurePill {
+  display: flex;
+  padding: 10.62px 15.93px;
+  align-items: center;
+  gap: 10.62px;
+  border-radius: 47.789px;
+  border: 1.327px solid rgba(255, 255, 255, 0.20);
+  background: rgba(16, 10, 41, 0.36);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  position: relative;
+  z-index: 2;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.25);
+}
+
+.pillIconBg {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: linear-gradient(173deg, #4582F3 5.22%, #0B5DF4 118.69%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.pillIcon {
+  color: #ffffff;
+}
+
+.pillText {
+  color: #ffffff;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* Phone Carousel Unit with Arrows */
+.phoneCarouselUnit {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  max-width: 440px;
+}
+
+.phoneMockupWrap {
+  width: 280px;
+  display: flex;
+  justify-content: center;
+  position: relative;
+  z-index: 1;
+}
+
+.phoneImg {
+  width: 100%;
+  height: auto;
   object-fit: contain;
-  object-position: bottom right;
-  transform: scale(1.5);
-  transform-origin: bottom right;
+  filter: drop-shadow(0 20px 40px rgba(0, 0, 0, 0.5));
 }
 
-@media (max-width: 960px) {
-  .inner {
+/* User Prompt Specified Carousel Arrow Style */
+.carouselArrowLeft,
+.carouselArrowRight {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 5;
+  border-radius: 55.385px;
+  border: 1px solid #FFF;
+  background: rgba(255, 255, 255, 0.14);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #ffffff;
+  transition: background 0.2s ease, transform 0.2s ease;
+}
+
+.carouselArrowLeft {
+  left: 10px;
+}
+
+.carouselArrowRight {
+  right: 10px;
+}
+
+.carouselArrowLeft:hover,
+.carouselArrowRight:hover {
+  background: rgba(255, 255, 255, 0.28);
+  transform: translateY(-50%) scale(1.08);
+}
+
+/* Responsive Rules */
+@media (max-width: 1024px) {
+  .contentCard {
     grid-template-columns: 1fr;
-    gap: var(--sp-4);
+    gap: 48px;
+    padding: 40px 24px;
   }
 
-  .contentCol {
-    max-width: 100%;
+  .leftCol {
+    align-items: center;
+    text-align: center;
   }
 
-  .mockupContainer {
-    margin: 0;
-    justify-content: flex-end;
-    align-items: flex-end;
-    width: 100%;
-  }
-  
-  .mockupImg {
-    transform: scale(1.2); /* Slightly smaller scale on mobile */
-    margin-right: -5%; /* Ensure it hugs the right edge tightly */
-  }
-}
-
-@media (max-width: 768px) {
-  .actionsRow {
-    gap: 8px;
+  .title, .subtitle {
+    text-align: center;
   }
 
-  .storeBadge img {
-    height: 38px;
+  .downloadsRow {
+    justify-content: center;
+  }
+
+  .carouselArrowLeft {
+    left: -10px;
+  }
+
+  .carouselArrowRight {
+    right: -10px;
   }
 }

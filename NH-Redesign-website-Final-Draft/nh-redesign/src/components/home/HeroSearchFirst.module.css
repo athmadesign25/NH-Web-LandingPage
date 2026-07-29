@@ -697,6 +697,67 @@
   transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
 }
 
+/* Animated SVG Border Glow - Strictly on Border */
+.glow {
+  --glow-line-color: #ffffff;
+  --glow-line-thickness: 1.5px;
+  --glow-line-length: 16;
+  --animation-speed: 1200ms;
+  position: relative;
+}
+
+.glowContainer {
+  pointer-events: none;
+  position: absolute;
+  inset: -6px;
+  width: calc(100% + 12px);
+  height: calc(100% + 12px);
+  opacity: 0;
+  z-index: 10;
+  overflow: visible;
+}
+
+.glowBlur,
+.glowLine {
+  width: 100%;
+  height: 100%;
+  x: 0;
+  y: 0;
+  rx: 33px;
+  fill: transparent;
+  stroke-dasharray: var(--glow-line-length) calc(50 - var(--glow-line-length));
+}
+
+.glowLine {
+  stroke: var(--glow-line-color);
+  stroke-width: var(--glow-line-thickness);
+}
+
+.glowBlur {
+  stroke: rgba(255, 255, 255, 0.85);
+  stroke-width: 4px;
+  filter: blur(6px);
+}
+
+.glow:is(:hover, :focus-within) .glowBlur,
+.glow:is(:hover, :focus-within) .glowLine {
+  stroke-dashoffset: -80px;
+  transition: stroke-dashoffset var(--animation-speed) ease-in, stroke-dasharray var(--animation-speed) ease-in;
+}
+
+.glow:is(:hover, :focus-within) .glowContainer {
+  animation: glowVisibility var(--animation-speed) ease-in;
+}
+
+@keyframes glowVisibility {
+  0%, 100% {
+    opacity: 0;
+  }
+  25%, 75% {
+    opacity: 1;
+  }
+}
+
 .searchContainer:focus-within,
 .searchContainerActive {
   box-shadow: 0 0 25px rgba(255, 255, 255, 0.4);

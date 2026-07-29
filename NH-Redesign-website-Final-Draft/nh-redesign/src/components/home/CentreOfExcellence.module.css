@@ -51,7 +51,7 @@
   position: relative;
   width: 100%;
   max-width: 1180px;
-  min-height: 440px;
+  min-height: 490px;
   margin: 0 auto;
   display: flex;
   flex-direction: column;
@@ -64,22 +64,24 @@
 .carousel {
   position: relative;
   width: 100%;
-  height: 440px;
-  padding: 0 96px;
+  height: 490px;
+  padding: 8px 96px 42px 96px; /* 42px bottom padding allows card drop-shadow to render unclipped */
   display: flex;
   justify-content: flex-start;
   align-items: stretch;
   transform-style: preserve-3d;
-  overflow: visible;
+  overflow: hidden;
   box-sizing: border-box;
   touch-action: pan-y;
+  -webkit-mask-image: linear-gradient(to right, transparent 0%, black 2.5%, black 97.5%, transparent 100%);
+  mask-image: linear-gradient(to right, transparent 0%, black 2.5%, black 97.5%, transparent 100%);
 }
 
 .slide {
   position: absolute;
-  top: 0;
+  top: 8px;
   left: 96px;
-  height: 100%;
+  height: 440px;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -137,7 +139,7 @@
 /* Highlighting Focused (Center) Card */
 .cardFocused {
   border: 1px solid rgba(255, 255, 255, 0.9);
-  box-shadow: 0 18px 40px rgba(0, 0, 0, 0.18);
+  box-shadow: 0 6px 28px rgba(0, 0, 0, 0.16);
 }
 
 /* Left Content Overlay */
@@ -146,6 +148,7 @@
   z-index: 3;
   width: calc(100% - 96px);
   max-width: 680px;
+  height: 260px; /* Pre-sized height eliminates vertical card pop/shift */
   margin: 0 0 48px 48px;
   padding: 28px 36px;
   display: flex;
@@ -160,6 +163,7 @@
   box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
   transition: width 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               max-width 0.7s cubic-bezier(0.4, 0, 0.2, 1),
+              height 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               margin 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               padding 0.7s cubic-bezier(0.4, 0, 0.2, 1),
               border-radius 0.7s cubic-bezier(0.4, 0, 0.2, 1),
@@ -170,6 +174,7 @@
 .cardContentPreview {
   width: calc(100% - 32px) !important;
   max-width: 230px !important;
+  height: auto !important;
   margin: 0 0 48px 20px !important;
   padding: 16px 20px !important;
   border-radius: 16px !important;
@@ -214,11 +219,18 @@
               line-height 0.7s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
+.focusedContentWrap {
+  width: 100%;
+  min-width: 280px;
+}
+
 .cardDesc {
   font-size: 14.5px;
   color: var(--color-text-secondary, #4A5568);
   line-height: 1.5;
   margin-bottom: 20px;
+  width: 100%;
+  max-width: 460px;
 }
 
 /* Glass CTA Link */
@@ -296,26 +308,29 @@
 }
 
 .navBtn {
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  border: 1px solid var(--color-border);
-  background: rgba(255, 255, 255, 0.85);
-  color: var(--color-text);
+  width: 44px;
+  height: 44px;
+  border-radius: 50px;
+  border: 1px solid rgba(16, 24, 40, 0.14); /* Slight grey stroke */
+  background: rgba(255, 255, 255, 0.65); /* Glass background */
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  color: #101828; /* Dark arrow color */
   cursor: pointer;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
-  box-shadow: var(--shadow-sm);
+  transition: background 0.2s ease, border-color 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.06);
   pointer-events: auto;
 }
 
 .navBtn:hover {
-  transform: translateY(-1px);
-  border-color: var(--color-primary);
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: var(--shadow-md);
+  background: rgba(255, 255, 255, 0.95);
+  border-color: rgba(16, 24, 40, 0.25);
+  color: #034EA2;
+  transform: scale(1.08);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .specialitiesGrid {

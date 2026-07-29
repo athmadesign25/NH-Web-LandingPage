@@ -64,10 +64,13 @@ export default function PatientStories() {
 
   const allItems = [...items, ...items]; // Duplicate for seamless scrolling
 
+  const topRowImages = [stories[0].image, stories[1].image, stories[2].image, stories[3].image, videos[0].thumb, videos[1].thumb];
+  const bottomRowImages = [videos[0].thumb, videos[1].thumb, videos[2].thumb, videos[3].thumb, stories[0].image, stories[1].image];
+
   const backgroundGridItems = [
-    ...stories.map(s => s.image), // Top row
-    null, null, null, null,       // Middle row (empty)
-    ...videos.map(v => v.thumb)   // Bottom row
+    ...topRowImages,                     // Top row: 6 tiles
+    null, null, null, null, null, null, // Middle row: 6 empty slots leaving space for carousel
+    ...bottomRowImages,                  // Bottom row: 6 tiles
   ];
 
   return (

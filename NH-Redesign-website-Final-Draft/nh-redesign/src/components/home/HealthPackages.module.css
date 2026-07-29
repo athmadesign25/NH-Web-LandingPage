@@ -1,11 +1,5 @@
 .section {
-  background: linear-gradient(
-    160deg,
-    #101a2d 0%,
-    #172c4c 40%,
-    #1d385d 70%,
-    #0f1d33 100%
-  );
+  background: radial-gradient(74.69% 123.04% at 50% 108.1%, rgba(237, 28, 36, 0.40) 0%, rgba(9, 38, 86, 0.00) 100%), linear-gradient(155deg, #050F1C 0%, #061323 34.28%, #0F233A 41.61%, #0345A1 78.09%, #5388D2 103.73%);
   padding: var(--sp-10) 0;
   overflow: hidden;
   position: relative;

@@ -811,9 +811,18 @@ export default function HeroSearchFirst() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-  
-  return () => document.removeEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
+
+  // Set glow effect SVG rect rx dynamically from computed border-radius + 6px offset for outside glow
+  useEffect(() => {
+    if (searchContainerRef.current) {
+      const computedRx = parseFloat(window.getComputedStyle(searchContainerRef.current).borderRadius) || 27;
+      const rx = `${computedRx + 6}px`;
+      const rects = searchContainerRef.current.querySelectorAll<SVGRectElement>(`.${styles.glowBlur}, .${styles.glowLine}`);
+      rects.forEach(rect => rect.setAttribute("rx", rx));
+    }
+  }, [isOpen]);
 
   return (
     <section className={styles.hero} id="hero-section-search-first">
@@ -866,7 +875,11 @@ export default function HeroSearchFirst() {
                         className={`${styles.glowWrap} ${isApproach ? styles.glowWrapApproach : ""}`}
                       >
                         <div className={styles.searchGlow} aria-hidden="true" />
-                        <div ref={searchContainerRef} className={`${styles.searchContainer} ${isOpen ? styles.searchContainerActive : ""}`}>
+                        <div ref={searchContainerRef} className={`${styles.searchContainer} ${styles.glow} ${isOpen ? styles.searchContainerActive : ""}`}>
+                          <svg className={styles.glowContainer}>
+                            <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
+                            <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
+                          </svg>
                           <div className={styles.searchIconWrapper}>
                             <Search className={styles.searchIcon} size={18} />
                           </div>

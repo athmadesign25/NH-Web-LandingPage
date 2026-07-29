@@ -136,6 +136,7 @@ export default function CentreOfExcellence() {
   const [activeIndex, setActiveIndex] = React.useState(0);
   const [isInView, setIsInView] = React.useState(false);
   const [isMobile, setIsMobile] = React.useState(false);
+  const [isHovered, setIsHovered] = React.useState(false);
   const [sideContentReady, setSideContentReady] = React.useState(true);
   const isFirstRender = React.useRef(true);
 
@@ -184,16 +185,16 @@ export default function CentreOfExcellence() {
     return () => observer.disconnect();
   }, []);
 
-  // Autoplay carousel every 5 seconds only when in view
+  // Autoplay carousel every 5 seconds only when in view and not hovered, resetting timer on manual interaction
   React.useEffect(() => {
-    if (!isInView) return;
+    if (!isInView || isHovered) return;
 
     const interval = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % CARDS.length);
     }, 5000);
 
     return () => clearInterval(interval);
-  }, [isInView]);
+  }, [isInView, isHovered, activeIndex]);
 
   const handleDragEnd = (event: any, info: any) => {
     const threshold = 50;
@@ -216,7 +217,11 @@ export default function CentreOfExcellence() {
         </div>
 
         {/* Carousel */}
-        <div className={styles.carouselWrapper}>
+        <div 
+          className={styles.carouselWrapper}
+          onMouseEnter={() => setIsHovered(true)}
+          onMouseLeave={() => setIsHovered(false)}
+        >
           <motion.div 
             className={styles.carousel} 
             role="group" 
@@ -243,12 +248,13 @@ export default function CentreOfExcellence() {
                   animate={{
                     x: translateX,
                     opacity: cardOpacity,
-                    width: width ?? "100%"
+                    width: width ?? "100%",
+                    scale: isFocused ? 1 : 0.95
                   }}
                   transition={{
                     type: "tween",
-                    duration: 0.78,
-                    ease: [0.22, 1, 0.36, 1]
+                    duration: 1.15,
+                    ease: [0.16, 1, 0.3, 1]
                   }}
                   onAnimationComplete={() => {
                     setSideContentReady(true);
@@ -260,20 +266,21 @@ export default function CentreOfExcellence() {
                   }}
                 >
                   <div className={`${styles.card} ${isFocused ? styles.cardFocused : ""} ${isSideCard ? styles.cardSide : ""}`}>
-                    {/* Left Column: Content — always rendered for CSS transitions */}
+                    {/* Left Column: Content */}
                     <motion.div 
                       className={`${styles.cardContent} ${(isNext || isPrev) ? styles.cardContentPreview : ""} ${!showContent || (isSideCard && !sideContentReady) ? styles.cardContentHidden : ""}`}
                       initial={isFocused ? { opacity: 0, y: 14 } : false}
                       animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.35, ease: [0.25, 0.1, 0.25, 1] }}
+                      transition={{ duration: 0.65, ease: [0.16, 1, 0.3, 1] }}
                     >
                       <span className={styles.cardCategory}>{card.category}</span>
                       <h3 className={styles.cardTitle}>{card.title}</h3>
                       {isFocused && (
                         <motion.div
-                          initial={{ opacity: 0, y: 8 }}
-                          animate={{ opacity: 1, y: 0 }}
-                          transition={{ duration: 0.35, delay: 0.15, ease: [0.25, 0.1, 0.25, 1] }}
+                          className={styles.focusedContentWrap}
+                          initial={{ opacity: 0, y: 8, filter: "blur(6px)" }}
+                          animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                          transition={{ duration: 0.5, delay: 0.25, ease: [0.16, 1, 0.3, 1] }}
                         >
                           <p className={styles.cardDesc}>{card.desc}</p>
                           <div>
@@ -309,16 +316,16 @@ export default function CentreOfExcellence() {
             <button
               type="button"
               className={styles.navBtn}
-              onClick={() => moveToIndex((activeIndex - 1 + CARDS.length) % CARDS.length)}
-              aria-label="Previous centre"
+              onClick={() => moveToIndex((activeIndex + 1) % CARDS.length)}
+              aria-label="Move cards left"
             >
               <ChevronLeft size={18} />
             </button>
             <button
               type="button"
               className={styles.navBtn}
-              onClick={() => moveToIndex((activeIndex + 1) % CARDS.length)}
-              aria-label="Next centre"
+              onClick={() => moveToIndex((activeIndex - 1 + CARDS.length) % CARDS.length)}
+              aria-label="Move cards right"
             >
               <ChevronRight size={18} />
             </button>

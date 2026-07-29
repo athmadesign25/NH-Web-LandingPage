@@ -70,7 +70,7 @@ export default function AppDownloadBanner() {
         viewport={{ once: true, amount: 0.25 }}
         transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
       >
-        {/* Left Side: Copy + QR & Store Downloads */}
+        {/* Left Side: Copy + QR & Separate Store Containers */}
         <div className={styles.leftCol}>
           <div className={styles.eyebrow}>
             <span className={styles.eyebrowLine} />
@@ -87,7 +87,7 @@ export default function AppDownloadBanner() {
             India&apos;s most trusted hospital app. Millions of patients use NH Care to manage their journey end-to-end from booking to recovery.
           </p>
 
-          {/* QR & Store Buttons Row */}
+          {/* QR & Separate Store Containers Row */}
           <div className={styles.downloadsRow}>
             {/* QR Box */}
             <div className={styles.qrBox}>
@@ -97,47 +97,51 @@ export default function AppDownloadBanner() {
               <span className={styles.qrLabel}>SCAN TO INSTALL</span>
             </div>
 
-            {/* App Store & Google Play Container */}
-            <div className={styles.storesContainer}>
-              <a href="#" className={styles.storeBadge} tabIndex={0}>
-                <img alt="Download on the App Store" src="/App%20store.svg" />
-              </a>
-              <a href="#" className={styles.storeBadge} tabIndex={0}>
-                <img alt="Get it on Google Play" src="/Google%20play.svg" />
-              </a>
+            {/* Separate App Store and Google Play Containers */}
+            <div className={styles.storesCol}>
+              <div className={styles.storeContainer}>
+                <a href="#" className={styles.storeBadge} tabIndex={0}>
+                  <img alt="Download on the App Store" src="/App%20store.svg" />
+                </a>
+              </div>
+              <div className={styles.storeContainer}>
+                <a href="#" className={styles.storeBadge} tabIndex={0}>
+                  <img alt="Get it on Google Play" src="/Google%20play.svg" />
+                </a>
+              </div>
             </div>
           </div>
         </div>
 
-        {/* Right Side: Feature Pill + Phone + Carousel Navigation */}
+        {/* Right Side: Feature Pill + Concentric Rings + Phone Carousel */}
         <div className={styles.rightCol}>
-          {/* Top Feature Name Pill with Concentric Revolving Halo Rings */}
-          <div className={styles.pillWrapper}>
-            {/* Concentric Rings */}
-            <div className={`${styles.concentricRing} ${styles.ring1}`} />
-            <div className={`${styles.concentricRing} ${styles.ring2}`} />
+          {/* Top Feature Name Pill with Animating Concentric Halo Rings */}
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={activeFeature.id}
+              initial={{ opacity: 0, y: -10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 10, scale: 0.95 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+              className={styles.pillWrapper}
+            >
+              {/* Concentric Rings */}
+              <div className={`${styles.concentricRing} ${styles.ring1}`} />
+              <div className={`${styles.concentricRing} ${styles.ring2}`} />
 
-            {/* Pill Container */}
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeFeature.id}
-                initial={{ opacity: 0, y: -8, scale: 0.95 }}
-                animate={{ opacity: 1, y: 0, scale: 1 }}
-                exit={{ opacity: 0, y: 8, scale: 0.95 }}
-                transition={{ duration: 0.35, ease: "easeOut" }}
-                className={styles.featurePill}
-              >
+              {/* Feature Pill */}
+              <div className={styles.featurePill}>
                 <div className={styles.pillIconBg}>
                   <IconComponent className={styles.pillIcon} size={16} />
                 </div>
                 <span className={styles.pillText}>{activeFeature.title}</span>
-              </motion.div>
-            </AnimatePresence>
-          </div>
+              </div>
+            </motion.div>
+          </AnimatePresence>
 
-          {/* Phone Display Unit with Left/Right Navigation Arrows */}
+          {/* Phone Display Unit with Left/Right Glass Arrows */}
           <div className={styles.phoneCarouselUnit}>
-            {/* Left Arrow Button */}
+            {/* Left Glass Arrow Button */}
             <button
               onClick={handlePrev}
               className={styles.carouselArrowLeft}
@@ -147,19 +151,29 @@ export default function AppDownloadBanner() {
               <ChevronLeft size={22} />
             </button>
 
-            {/* Phone Image Container */}
-            <div className={styles.phoneMockupWrap}>
-              <Image
-                src={activeFeature.img}
-                alt={activeFeature.title}
-                width={320}
-                height={620}
-                className={styles.phoneImg}
-                priority
-              />
-            </div>
+            {/* Phone Image Container with Animating Transition (Pinned to bottom) */}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activeFeature.id}
+                initial={{ opacity: 0.5, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0.5, scale: 0.97 }}
+                transition={{ duration: 0.35, ease: "easeOut" }}
+                style={{ transformOrigin: "bottom center" }}
+                className={styles.phoneMockupWrap}
+              >
+                <Image
+                  src={activeFeature.img}
+                  alt={activeFeature.title}
+                  width={380}
+                  height={540}
+                  className={styles.phoneImg}
+                  priority
+                />
+              </motion.div>
+            </AnimatePresence>
 
-            {/* Right Arrow Button */}
+            {/* Right Glass Arrow Button */}
             <button
               onClick={handleNext}
               className={styles.carouselArrowRight}

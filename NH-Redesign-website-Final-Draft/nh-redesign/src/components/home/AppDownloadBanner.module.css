@@ -1,9 +1,12 @@
-/* Outer Section: #050F1C background, 16px padding on all sides */
+/* Outer Section: #050F1C background, 16px padding on all sides, overlaying previous section */
 .section {
+  position: relative;
+  z-index: 25;
   background: #050F1C;
   padding: 16px;
   width: 100%;
   box-sizing: border-box;
+  box-shadow: 0 -24px 64px rgba(0, 0, 0, 0.6);
 }
 
 /* Card Container: sits 16px away from screen edges horizontally (full width) */

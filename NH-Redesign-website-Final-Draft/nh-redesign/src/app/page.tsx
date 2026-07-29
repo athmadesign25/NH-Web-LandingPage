@@ -32,11 +32,22 @@ export default function HomePage() {
         </div>
         <PatientStories />
         <WhyChooseNH />
-        <ChairmanQuote />
-        <AppDownloadBanner />
-        <HealthPackages />
+
+        {/* ChairmanQuote section pinned sticky so AppDownloadBanner overlays on top of it during scroll */}
+        <div style={{ position: "sticky", top: 0, zIndex: 15 }}>
+          <ChairmanQuote />
+        </div>
+
+        {/* AppDownloadBanner Section overlays on top of ChairmanQuote */}
+        <div style={{ position: "relative", zIndex: 25 }}>
+          <AppDownloadBanner />
+        </div>
+
+        {/* Subsequent sections scroll over/after AppDownloadBanner with solid z-index */}
+        <div style={{ position: "relative", zIndex: 30, background: "#ffffff" }}>
+          <HealthPackages />
+        </div>
       </div>
     </>
   );
 }
-

@@ -30,11 +30,11 @@ export default function HomePage() {
         <div style={{ background: "linear-gradient(135deg, #f5eff2 0%, #cbe1fc 100%)", borderRadius: 0 }}>
           <CentreOfExcellence />
         </div>
-        <HealthPackages />
         <PatientStories />
         <WhyChooseNH />
         <ChairmanQuote />
         <AppDownloadBanner />
+        <HealthPackages />
       </div>
     </>
   );

@@ -567,7 +567,7 @@ export default function HeroSearchFirst() {
 
     gradientRef.current = new NeatGradient({
       ref: canvasRef.current,
-      ...config,
+      ...(config as any),
     });
 
     const handleScroll = () => {

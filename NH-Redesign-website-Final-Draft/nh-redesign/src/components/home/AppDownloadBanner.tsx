@@ -12,28 +12,28 @@ const features = [
     title: "Video consultations from home",
     icon: Video,
     img: "/app-video-consultation.png",
-    offsetY: 175,
+    isTightCrop: true,
   },
   {
     id: 2,
     title: "Book appointments in 60 seconds",
     icon: Calendar,
     img: "/app-feature-image-1.png",
-    offsetY: 0,
+    isTightCrop: false,
   },
   {
     id: 3,
     title: "Access your health records anytime",
     icon: FileText,
     img: "/app-health-records.png",
-    offsetY: 175,
+    isTightCrop: true,
   },
   {
     id: 4,
     title: "Track vitals and wellness reports",
     icon: Activity,
     img: "/app-track-vitals.png",
-    offsetY: 175,
+    isTightCrop: true,
   },
 ];
 
@@ -161,12 +161,12 @@ export default function AppDownloadBanner() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeFeature.id}
-                initial={{ opacity: 0.5, scale: 0.97, y: activeFeature.offsetY || 0 }}
-                animate={{ opacity: 1, scale: 1, y: activeFeature.offsetY || 0 }}
-                exit={{ opacity: 0.5, scale: 0.97, y: activeFeature.offsetY || 0 }}
+                initial={{ opacity: 0.5, scale: 0.97 }}
+                animate={{ opacity: 1, scale: 1 }}
+                exit={{ opacity: 0.5, scale: 0.97 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 style={{ transformOrigin: "bottom center" }}
-                className={styles.phoneMockupWrap}
+                className={`${styles.phoneMockupWrap} ${activeFeature.isTightCrop ? styles.tightCropWrap : styles.paddedCropWrap}`}
               >
                 <Image
                   src={activeFeature.img}

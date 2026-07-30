@@ -276,7 +276,7 @@
 
 .phoneMockupWrap {
   width: 380px;
-  height: 480px;
+  height: 420px;
   display: flex;
   justify-content: center;
   align-items: flex-end;
@@ -284,17 +284,27 @@
   z-index: 1;
   margin-bottom: 0;
   transform-origin: bottom center;
-  filter: drop-shadow(0 74px 104px rgba(121, 205, 254, 0.50));
+  filter: drop-shadow(0 50px 80px rgba(121, 205, 254, 0.45));
 }
 
-.phoneImg {
+/* Feature 2: Wide 810x765 Canvas with Built-in Transparent Padding */
+.paddedCropWrap .phoneImg {
   width: 380px;
   height: 100%;
   object-fit: contain;
   object-position: bottom center;
   transform: scale(1.35);
   transform-origin: bottom center;
-  filter: drop-shadow(0 74px 104px rgba(121, 205, 254, 0.50));
+}
+
+/* Features 1, 3, 4: Tight 498x743 Canvas (No Padding) */
+.tightCropWrap .phoneImg {
+  width: 250px;
+  height: 373px;
+  object-fit: contain;
+  object-position: bottom center;
+  transform: scale(1.0);
+  transform-origin: bottom center;
 }
 
 /* Transparent Glass Carousel Arrow Style */

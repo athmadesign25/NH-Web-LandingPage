@@ -12,28 +12,28 @@ const features = [
     title: "Video consultations from home",
     icon: Video,
     img: "/app-video-consultation.png",
-    isTightCrop: true,
+    isBooking: false,
   },
   {
     id: 2,
     title: "Book appointments in 60 seconds",
     icon: Calendar,
-    img: "/app-feature-image-1.png",
-    isTightCrop: false,
+    img: "/app-book-appointments.png",
+    isBooking: true,
   },
   {
     id: 3,
     title: "Access your health records anytime",
     icon: FileText,
     img: "/app-health-records.png",
-    isTightCrop: true,
+    isBooking: false,
   },
   {
     id: 4,
     title: "Track vitals and wellness reports",
     icon: Activity,
     img: "/app-track-vitals.png",
-    isTightCrop: true,
+    isBooking: false,
   },
 ];
 
@@ -166,7 +166,7 @@ export default function AppDownloadBanner() {
                 exit={{ opacity: 0.5, scale: 0.97 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 style={{ transformOrigin: "bottom center" }}
-                className={`${styles.phoneMockupWrap} ${activeFeature.isTightCrop ? styles.tightCropWrap : styles.paddedCropWrap}`}
+                className={`${styles.phoneMockupWrap} ${activeFeature.isBooking ? styles.bookingWrap : styles.regularWrap}`}
               >
                 <Image
                   src={activeFeature.img}

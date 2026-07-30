@@ -1,6 +1,6 @@
 "use client";
 
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
 import React from "react";
 import { Award, Microscope, Stethoscope, ShieldCheck } from "lucide-react";
 import styles from "./WhyChooseNH.module.css";
@@ -31,6 +31,73 @@ const featureCards = [
     descriptionLines: ["Clear communication and care", "navigation for every family"],
   },
 ];
+
+function ParallaxFeatureCard({ card, index }: { card: typeof featureCards[0]; index: number }) {
+  const cardRef = React.useRef<HTMLElement>(null);
+  const x = useMotionValue(0);
+  const y = useMotionValue(0);
+
+  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [4, -4]), { stiffness: 120, damping: 22 });
+  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-4, 4]), { stiffness: 120, damping: 22 });
+  const shiftX = useSpring(useTransform(x, [-0.5, 0.5], [-5, 5]), { stiffness: 120, damping: 22 });
+  const shiftY = useSpring(useTransform(y, [-0.5, 0.5], [-3, 3]), { stiffness: 120, damping: 22 });
+
+  const handleMouseMove = (event: React.MouseEvent<HTMLElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    const mouseX = event.clientX - rect.left;
+    const mouseY = event.clientY - rect.top;
+
+    const normX = mouseX / rect.width - 0.5;
+    const normY = mouseY / rect.height - 0.5;
+
+    x.set(normX);
+    y.set(normY);
+
+    cardRef.current.style.setProperty("--mx", `${mouseX}px`);
+    cardRef.current.style.setProperty("--my", `${mouseY}px`);
+  };
+
+  const handleMouseLeave = () => {
+    x.set(0);
+    y.set(0);
+    if (cardRef.current) {
+      cardRef.current.style.setProperty("--mx", "50%");
+      cardRef.current.style.setProperty("--my", "50%");
+    }
+  };
+
+  const Icon = card.icon;
+
+  return (
+    <motion.article
+      ref={cardRef}
+      className={`${styles.featureCard} ${styles[`tone${card.tone[0].toUpperCase()}${card.tone.slice(1)}`]}`}
+      initial={{ opacity: 0, y: 16 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.25 }}
+      transition={{ duration: 0.45, delay: index * 0.07 }}
+      style={{
+        rotateX,
+        rotateY,
+        x: shiftX,
+        y: shiftY,
+        transformStyle: "preserve-3d",
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseLeave={handleMouseLeave}
+    >
+      <div className={styles.featureIcon}>
+        <Icon size={30} />
+      </div>
+      <h3 className={styles.featureTitle}>{card.title}</h3>
+      <p className={styles.featureDescription}>
+        <span>{card.descriptionLines[0]}</span>
+        <span>{card.descriptionLines[1]}</span>
+      </p>
+    </motion.article>
+  );
+}
 
 const accreditations = [
   {
@@ -78,39 +145,9 @@ export default function WhyChooseNH() {
         </div>
 
         <div className={styles.featuresGrid}>
-          {featureCards.map((card, index) => {
-            const Icon = card.icon;
-            return (
-              <motion.article
-                key={card.title}
-                className={`${styles.featureCard} ${styles[`tone${card.tone[0].toUpperCase()}${card.tone.slice(1)}`]}`}
-                initial={{ opacity: 0, y: 16 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, amount: 0.25 }}
-                transition={{ duration: 0.45, delay: index * 0.07 }}
-                onMouseMove={(event) => {
-                  const rect = event.currentTarget.getBoundingClientRect();
-                  const x = event.clientX - rect.left;
-                  const y = event.clientY - rect.top;
-                  event.currentTarget.style.setProperty("--mx", `${x}px`);
-                  event.currentTarget.style.setProperty("--my", `${y}px`);
-                }}
-                onMouseLeave={(event) => {
-                  event.currentTarget.style.setProperty("--mx", "50%");
-                  event.currentTarget.style.setProperty("--my", "50%");
-                }}
-              >
-                <div className={styles.featureIcon}>
-                  <Icon size={30} />
-                </div>
-                <h3 className={styles.featureTitle}>{card.title}</h3>
-                <p className={styles.featureDescription}>
-                  <span>{card.descriptionLines[0]}</span>
-                  <span>{card.descriptionLines[1]}</span>
-                </p>
-              </motion.article>
-            );
-          })}
+          {featureCards.map((card, index) => (
+            <ParallaxFeatureCard key={card.title} card={card} index={index} />
+          ))}
         </div>
 
         <div className={styles.badgesWrap}>

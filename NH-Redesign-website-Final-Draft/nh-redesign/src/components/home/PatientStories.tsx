@@ -1,7 +1,7 @@
 "use client";
 
 import Image from "next/image";
-import { motion } from "framer-motion";
+import { motion, useMotionValue, useSpring } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Quote } from "lucide-react";
 import React from "react";
 import styles from "./PatientStories.module.css";
@@ -46,6 +46,31 @@ const stories = [
 ];
 
 export default function PatientStories() {
+  const containerRef = React.useRef<HTMLDivElement>(null);
+
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const parallaxX = useSpring(mouseX, { stiffness: 90, damping: 30 });
+  const parallaxY = useSpring(mouseY, { stiffness: 90, damping: 30 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    const normalizedX = (e.clientX - centerX) / (rect.width / 2);
+    const normalizedY = (e.clientY - centerY) / (rect.height / 2);
+
+    mouseX.set(normalizedX * 6);
+    mouseY.set(normalizedY * 3);
+  };
+
+  const handleMouseLeave = () => {
+    mouseX.set(0);
+    mouseY.set(0);
+  };
+
   const videos = [
     { videoId: "ZSEB_JWPLXE", thumb: "/assets/patient_in_1.png", title: "Cardiac Recovery Journey with NH Team" },
     { videoId: "zj57LyreDYU", thumb: "/assets/patient_in_2.png", title: "Cancer Care Experience from Diagnosis to Healing" },
@@ -95,7 +120,12 @@ export default function PatientStories() {
         </motion.div>
       </div>
 
-      <div className={styles.carouselWrap}>
+      <div 
+        ref={containerRef} 
+        className={styles.carouselWrap}
+        onMouseMove={handleMouseMove}
+        onMouseLeave={handleMouseLeave}
+      >
         {/* Background Image Grid */}
         <div className={styles.backgroundGridWrap}>
           <div className={styles.backgroundGrid}>
@@ -121,6 +151,7 @@ export default function PatientStories() {
 
         <motion.div 
           className={styles.marqueeContainer}
+          style={{ x: parallaxX, y: parallaxY }}
           initial={{ opacity: 0, y: 40 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.1 }}

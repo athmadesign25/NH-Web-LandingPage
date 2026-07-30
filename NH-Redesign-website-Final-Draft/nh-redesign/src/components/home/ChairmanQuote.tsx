@@ -1,41 +1,54 @@
 "use client";
 
 import React, { useRef, useState } from "react";
+import Image from "next/image";
 import { motion } from "framer-motion";
 import styles from "./ChairmanQuote.module.css";
 
 export default function ChairmanQuote() {
+  const sectionRef = useRef<HTMLElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
-  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
+  const [mousePos, setMousePos] = useState({ normX: 0, normY: 0, rawX: -1000, rawY: -1000 });
   const [isHovered, setIsHovered] = useState(false);
 
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    setMousePos({
-      x: e.clientX - rect.left,
-      y: e.clientY - rect.top,
-    });
+  const handleMouseMove = (e: React.MouseEvent<HTMLElement>) => {
+    if (!sectionRef.current) return;
+    const secRect = sectionRef.current.getBoundingClientRect();
+    const secMouseX = e.clientX - secRect.left;
+    const secMouseY = e.clientY - secRect.top;
+
+    const normX = (secMouseX - secRect.width / 2) / (secRect.width / 2);
+    const normY = (secMouseY - secRect.height / 2) / (secRect.height / 2);
+
+    let rawX = -1000;
+    let rawY = -1000;
+    if (cardRef.current) {
+      const cardRect = cardRef.current.getBoundingClientRect();
+      rawX = e.clientX - cardRect.left;
+      rawY = e.clientY - cardRect.top;
+    }
+
+    setMousePos({ normX, normY, rawX, rawY });
   };
 
-  // Subtle mouse-interactive parallax offset calculation (-8px to +8px max)
-  const parallaxX = isHovered && cardRef.current
-    ? ((mousePos.x - cardRef.current.clientWidth / 2) / (cardRef.current.clientWidth / 2)) * -8
-    : 0;
-
-  const parallaxY = isHovered && cardRef.current
-    ? ((mousePos.y - cardRef.current.clientHeight / 2) / (cardRef.current.clientHeight / 2)) * -8
-    : 0;
+  // Parallax shifts when mouse is inside the Leadership section
+  // Sideways (x) movement allowed; vertical (y) movement clamped to >= 0 (only moves downwards, never upwards)
+  const parallaxX = isHovered ? mousePos.normX * -14 : 0;
+  const parallaxY = isHovered ? Math.max(0, mousePos.normY * 12) : 0;
 
   return (
-    <section className={styles.section} id="chairman-quote">
+    <section 
+      ref={sectionRef} 
+      className={styles.section} 
+      id="chairman-quote"
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
       <div className="container">
         <motion.div
           ref={cardRef}
           className={styles.cardWrapper}
-          onMouseMove={handleMouseMove}
-          onMouseEnter={() => setIsHovered(true)}
-          onMouseLeave={() => setIsHovered(false)}
           initial={{ opacity: 0, y: 24 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true, amount: 0.2 }}
@@ -44,12 +57,12 @@ export default function ChairmanQuote() {
           {/* Base 20px Outer Glass Border */}
           <div className={styles.outerGlassFrame} />
 
-          {/* Mouse-tracking whisper-subtle whiter glass glow on 20px outer border layer */}
+          {/* Mouse-tracking glass glow on 20px outer border layer */}
           <div
             className={styles.borderGlowFrame}
             style={{
               opacity: isHovered ? 0.85 : 0,
-              background: `radial-gradient(280px circle at ${mousePos.x + 20}px ${mousePos.y + 20}px, rgba(255, 255, 255, 0.45) 0%, rgba(200, 225, 255, 0.20) 45%, transparent 80%)`,
+              background: `radial-gradient(280px circle at ${mousePos.rawX + 20}px ${mousePos.rawY + 20}px, rgba(255, 255, 255, 0.45) 0%, rgba(200, 225, 255, 0.20) 45%, transparent 80%)`,
             }}
           />
 
@@ -93,7 +106,7 @@ export default function ChairmanQuote() {
               </motion.p>
             </motion.div>
 
-            {/* Right Column: Dr. Devi Shetty Video + Overlay Identity Badge */}
+            {/* Right Column: Layered Chairman Portrait Composition */}
             <div className={styles.imageWrap}>
               <motion.div
                 className={styles.imageFrame}
@@ -102,27 +115,41 @@ export default function ChairmanQuote() {
                 viewport={{ once: true, amount: 0.3 }}
                 transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1], delay: 0.1 }}
               >
-                {/* Subtle mouse-interactive parallax video container */}
-                <motion.video
-                  autoPlay
-                  loop
-                  muted
-                  playsInline
-                  className={styles.video}
-                  src="/DrShettyVideo.MOV"
+                {/* 1. Background Image */}
+                <Image
+                  src="/chairman-portrait-bg.png"
+                  alt="Chairman background"
+                  fill
+                  sizes="(max-width: 768px) 100vw, 440px"
+                  className={styles.portraitBg}
+                />
+
+                {/* 2. Layered Cutout Portrait with Section Mouse Parallax */}
+                <motion.div
+                  className={styles.portraitCutoutWrap}
+                  style={{ position: "absolute", inset: 0, zIndex: 2, pointerEvents: "none" }}
                   animate={{
                     x: parallaxX,
                     y: parallaxY,
-                    scale: 1.08,
                   }}
                   transition={{
                     type: "spring",
-                    stiffness: 150,
-                    damping: 25,
+                    stiffness: 120,
+                    damping: 22,
                     mass: 0.5,
                   }}
-                />
+                >
+                  <Image
+                    src="/chairman-portrait-cutout.png"
+                    alt="Dr. Devi Prasad Shetty"
+                    fill
+                    sizes="(max-width: 768px) 100vw, 440px"
+                    className={styles.portraitCutout}
+                    priority
+                  />
+                </motion.div>
 
+                {/* 3. Name & Title Pill Overlay */}
                 <div className={styles.identityPill}>
                   <span className={styles.name}>Dr. Devi Prasad Shetty</span>
                   <span className={styles.title}>Founder and Chairman, Narayana Health</span>

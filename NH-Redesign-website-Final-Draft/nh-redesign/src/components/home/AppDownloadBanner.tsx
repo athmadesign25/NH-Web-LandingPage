@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Video, Calendar, FileText, Activity, Users, ChevronLeft, ChevronRight } from "lucide-react";
+import { Video, Calendar, FileText, Activity, ChevronLeft, ChevronRight } from "lucide-react";
 import Image from "next/image";
 import styles from "./AppDownloadBanner.module.css";
 
@@ -11,44 +11,46 @@ const features = [
     id: 1,
     title: "Video consultations from home",
     icon: Video,
-    img: "/app-feature-image-1.png",
+    img: "/app-video-consultation.png",
+    offsetY: 175,
   },
   {
     id: 2,
     title: "Book appointments in 60 seconds",
     icon: Calendar,
     img: "/app-feature-image-1.png",
+    offsetY: 0,
   },
   {
     id: 3,
     title: "Access your health records anytime",
     icon: FileText,
-    img: "/app-feature-image-1.png",
+    img: "/app-health-records.png",
+    offsetY: 175,
   },
   {
     id: 4,
     title: "Track vitals and wellness reports",
     icon: Activity,
-    img: "/app-feature-image-1.png",
-  },
-  {
-    id: 5,
-    title: "Manage your entire family health",
-    icon: Users,
-    img: "/app-feature-image-1.png",
+    img: "/app-track-vitals.png",
+    offsetY: 175,
   },
 ];
 
 export default function AppDownloadBanner() {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
 
-  // Auto-play carousel every 4 seconds
+  // Auto-play carousel every 4 seconds only when not hovered, resetting timer on manual interaction
   useEffect(() => {
+    if (isHovered) return;
+
     const timer = setInterval(() => {
       setActiveIndex((prev) => (prev + 1) % features.length);
     }, 4000);
+
     return () => clearInterval(timer);
-  }, []);
+  }, [isHovered, activeIndex]);
 
   const handlePrev = () => {
     setActiveIndex((prev) => (prev - 1 + features.length) % features.length);
@@ -140,7 +142,11 @@ export default function AppDownloadBanner() {
           </AnimatePresence>
 
           {/* Phone Display Unit with Left/Right Glass Arrows */}
-          <div className={styles.phoneCarouselUnit}>
+          <div 
+            className={styles.phoneCarouselUnit}
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+          >
             {/* Left Glass Arrow Button */}
             <button
               onClick={handlePrev}
@@ -155,9 +161,9 @@ export default function AppDownloadBanner() {
             <AnimatePresence mode="wait">
               <motion.div
                 key={activeFeature.id}
-                initial={{ opacity: 0.5, scale: 0.97 }}
-                animate={{ opacity: 1, scale: 1 }}
-                exit={{ opacity: 0.5, scale: 0.97 }}
+                initial={{ opacity: 0.5, scale: 0.97, y: activeFeature.offsetY || 0 }}
+                animate={{ opacity: 1, scale: 1, y: activeFeature.offsetY || 0 }}
+                exit={{ opacity: 0.5, scale: 0.97, y: activeFeature.offsetY || 0 }}
                 transition={{ duration: 0.35, ease: "easeOut" }}
                 style={{ transformOrigin: "bottom center" }}
                 className={styles.phoneMockupWrap}

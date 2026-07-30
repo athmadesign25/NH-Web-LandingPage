@@ -39,12 +39,21 @@ export default function FloatingQuickActions() {
           const id = topEl.id || "";
           const tag = topEl.tagName || "";
 
+          // Check for Leadership section (ChairmanQuote)
+          if (id === "chairman-quote" || className.includes("ChairmanQuote")) {
+            const sectionRect = topEl.getBoundingClientRect();
+            // As tile nears the end of Leadership section (within 100px of section bottom), swap to white
+            if (rect.bottom >= sectionRect.bottom - 100) {
+              return true;
+            }
+            return false; // Default blue text inside Leadership section
+          }
+
           // Check if top-most visible section under this link is a dark section
           if (
             id === "hero-section-search-first" ||
             className.includes("HeroSearchFirst") ||
             className.includes("HealthPackages_section") ||
-            className.includes("ChairmanQuote_section") ||
             className.includes("AppDownloadBanner") ||
             className.includes("Footer") ||
             tag === "FOOTER"

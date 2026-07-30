@@ -12,6 +12,29 @@ import brainAndSpineImg from "../../../public/Brain and Spine.jpg";
 import boneAndJointImg from "../../../public/Bone & Joint.jpg";
 import digestiveHealthImg from "../../../public/Digestive Health.png";
 
+const STATS_DATA = [
+  {
+    number: "5,000+",
+    line1: "Robotic Surgeries",
+    line2: "Performed",
+  },
+  {
+    number: "5,50,000+",
+    line1: "Cardiac Consults",
+    line2: "Annually",
+  },
+  {
+    number: "33,000+",
+    line1: "Image Guided",
+    line2: "Procedures",
+  },
+  {
+    number: "8,000+",
+    line1: "Solid Organ",
+    line2: "Transplants",
+  },
+];
+
 const CARDS = [
   {
     id: "card-cardiac",
@@ -207,6 +230,22 @@ export default function CentreOfExcellence() {
 
   return (
     <section ref={sectionRef} className={styles.section} id="centre-of-excellence">
+      {/* Top Stats Strip Section */}
+      <div className={styles.statsSection}>
+        <div className={styles.statsContainer}>
+          {STATS_DATA.map((stat, idx) => (
+            <div key={idx} className={styles.statCard}>
+              <span className={styles.statNumber}>{stat.number}</span>
+              <span className={styles.statSubtext}>
+                {stat.line1}
+                <br />
+                {stat.line2}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+
       <div className="container">
         <div className={styles.header}>
           <div className="section-eyebrow">CENTRES OF EXCELLENCE</div>

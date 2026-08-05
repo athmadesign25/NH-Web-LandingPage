@@ -813,27 +813,28 @@ export default function HeroSearchFirst() {
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
                   </svg>
-                  <div className={styles.searchIconWrapper}>
-                    <Search className={styles.searchIcon} size={18} />
+                  <div className={styles.searchInputUnit}>
+                    <div className={styles.searchIconWrapper}>
+                      <Search className={styles.searchIcon} size={18} />
+                    </div>
+                    <input
+                      type="text"
+                      placeholder="Book Doctors, Find Specialities or Treatments.."
+                      value={searchQuery}
+                      onChange={(e) => {
+                        setSearchQuery(e.target.value);
+                        setIsOpen(true);
+                        setHasOpened(true);
+                      }}
+                      onFocus={() => {
+                        setIsOpen(true);
+                        setHasOpened(true);
+                      }}
+                      className={styles.searchInput}
+                    />
                   </div>
-                  <input
-                    type="text"
-                    placeholder="Book Doctors, Find Specialities or Treatments.."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setIsOpen(true);
-                      setHasOpened(true);
-                    }}
-                    onFocus={() => {
-                      setIsOpen(true);
-                      setHasOpened(true);
-                    }}
-                    className={styles.searchInput}
-                  />
                   <div 
                     className={styles.pulseIconWrapper} 
-                    style={{ marginRight: '14px' }}
                     onClick={(e) => {
                       if (!isOpen) {
                         setIsOpen(true);

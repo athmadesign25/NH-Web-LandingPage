@@ -14,7 +14,6 @@ import Lottie from "lottie-react";
 import pulseAnimation from "../../../public/assets/pulse animation.json";
 import PixelRipple from "./PixelRipple";
 import PulseAIWorkspace from "../pulse-ai/PulseAIWorkspace";
-import { NeatGradient } from "@firecms/neat";
 
 const popularTags = ["chest pain", "cancer", "surgery", "liver"];
 
@@ -370,24 +369,79 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 }
 
 
-const carouselItems = [
+
+
+function CountUp({
+  end,
+  duration = 1600,
+  delay = 0,
+  suffix = "+",
+}: {
+  end: number;
+  duration?: number;
+  delay?: number;
+  suffix?: string;
+}) {
+  const [count, setCount] = useState(0);
+
+  useEffect(() => {
+    let startTime: number | null = null;
+    let animationFrameId: number;
+
+    const timer = setTimeout(() => {
+      const step = (timestamp: number) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        const easeProgress = 1 - Math.pow(1 - progress, 3);
+        setCount(Math.floor(easeProgress * end));
+
+        if (progress < 1) {
+          animationFrameId = requestAnimationFrame(step);
+        } else {
+          setCount(end);
+        }
+      };
+      animationFrameId = requestAnimationFrame(step);
+    }, delay * 1000);
+
+    return () => {
+      clearTimeout(timer);
+      cancelAnimationFrame(animationFrameId);
+    };
+  }, [end, duration, delay]);
+
+  return (
+    <span>
+      {count.toLocaleString("en-IN")}
+      {suffix}
+    </span>
+  );
+}
+
+const STATS_DATA = [
   {
-    id: 0,
-    title: "Advanced Cardiology & Surgical Care",
-    videoSrc: "/NH YT Vid 01.mp4",
-    poster: "/Hero image.png",
+    target: 5000,
+    suffix: "+",
+    line1: "Robotic Surgeries",
+    line2: "Performed",
   },
   {
-    id: 1,
-    title: "Compassionate Care & Expert Doctors",
-    videoSrc: "/NH YT Vid 02.mp4",
-    poster: "/doctor_patient.png",
+    target: 550000,
+    suffix: "+",
+    line1: "Cardiac Consults",
+    line2: "Annually",
   },
   {
-    id: 2,
-    title: "World-Class Multispecialty Healthcare",
-    videoSrc: "/NH YT Vid 03.mp4",
-    poster: "/Advance Heart Care.jpg",
+    target: 33000,
+    suffix: "+",
+    line1: "Image Guided",
+    line2: "Procedures",
+  },
+  {
+    target: 8000,
+    suffix: "+",
+    line1: "Solid Organ",
+    line2: "Transplants",
   },
 ];
 
@@ -402,55 +456,20 @@ export default function HeroSearchFirst() {
   const [isPulseActive, setIsPulseActive] = useState(false);
   const [showPixelRipple, setShowPixelRipple] = useState(false);
 
-  // Carousel infinite step counter (always moves leftward)
-  const [step, setStep] = useState(0);
-  const [isTransitioning, setIsTransitioning] = useState(false);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
-  const videoRef0 = useRef<HTMLVideoElement | null>(null);
-  const videoRef1 = useRef<HTMLVideoElement | null>(null);
-  const videoRef2 = useRef<HTMLVideoElement | null>(null);
-  const carouselVideoRefs = useRef<Array<React.RefObject<HTMLVideoElement | null>>>([videoRef0, videoRef1, videoRef2]);
-
-  // Track viewport width for pixel-accurate carousel layout
-  const [windowWidth, setWindowWidth] = useState<number>(
-    typeof window !== "undefined" ? window.innerWidth : 1200
-  );
+  // Pause background video when search is active
   useEffect(() => {
-    const onResize = () => setWindowWidth(window.innerWidth);
-    window.addEventListener("resize", onResize, { passive: true });
-    return () => window.removeEventListener("resize", onResize);
-  }, []);
-
-  // Auto-move carousel every 4.5 seconds (deliberate stay + silky transition)
-  useEffect(() => {
-    if (isOpen) return;
-
-    const timer = setInterval(() => {
-      setIsTransitioning(true);
-      setStep((prev) => prev + 1);
-    }, 4500);
-
-    return () => clearInterval(timer);
-  }, [isOpen]);
-
-  // Active center tile data index is (step + 1) % 3
-  const activeTileIndex = (step + 1) % carouselItems.length;
-
-  // Video playback controller: Video plays ONLY when a tile settles in center focus
-  useEffect(() => {
-    carouselVideoRefs.current.forEach((ref, idx) => {
-      if (!ref.current) return;
-      if (idx === activeTileIndex && !isTransitioning && !isOpen) {
-        ref.current.currentTime = 0;
-        ref.current.play().catch((err) => {
-          console.log("Carousel video play prevented:", err);
-        });
+    if (videoRef.current) {
+      if (isOpen) {
+        videoRef.current.pause();
       } else {
-        ref.current.pause();
-        ref.current.currentTime = 0;
+        videoRef.current.play().catch((err) => {
+          console.log("Background video play failed:", err);
+        });
       }
-    });
-  }, [activeTileIndex, isTransitioning, isOpen]);
+    }
+  }, [isOpen]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
@@ -462,126 +481,10 @@ export default function HeroSearchFirst() {
     }
     return () => clearTimeout(timer);
   }, [isPulseActive]);
+
   const [lastSearch, setLastSearch] = useState<string | null>(null);
   const searchRef = useRef<HTMLFormElement>(null);
   const prefersReducedMotion = useReducedMotion();
-
-  // NeatGradient animated background
-  const canvasRef = useRef<HTMLCanvasElement>(null);
-  const gradientRef = useRef<NeatGradient | null>(null);
-
-  useEffect(() => {
-    if (!canvasRef.current) return;
-
-    const config = {
-      colors: [
-        { color: '#07284E', enabled: true },
-        { color: '#3D0F0F', enabled: true },
-        { color: '#0D1628', enabled: true },
-        { color: '#002E64', enabled: true },
-        { color: '#1A275A', enabled: true },
-      ],
-      speed: 2,
-      horizontalPressure: 4,
-      verticalPressure: 4,
-      waveFrequencyX: 3,
-      waveFrequencyY: 2,
-      waveAmplitude: 1,
-      shadows: 2,
-      highlights: 2,
-      colorBrightness: 1,
-      colorSaturation: -1,
-      wireframe: false,
-      colorBlending: 7,
-      backgroundColor: '#010101',
-      backgroundAlpha: 1,
-      grainScale: 2,
-      grainSparsity: 0,
-      grainIntensity: 0,
-      grainSpeed: 1,
-      resolution: 0.75,
-      yOffset: 109,
-      yOffsetWaveMultiplier: 2.2,
-      yOffsetColorMultiplier: 2.5,
-      yOffsetFlowMultiplier: 2.8,
-      flowDistortionA: 0.4,
-      flowDistortionB: 3,
-      flowScale: 3.3,
-      flowEase: 0.53,
-      flowEnabled: false,
-      enableProceduralTexture: false,
-      transparentTextureVoid: false,
-      textureVoidLikelihood: 0.06,
-      textureVoidWidthMin: 10,
-      textureVoidWidthMax: 500,
-      textureBandDensity: 0.8,
-      textureColorBlending: 0.06,
-      textureSeed: 333,
-      textureEase: 0.68,
-      proceduralBackgroundColor: '#003FFF',
-      textureShapeTriangles: 20,
-      textureShapeCircles: 15,
-      textureShapeBars: 15,
-      textureShapeSquiggles: 10,
-      domainWarpEnabled: false,
-      domainWarpIntensity: 0,
-      domainWarpScale: 3,
-      vignetteIntensity: 0,
-      vignetteRadius: 0.8,
-      fresnelEnabled: false,
-      fresnelPower: 2,
-      fresnelIntensity: 0.5,
-      fresnelColor: '#FFFFFF',
-      iridescenceEnabled: false,
-      iridescenceIntensity: 0.5,
-      iridescenceSpeed: 1,
-      bloomIntensity: 0,
-      bloomThreshold: 0.7,
-      chromaticAberration: 0,
-      shapeType: 'plane',
-      shapeRotationX: 0,
-      shapeRotationY: 0,
-      shapeRotationZ: 0,
-      shapeAutoRotateSpeedX: 0,
-      shapeAutoRotateSpeedY: 0,
-      sphereRadius: 15,
-      torusRadius: 15,
-      torusTube: 5,
-      cylinderRadius: 10,
-      cylinderHeight: 40,
-      planeBend: 0,
-      planeTwist: 0,
-      silhouetteFade: 0.25,
-      cylinderFade: 0.08,
-      ribbonFade: 0.05,
-      flatShading: true,
-      cameraLock: true,
-      cameraX: 0,
-      cameraY: 0,
-      cameraZ: 0,
-      cameraRotationX: 0,
-      cameraRotationY: 0,
-      cameraRotationZ: 0,
-      cameraZoom: 1,
-    };
-
-    gradientRef.current = new NeatGradient({
-      ref: canvasRef.current,
-      ...(config as any),
-    });
-
-    const handleScroll = () => {
-      if (gradientRef.current) {
-        gradientRef.current.yOffset = window.scrollY;
-      }
-    };
-    window.addEventListener("scroll", handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener("scroll", handleScroll);
-      gradientRef.current?.destroy();
-    };
-  }, []);
 
   // Cursor-reactive global window tracking logic for search bar glow
   const glowWrapRef = useRef<HTMLDivElement>(null);
@@ -826,13 +729,44 @@ export default function HeroSearchFirst() {
 
   return (
     <section className={styles.hero} id="hero-section-search-first">
-      {/* NeatGradient animated mesh background */}
-      <canvas ref={canvasRef} className={styles.neatCanvas} />
+      {/* Full-screen Background Video */}
+      <video
+        ref={videoRef}
+        src="/Hero-Video-New.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className={styles.bgVideo}
+      />
       <div className={`${styles.videoOverlay} ${isOpen ? styles.videoOverlayActive : ""}`} />
       <PixelRipple trigger={showPixelRipple} />
 
-      <div className={styles.centerWrap}>
-        <div className={styles.heroStack}>
+      {/* Bottom Hero Layout: Left Unit (Title + Search) & Right Unit (Stats Stack) */}
+      <div className={styles.bottomHeroContainer}>
+        {/* Left Content Unit */}
+        <div className={styles.leftContentUnit}>
+          {/* Readability Blurry Shape Backdrop */}
+          <div className={`${styles.textReadabilityBlurWrap} ${isOpen ? styles.textReadabilityBlurHidden : ""}`} aria-hidden="true">
+            <svg 
+              width="852" 
+              height="608" 
+              viewBox="0 0 852 608" 
+              fill="none" 
+              xmlns="http://www.w3.org/2000/svg"
+              className={styles.textReadabilitySvg}
+            >
+              <rect width="852" height="608" fill="black" fillOpacity="0.02"/>
+              <rect width="852" height="608" fill="url(#paint0_radial_413_359)" fillOpacity="0.6"/>
+              <defs>
+                <radialGradient id="paint0_radial_413_359" cx="0" cy="0" r="1" gradientTransform="matrix(176.211 -473.5 663.523 281.072 266.191 608)" gradientUnits="userSpaceOnUse">
+                  <stop offset="0.510447" stopColor="#0E1126"/>
+                  <stop offset="1" stopColor="#666666" stopOpacity="0"/>
+                </radialGradient>
+              </defs>
+            </svg>
+          </div>
+
           <div className={`${styles.titleUnit} ${isOpen ? styles.titleHidden : ""}`}>
             <motion.h1
               className={styles.headline}
@@ -850,580 +784,453 @@ export default function HeroSearchFirst() {
             >
               Compassion Backed by Expertise
             </motion.p>
-            
           </div>
 
-<motion.form
-                    ref={searchRef}
-                    onSubmit={handleSearch}
-                    className={`${styles.searchBarForm} ${isOpen ? styles.searchBarFormActive : ""}`}
-                    initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-                    animate={{ 
-                      opacity: 1,
-                      y: 0,
-                      filter: "blur(0px)"
+          <motion.form
+            ref={searchRef}
+            onSubmit={handleSearch}
+            className={`${styles.searchBarForm} ${isOpen ? styles.searchBarFormActive : ""}`}
+            initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
+            animate={{ 
+              opacity: 1,
+              y: 0,
+              filter: "blur(0px)"
+            }}
+            transition={
+              hasOpened 
+                ? { duration: 0.2, ease: "easeOut" } 
+                : { delay: 0.7, duration: 1.2, ease: [0.16, 1, 0.3, 1] }
+            }
+          >
+            {!isPulseActive && (
+              <div
+                ref={glowWrapRef}
+                className={`${styles.glowWrap} ${isApproach ? styles.glowWrapApproach : ""}`}
+              >
+                <div className={styles.searchGlow} aria-hidden="true" />
+                <div ref={searchContainerRef} className={`${styles.searchContainer} ${styles.glow} ${isOpen ? styles.searchContainerActive : ""}`}>
+                  <svg className={styles.glowContainer}>
+                    <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
+                    <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
+                  </svg>
+                  <div className={styles.searchIconWrapper}>
+                    <Search className={styles.searchIcon} size={18} />
+                  </div>
+                  <input
+                    type="text"
+                    placeholder="Book Doctors, Find Specialities or Treatments.."
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsOpen(true);
+                      setHasOpened(true);
                     }}
-                    transition={
-                      hasOpened 
-                        ? { duration: 0.2, ease: "easeOut" } 
-                        : { delay: 0.7, duration: 1.2, ease: [0.16, 1, 0.3, 1] }
-                    }
+                    onFocus={() => {
+                      setIsOpen(true);
+                      setHasOpened(true);
+                    }}
+                    className={styles.searchInput}
+                  />
+                  <div 
+                    className={styles.pulseIconWrapper} 
+                    style={{ marginRight: '14px' }}
+                    onClick={(e) => {
+                      if (!isOpen) {
+                        setIsOpen(true);
+                        setHasOpened(true);
+                        e.preventDefault();
+                        return;
+                      }
+                      setIsPulseActive(true);
+                    }}
                   >
-                    {!isPulseActive && (
-                      <div
-                        ref={glowWrapRef}
-                        className={`${styles.glowWrap} ${isApproach ? styles.glowWrapApproach : ""}`}
-                      >
-                        <div className={styles.searchGlow} aria-hidden="true" />
-                        <div ref={searchContainerRef} className={`${styles.searchContainer} ${styles.glow} ${isOpen ? styles.searchContainerActive : ""}`}>
-                          <svg className={styles.glowContainer}>
-                            <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
-                            <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
-                          </svg>
-                          <div className={styles.searchIconWrapper}>
-                            <Search className={styles.searchIcon} size={18} />
-                          </div>
-                          <input
-                            type="text"
-                            placeholder="Book Doctors, Find Specialities or Treatments.."
-                            value={searchQuery}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              setIsOpen(true);
-                              setHasOpened(true);
-                            }}
-                            onFocus={() => {
-                              setIsOpen(true);
-                              setHasOpened(true);
-                            }}
-                            className={styles.searchInput}
-                          />
-                          <div 
-                            className={styles.pulseIconWrapper} 
-                            style={{ marginRight: '14px' }}
-                            onClick={(e) => {
-                              if (!isOpen) {
-                                setIsOpen(true);
-                                setHasOpened(true);
-                                e.preventDefault();
-                                return;
-                              }
-                              setIsPulseActive(true);
-                            }}
-                          >
-                            <Lottie animationData={pulseAnimation} className={styles.pulseIcon} loop={true} />
-                            <span className={styles.pulseText}>Ask Pulse</span>
-                          </div>
+                    <Lottie animationData={pulseAnimation} className={styles.pulseIcon} loop={true} />
+                    <span className={styles.pulseText}>Ask Pulse</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Progressive Search Dropdown */}
+            <AnimatePresence mode="wait">
+              {isPulseActive ? (
+                <motion.div
+                  key="pulse-workspace"
+                  className={styles.pulseWorkspaceContainer}
+                  initial={{ height: 56, opacity: 0.5 }}
+                  animate={{ height: "75vh", opacity: 1 }}
+                  exit={{ height: 56, opacity: 0 }}
+                  transition={{ duration: 0.4, ease: "easeInOut" }}
+                >
+                   <PulseAIWorkspace onClose={() => setIsPulseActive(false)} />
+                </motion.div>
+              ) : isOpen ? (
+                <motion.div
+                  key="dropdown"
+                  className={styles.dropdown}
+                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  animate={{ opacity: 1, y: 0, scale: 1 }}
+                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  transition={{ duration: 0.2, ease: "easeOut" }}
+                  data-lenis-prevent
+                >
+          {!searchQuery.trim() ? (
+            <div className={styles.popularSearches}>
+              <div className={styles.popularTitle}>what people are searching for :</div>
+              <div className={styles.popularTags}>
+                {["chest pain", "cancer", "surgery", "liver"].map((tag) => (
+                  <button
+                    key={tag}
+                    type="button"
+                    onClick={() => setSearchQuery(tag)}
+                    className={styles.popularTagBtn}
+                  >
+                    {tag}
+                  </button>
+                ))}
+              </div>
+            </div>
+          ) : (
+            <>
+              {/* Tabs Selector at the top */}
+              <div className={styles.dropdownTabs}>
+                <div className={styles.dropdownTabButtons}>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdownTab("doctors_specialities")}
+                    className={`${styles.dropdownTab} ${activeDropdownTab === "doctors_specialities" ? styles.activeTab : ""}`}
+                  >
+                    Appointments ({filteredDoctors.length + filteredSpecs.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdownTab("treatments_tests")}
+                    className={`${styles.dropdownTab} ${activeDropdownTab === "treatments_tests" ? styles.activeTab : ""}`}
+                  >
+                    Treatments & Tests ({filteredTreatments.length})
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setActiveDropdownTab("articles")}
+                    className={`${styles.dropdownTab} ${activeDropdownTab === "articles" ? styles.activeTab : ""}`}
+                  >
+                    Articles ({filteredArticles.length})
+                  </button>
+                </div>
+
+                {activeDropdownTab === "doctors_specialities" && (
+                  <div className={styles.dropdownLocationFilter}>
+                    <MapPin size={14} className={styles.locationPinIcon} />
+                    <select
+                      value={selectedLocation}
+                      onChange={(e) => setSelectedLocation(e.target.value)}
+                      className={styles.locationDropdownSelect}
+                    >
+                      <option value="All Locations">All Locations</option>
+                      {Array.from(new Set(doctorsData.map((d) => d.location))).map((loc) => (
+                        <option key={loc} value={loc}>
+                          {loc}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                )}
+              </div>
+
+              <div className={styles.dropdownTabContent} data-lenis-prevent>
+                {activeDropdownTab === "doctors_specialities" && (
+                  <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* Doctors Section */}
+                    {filteredDoctors.length > 0 && (
+                      <div>
+                        <div className={styles.sectionHeader}>Doctors</div>
+                        <div className={styles.doctorGrid}>
+                          {filteredDoctors.map((doc) => (
+                            <div
+                              key={doc.name}
+                              onClick={() => handleSelectSuggestion(doc.name)}
+                              className={styles.doctorCard}
+                            >
+                              <img
+                                src={doc.photo || "/doctor_avatar_male.png"}
+                                alt={doc.name}
+                                className={styles.doctorPhoto}
+                              />
+                              <div className={styles.doctorInfo}>
+                                <div className={styles.doctorName}>
+                                  <HighlightMatch text={doc.name} query={searchQuery} />
+                                </div>
+                                <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                <div className={styles.doctorLoc}>
+                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                  <span>
+                                    {doc.hospital}
+                                    {doc.additionalHospitals && (
+                                      <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                    )}
+                                  </span>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
                         </div>
                       </div>
                     )}
 
-                    {/* Progressive Search Dropdown */}
-                    <AnimatePresence mode="wait">
-                      {isPulseActive ? (
-                        <motion.div
-                          key="pulse-workspace"
-                          className={styles.pulseWorkspaceContainer}
-                          initial={{ height: 56, opacity: 0.5 }}
-                          animate={{ height: "75vh", opacity: 1 }}
-                          exit={{ height: 56, opacity: 0 }}
-                          transition={{ duration: 0.4, ease: "easeInOut" }}
-                        >
-                           <PulseAIWorkspace onClose={() => setIsPulseActive(false)} />
-                        </motion.div>
-                      ) : isOpen ? (
-                        <motion.div
-                          key="dropdown"
-                          className={styles.dropdown}
-                          initial={{ opacity: 0, y: 10, scale: 0.98 }}
-                          animate={{ opacity: 1, y: 0, scale: 1 }}
-                          exit={{ opacity: 0, y: 10, scale: 0.98 }}
-                          transition={{ duration: 0.2, ease: "easeOut" }}
-                          data-lenis-prevent
-                        >
-                  {!searchQuery.trim() ? (
-                    <div className={styles.popularSearches}>
-                      <div className={styles.popularTitle}>what people are searching for :</div>
-                      <div className={styles.popularTags}>
-                        {["chest pain", "cancer", "surgery", "liver"].map((tag) => (
-                          <button
-                            key={tag}
-                            type="button"
-                            onClick={() => setSearchQuery(tag)}
-                            className={styles.popularTagBtn}
-                          >
-                            {tag}
-                          </button>
-                        ))}
-                      </div>
-                    </div>
-                  ) : (
-                    <>
-                      {/* Tabs Selector at the top */}
-                      <div className={styles.dropdownTabs}>
-                        <div className={styles.dropdownTabButtons}>
-                          <button
-                            type="button"
-                            onClick={() => setActiveDropdownTab("doctors_specialities")}
-                            className={`${styles.dropdownTab} ${activeDropdownTab === "doctors_specialities" ? styles.activeTab : ""}`}
-                          >
-                            Appointments ({filteredDoctors.length + filteredSpecs.length})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActiveDropdownTab("treatments_tests")}
-                            className={`${styles.dropdownTab} ${activeDropdownTab === "treatments_tests" ? styles.activeTab : ""}`}
-                          >
-                            Treatments & Tests ({filteredTreatments.length})
-                          </button>
-                          <button
-                            type="button"
-                            onClick={() => setActiveDropdownTab("articles")}
-                            className={`${styles.dropdownTab} ${activeDropdownTab === "articles" ? styles.activeTab : ""}`}
-                          >
-                            Articles ({filteredArticles.length})
-                          </button>
-                        </div>
-
-                        {activeDropdownTab === "doctors_specialities" && (
-                          <div className={styles.dropdownLocationFilter}>
-                            <MapPin size={14} className={styles.locationPinIcon} />
-                            <select
-                              value={selectedLocation}
-                              onChange={(e) => setSelectedLocation(e.target.value)}
-                              className={styles.locationDropdownSelect}
+                    {/* Specialities Section */}
+                    {filteredSpecs.length > 0 && (
+                      <div>
+                        <div className={styles.sectionHeader}>Specialities</div>
+                        <div className={styles.specGrid}>
+                          {filteredSpecs.map((spec) => (
+                            <div
+                              key={spec.name}
+                              onClick={() => handleSelectSuggestion(spec.name)}
+                              className={styles.specCard}
                             >
-                              <option value="All Locations">All Locations</option>
-                              {Array.from(new Set(doctorsData.map((d) => d.location))).map((loc) => (
-                                <option key={loc} value={loc}>
-                                  {loc}
-                                </option>
-                              ))}
-                            </select>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className={styles.dropdownTabContent} data-lenis-prevent>
-                        {activeDropdownTab === "doctors_specialities" && (
-                          <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            {/* Doctors Section */}
-                            {filteredDoctors.length > 0 && (
-                              <div>
-                                <div className={styles.sectionHeader}>Doctors</div>
-                                <div className={styles.doctorGrid}>
-                                  {filteredDoctors.map((doc) => (
-                                    <div
-                                      key={doc.name}
-                                      onClick={() => handleSelectSuggestion(doc.name)}
-                                      className={styles.doctorCard}
-                                    >
-                                      <img
-                                        src={doc.photo || "/doctor_avatar_male.png"}
-                                        alt={doc.name}
-                                        className={styles.doctorPhoto}
-                                      />
-                                      <div className={styles.doctorInfo}>
-                                        <div className={styles.doctorName}>
-                                          <HighlightMatch text={doc.name} query={searchQuery} />
-                                        </div>
-                                        <div className={styles.doctorSpec}>{doc.speciality}</div>
-                                        <div className={styles.doctorLoc}>
-                                          <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                          <span>
-                                            {doc.hospital}
-                                            {doc.additionalHospitals && (
-                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
-                                            )}
-                                          </span>
-                                        </div>
-                                      </div>
-                                    </div>
-                                  ))}
+                              <img
+                                src={spec.image || "/Specialities icons/General Medicine.svg"}
+                                alt={spec.name}
+                                className={styles.specImage}
+                              />
+                              <div className={styles.specInfo} style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                                <div className={styles.specName}>
+                                  <HighlightMatch text={spec.name} query={searchQuery} />
                                 </div>
-                              </div>
-                            )}
-
-                            {/* Specialities Section */}
-                            {filteredSpecs.length > 0 && (
-                              <div>
-                                <div className={styles.sectionHeader}>Specialities</div>
-                                <div className={styles.specGrid}>
-                                  {filteredSpecs.map((spec) => (
-                                    <div
-                                      key={spec.name}
-                                      onClick={() => handleSelectSuggestion(spec.name)}
-                                      className={styles.specCard}
-                                    >
-                                      <img
-                                        src={spec.image || "/Specialities icons/General Medicine.svg"}
-                                        alt={spec.name}
-                                        className={styles.specImage}
-                                      />
-                                      <div className={styles.specInfo} style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
-                                        <div className={styles.specName}>
-                                          <HighlightMatch text={spec.name} query={searchQuery} />
-                                        </div>
-                                        {spec.matchingKeyword && (
-                                          <div style={{ fontSize: "10.5px", color: "#64748B", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                            Relates to: <HighlightMatch text={spec.matchingKeyword} query={searchQuery} />
-                                          </div>
-                                        )}
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {filteredDoctors.length === 0 && filteredSpecs.length === 0 && (
-                              <div className={styles.noResults}>No matching doctors or specialities found</div>
-                            )}
-                          </div>
-                        )}
-
-                        {activeDropdownTab === "treatments_tests" && (
-                          <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                            {/* Health Checkup Packages Section */}
-                            {filteredHealthCheckups.length > 0 && (
-                              <div>
-                                <div className={styles.sectionHeader}>Health Checkup Packages</div>
-                                <div className={styles.treatmentGrid}>
-                                  {filteredHealthCheckups.map((t) => (
-                                    <div
-                                      key={t.name}
-                                      onClick={() => handleSelectSuggestion(t.name)}
-                                      className={styles.treatmentCard}
-                                    >
-                                      {t.image && (
-                                        <img
-                                          src={t.image}
-                                          alt={t.name}
-                                          className={styles.treatmentImage}
-                                        />
-                                      )}
-                                      <div className={styles.treatmentInfo}>
-                                        <div className={styles.treatmentHeader}>
-                                          <div className={styles.treatmentName}>
-                                            <HighlightMatch text={t.name} query={searchQuery} />
-                                          </div>
-                                          <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                            {t.testCount}
-                                          </div>
-                                        </div>
-                                        <div className={styles.treatmentDesc}>{t.description}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Lab Tests Section */}
-                            {filteredLabTests.length > 0 && (
-                              <div>
-                                <div className={styles.sectionHeader}>Lab Tests</div>
-                                <div className={styles.treatmentGrid}>
-                                  {filteredLabTests.map((t) => (
-                                    <div
-                                      key={t.name}
-                                      onClick={() => handleSelectSuggestion(t.name)}
-                                      className={styles.treatmentCard}
-                                    >
-                                      {t.name.includes("CBC") ? (
-                                        <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#EF4444" }}>
-                                          <Droplets size={20} />
-                                        </div>
-                                      ) : t.name.includes("Thyroid") ? (
-                                        <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(168, 85, 247, 0.1)", color: "#A855F7" }}>
-                                          <FlaskConical size={20} />
-                                        </div>
-                                      ) : (
-                                        <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10B981" }}>
-                                          <Activity size={20} />
-                                        </div>
-                                      )}
-                                      <div className={styles.treatmentInfo}>
-                                        <div className={styles.treatmentHeader}>
-                                          <div className={styles.treatmentName}>
-                                            <HighlightMatch text={t.name} query={searchQuery} />
-                                          </div>
-                                          <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                            {t.testCount}
-                                          </div>
-                                        </div>
-                                        <div className={styles.treatmentDesc}>{t.description}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {/* Treatments Section */}
-                            {filteredOnlyTreatments.length > 0 && (
-                              <div>
-                                <div className={styles.sectionHeader}>Treatments</div>
-                                <div className={styles.treatmentGrid}>
-                                  {filteredOnlyTreatments.map((t) => (
-                                    <div
-                                      key={t.name}
-                                      onClick={() => handleSelectSuggestion(t.name)}
-                                      className={styles.treatmentCard}
-                                    >
-                                      {t.image && (
-                                        <img
-                                          src={t.image}
-                                          alt={t.name}
-                                          className={styles.treatmentImage}
-                                        />
-                                      )}
-                                      <div className={styles.treatmentInfo}>
-                                        <div className={styles.treatmentHeader}>
-                                          <div className={styles.treatmentName}>
-                                            <HighlightMatch text={t.name} query={searchQuery} />
-                                          </div>
-                                          <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                            Related to: <HighlightMatch text={t.speciality ?? ""} query={searchQuery} />
-                                          </div>
-                                        </div>
-                                        <div className={styles.treatmentDesc}>{t.description}</div>
-                                      </div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-
-                            {filteredTreatments.length === 0 && (
-                              <div className={styles.noResults}>No matching treatments, packages or tests found</div>
-                            )}
-                          </div>
-                        )}
-
-                        {activeDropdownTab === "articles" && (
-                          <div className={styles.dropdownSection}>
-                            {filteredArticles.length > 0 ? (
-                              filteredArticles.map((a) => (
-                                <div
-                                  key={a.name}
-                                  onClick={() => handleSelectSuggestion(a.name)}
-                                  className={styles.treatmentCard}
-                                >
-                                  {a.image ? (
-                                    <img
-                                      src={a.image}
-                                      alt={a.name}
-                                      className={styles.articleImage}
-                                    />
-                                  ) : (
-                                    <div className={styles.itemIconWrap}>
-                                      <FileText size={14} />
-                                    </div>
-                                  )}
-                                  <div className={styles.treatmentInfo}>
-                                    <div className={styles.treatmentHeader}>
-                                      <div className={styles.treatmentName}>
-                                        <HighlightMatch text={a.name} query={searchQuery} />
-                                      </div>
-                                      {a.matchingKeyword && (
-                                        <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
-                                          Relates to: <HighlightMatch text={a.matchingKeyword} query={searchQuery} />
-                                        </div>
-                                      )}
-                                    </div>
-                                    {a.description && (
-                                      <div className={styles.treatmentDesc}>
-                                        {a.description}
-                                      </div>
-                                    )}
+                                {spec.matchingKeyword && (
+                                  <div style={{ fontSize: "10.5px", color: "#64748B", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                    Relates to: <HighlightMatch text={spec.matchingKeyword} query={searchQuery} />
                                   </div>
-                                  {lastSearch && lastSearch.toLowerCase() === a.name.toLowerCase() && (
-                                    <span className={styles.itemTag}>Last Searched</span>
-                                  )}
+                                )}
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {filteredDoctors.length === 0 && filteredSpecs.length === 0 && (
+                      <div className={styles.noResults}>No matching doctors or specialities found</div>
+                    )}
+                  </div>
+                )}
+
+                {activeDropdownTab === "treatments_tests" && (
+                  <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                    {/* Health Checkup Packages Section */}
+                    {filteredHealthCheckups.length > 0 && (
+                      <div>
+                        <div className={styles.sectionHeader}>Health Checkup Packages</div>
+                        <div className={styles.treatmentGrid}>
+                          {filteredHealthCheckups.map((t) => (
+                            <div
+                              key={t.name}
+                              onClick={() => handleSelectSuggestion(t.name)}
+                              className={styles.treatmentCard}
+                            >
+                              {t.image && (
+                                <img
+                                  src={t.image}
+                                  alt={t.name}
+                                  className={styles.treatmentImage}
+                                />
+                              )}
+                              <div className={styles.treatmentInfo}>
+                                <div className={styles.treatmentHeader}>
+                                  <div className={styles.treatmentName}>
+                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                  </div>
+                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
+                                    {t.testCount}
+                                  </div>
                                 </div>
-                              ))
-                            ) : (
-                              <div className={styles.noResults}>No matching articles found</div>
+                                <div className={styles.treatmentDesc}>{t.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Lab Tests Section */}
+                    {filteredLabTests.length > 0 && (
+                      <div>
+                        <div className={styles.sectionHeader}>Lab Tests</div>
+                        <div className={styles.treatmentGrid}>
+                          {filteredLabTests.map((t) => (
+                            <div
+                              key={t.name}
+                              onClick={() => handleSelectSuggestion(t.name)}
+                              className={styles.treatmentCard}
+                            >
+                              {t.name.includes("CBC") ? (
+                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#EF4444" }}>
+                                  <Droplets size={20} />
+                                </div>
+                              ) : t.name.includes("Thyroid") ? (
+                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(168, 85, 247, 0.1)", color: "#A855F7" }}>
+                                  <FlaskConical size={20} />
+                                </div>
+                              ) : (
+                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10B981" }}>
+                                  <Activity size={20} />
+                                </div>
+                              )}
+                              <div className={styles.treatmentInfo}>
+                                <div className={styles.treatmentHeader}>
+                                  <div className={styles.treatmentName}>
+                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                  </div>
+                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
+                                    {t.testCount}
+                                  </div>
+                                </div>
+                                <div className={styles.treatmentDesc}>{t.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Treatments Section */}
+                    {filteredOnlyTreatments.length > 0 && (
+                      <div>
+                        <div className={styles.sectionHeader}>Treatments</div>
+                        <div className={styles.treatmentGrid}>
+                          {filteredOnlyTreatments.map((t) => (
+                            <div
+                              key={t.name}
+                              onClick={() => handleSelectSuggestion(t.name)}
+                              className={styles.treatmentCard}
+                            >
+                              {t.image && (
+                                <img
+                                  src={t.image}
+                                  alt={t.name}
+                                  className={styles.treatmentImage}
+                                />
+                              )}
+                              <div className={styles.treatmentInfo}>
+                                <div className={styles.treatmentHeader}>
+                                  <div className={styles.treatmentName}>
+                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                  </div>
+                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
+                                    Related to: <HighlightMatch text={t.speciality ?? ""} query={searchQuery} />
+                                  </div>
+                                </div>
+                                <div className={styles.treatmentDesc}>{t.description}</div>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {filteredTreatments.length === 0 && (
+                      <div className={styles.noResults}>No matching treatments, packages or tests found</div>
+                    )}
+                  </div>
+                )}
+
+                {activeDropdownTab === "articles" && (
+                  <div className={styles.dropdownSection}>
+                    {filteredArticles.length > 0 ? (
+                      filteredArticles.map((a) => (
+                        <div
+                          key={a.name}
+                          onClick={() => handleSelectSuggestion(a.name)}
+                          className={styles.treatmentCard}
+                        >
+                          {a.image ? (
+                            <img
+                              src={a.image}
+                              alt={a.name}
+                              className={styles.articleImage}
+                            />
+                          ) : (
+                            <div className={styles.itemIconWrap}>
+                              <FileText size={14} />
+                            </div>
+                          )}
+                          <div className={styles.treatmentInfo}>
+                            <div className={styles.treatmentHeader}>
+                              <div className={styles.treatmentName}>
+                                <HighlightMatch text={a.name} query={searchQuery} />
+                              </div>
+                              {a.matchingKeyword && (
+                                <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                  Relates to: <HighlightMatch text={a.matchingKeyword} query={searchQuery} />
+                                </div>
+                              )}
+                            </div>
+                            {a.description && (
+                              <div className={styles.treatmentDesc}>
+                                {a.description}
+                              </div>
                             )}
                           </div>
-                        )}
-                      </div>
-                    </>
-                  )}
-                </motion.div>
-                      ) : null}
-                    </AnimatePresence>
-                  </motion.form>
-
-
-
+                          {lastSearch && lastSearch.toLowerCase() === a.name.toLowerCase() && (
+                            <span className={styles.itemTag}>Last Searched</span>
+                          )}
+                        </div>
+                      ))
+                    ) : (
+                      <div className={styles.noResults}>No matching articles found</div>
+                    )}
+                  </div>
+                )}
+              </div>
+            </>
+          )}
+        </motion.div>
+              ) : null}
+            </AnimatePresence>
+          </motion.form>
         </div>
-      </div>
 
-      {/* Auto-Moving 3-Tile Video Carousel (Strict Unidirectional Leftward Flow) */}
-      <motion.div 
-        className={`${styles.heroCarouselSection} ${isOpen ? styles.heroCarouselHidden : ""}`}
-        initial={{ opacity: 0, y: 30, filter: "blur(18px)" }}
-        animate={{ 
-          opacity: isOpen ? 0 : 1, 
-          y: isOpen ? 40 : 0, 
-          filter: isOpen ? "blur(8px)" : "blur(0px)" 
-        }}
-        transition={
-          isOpen
-            ? { duration: 0.35, ease: "easeOut" }
-            : { delay: 0.95, duration: 1.3, ease: [0.16, 1, 0.3, 1] }
-        }
-      >
-        <div className={styles.carouselStage}>
-          {[-1, 0, 1, 2, 3].map((slotOffset) => {
-            const k = step + slotOffset;
-            const dataIndex = ((k % carouselItems.length) + carouselItems.length) % carouselItems.length;
-            const item = carouselItems[dataIndex];
-
-            const isCenter = slotOffset === 1;
-            const isLeft   = slotOffset === 0;
-            const isRight  = slotOffset === 2;
-
-            // ── Pixel layout calculation ─────────────────────────
-            const GAP = 16;
-            const centerW = Math.round(Math.min(Math.max(windowWidth * 0.42, 420), 720));
-            const sideW   = Math.round((windowWidth - centerW - GAP * 2) / 2);
-            const centerH = Math.round(Math.min(Math.max(windowWidth * 0.28, 240), 370));
-            const sideH   = Math.round(Math.min(Math.max(windowWidth * 0.21, 180), 280));
-
-            const leftPos   = 0;
-            const centerPos = sideW + GAP;
-            const rightPos  = sideW + GAP + centerW + GAP;
-
-            let targetLeft = 0;
-            let targetWidth = sideW;
-            let targetHeight = sideH;
-            let targetOpacity = 0.55;
-            let targetFilter = "brightness(0.6)";
-
-            if (slotOffset === -1) {
-              // Exiting off-screen to the left
-              targetLeft = -sideW - 60;
-              targetWidth = sideW;
-              targetHeight = sideH;
-              targetOpacity = 0;
-              targetFilter = "blur(8px) brightness(0.4)";
-            } else if (slotOffset === 0) {
-              // Left side position
-              targetLeft = leftPos;
-              targetWidth = sideW;
-              targetHeight = sideH;
-              targetOpacity = 0.55;
-              targetFilter = "brightness(0.6)";
-            } else if (slotOffset === 1) {
-              // Center focused position
-              targetLeft = centerPos;
-              targetWidth = centerW;
-              targetHeight = centerH;
-              targetOpacity = 1;
-              targetFilter = "brightness(1)";
-            } else if (slotOffset === 2) {
-              // Right side position
-              targetLeft = rightPos;
-              targetWidth = sideW;
-              targetHeight = sideH;
-              targetOpacity = 0.55;
-              targetFilter = "brightness(0.6)";
-            } else if (slotOffset === 3) {
-              // Entering off-screen from the right
-              targetLeft = windowWidth + 80;
-              targetWidth = sideW;
-              targetHeight = sideH;
-              targetOpacity = 0;
-              targetFilter = "blur(8px) brightness(0.4)";
-            }
-
-            let initialLeft = targetLeft;
-            let initialOpacity = targetOpacity;
-            let initialFilter = targetFilter;
-
-            if (slotOffset === 3) {
-              initialLeft = windowWidth + 120;
-              initialOpacity = 0;
-              initialFilter = "blur(8px) brightness(0.4)";
-            } else if (slotOffset === -1) {
-              initialLeft = -sideW - 120;
-              initialOpacity = 0;
-              initialFilter = "blur(8px) brightness(0.4)";
-            }
-
-            const r = 13.529;
-            const borderRadiusVal = isLeft
-              ? `0 ${r}px 0 0`
-              : isRight
-              ? `${r}px 0 0 0`
-              : `${r}px ${r}px 0 0`;
-
+        {/* Right Stats Vertical Stack */}
+        <motion.div 
+          className={styles.rightStatsUnit}
+          animate={{ 
+            opacity: isOpen ? 0 : 1, 
+            y: isOpen ? 20 : 0,
+            pointerEvents: isOpen ? "none" : "auto"
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          {STATS_DATA.map((stat, idx) => {
+            const cardDelay = 0.4 + idx * 0.15;
             return (
               <motion.div
-                key={k}
-                className={`${styles.carouselCard} ${isCenter ? styles.carouselCardActive : styles.carouselCardInactive}`}
-                initial={{
-                  left:         initialLeft,
-                  width:        targetWidth,
-                  height:       targetHeight,
-                  borderRadius: borderRadiusVal,
-                  opacity:      initialOpacity,
-                  filter:       initialFilter,
-                  zIndex:       isCenter ? 10 : 5,
+                key={idx}
+                className={styles.statCard}
+                initial={{ opacity: 0, x: 30, filter: "blur(12px)" }}
+                animate={{ 
+                  opacity: isOpen ? 0 : 1, 
+                  x: 0, 
+                  filter: "blur(0px)" 
                 }}
-                animate={{
-                  left:         targetLeft,
-                  width:        targetWidth,
-                  height:       targetHeight,
-                  borderRadius: borderRadiusVal,
-                  opacity:      targetOpacity,
-                  filter:       targetFilter,
-                  zIndex:       isCenter ? 10 : 5,
-                }}
-                transition={{
-                  duration: 1.15,
-                  ease: [0.22, 1, 0.36, 1],
-                }}
-                onAnimationComplete={() => {
-                  if (isCenter) setIsTransitioning(false);
-                }}
-                onClick={() => {
-                  if (isRight) {
-                    setIsTransitioning(true);
-                    setStep((prev) => prev + 1);
-                  } else if (isLeft) {
-                    setIsTransitioning(true);
-                    setStep((prev) => prev - 1);
-                  }
+                transition={{ 
+                  delay: cardDelay, 
+                  duration: 1.0, 
+                  ease: [0.16, 1, 0.3, 1] 
                 }}
               >
-                <video
-                  ref={(el) => {
-                    if (!el) return;
-                    if (isCenter && !isOpen) {
-                      el.play().catch(() => {});
-                    } else {
-                      el.pause();
-                      el.currentTime = 0;
-                    }
-                  }}
-                  src={item.videoSrc}
-                  poster={item.poster}
-                  muted
-                  loop
-                  playsInline
-                  className={styles.carouselVideo}
-                  style={{ objectPosition: 'center', transform: 'scale(1.20)' }}
-                />
-                <div className={styles.carouselOverlay} />
+                <span className={styles.statNumber}>
+                  <CountUp end={stat.target} suffix={stat.suffix} delay={cardDelay} duration={1400} />
+                </span>
+                <span className={styles.statSubtext}>
+                  {stat.line1}
+                  <br />
+                  {stat.line2}
+                </span>
               </motion.div>
             );
           })}
-        </div>
-      </motion.div>
+        </motion.div>
+      </div>
 
       {/* Aesthetic Bottom Corner Blur Frame Overlays */}
       <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />

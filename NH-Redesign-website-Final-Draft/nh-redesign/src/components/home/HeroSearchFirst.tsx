@@ -704,6 +704,17 @@ export default function HeroSearchFirst() {
 
   const hasSuggestions = filteredDoctors.length > 0 || filteredSpecs.length > 0 || filteredTreatments.length > 0 || filteredArticles.length > 0;
 
+  // Listen for openPulseModal event from floating Pulse AI button
+  useEffect(() => {
+    function handleOpenPulse() {
+      setIsPulseActive(true);
+      setIsOpen(true);
+      setHasOpened(true);
+    }
+    window.addEventListener("openPulseModal", handleOpenPulse);
+    return () => window.removeEventListener("openPulseModal", handleOpenPulse);
+  }, []);
+
   // Close dropdown on click outside and reset search query
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
@@ -739,7 +750,7 @@ export default function HeroSearchFirst() {
         playsInline
         className={styles.bgVideo}
       />
-      <div className={`${styles.videoOverlay} ${isOpen ? styles.videoOverlayActive : ""}`} />
+      <div className={styles.videoOverlay} />
       <PixelRipple trigger={showPixelRipple} />
 
       {/* Bottom Hero Layout: Left Unit (Title + Search) & Right Unit (Stats Stack) */}
@@ -796,11 +807,11 @@ export default function HeroSearchFirst() {
               y: 0,
               filter: "blur(0px)"
             }}
+            style={{ filter: "none", zIndex: isOpen ? 99999 : 60 }}
             transition={
               hasOpened 
                 ? { duration: 0.2, ease: "easeOut" } 
-                : { delay: 0.7, duration: 1.2, ease: [0.16, 1, 0.3, 1] }
-            }
+                : { delay: 0.7, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
           >
             {!isPulseActive && (
               <div
@@ -813,6 +824,21 @@ export default function HeroSearchFirst() {
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
                   </svg>
+                  <div 
+                    className={styles.pulseIconWrapper} 
+                    onClick={(e) => {
+                      if (!isOpen) {
+                        setIsOpen(true);
+                        setHasOpened(true);
+                        e.preventDefault();
+                        return;
+                      }
+                      setIsPulseActive(true);
+                    }}
+                  >
+                    <Lottie animationData={pulseAnimation} className={styles.pulseIcon} loop={true} />
+                    <span className={styles.pulseText}>Ask Pulse</span>
+                  </div>
                   <div className={styles.searchInputUnit}>
                     <div className={styles.searchIconWrapper}>
                       <Search className={styles.searchIcon} size={18} />
@@ -832,21 +858,6 @@ export default function HeroSearchFirst() {
                       }}
                       className={styles.searchInput}
                     />
-                  </div>
-                  <div 
-                    className={styles.pulseIconWrapper} 
-                    onClick={(e) => {
-                      if (!isOpen) {
-                        setIsOpen(true);
-                        setHasOpened(true);
-                        e.preventDefault();
-                        return;
-                      }
-                      setIsPulseActive(true);
-                    }}
-                  >
-                    <Lottie animationData={pulseAnimation} className={styles.pulseIcon} loop={true} />
-                    <span className={styles.pulseText}>Ask Pulse</span>
                   </div>
                 </div>
               </div>
@@ -869,9 +880,9 @@ export default function HeroSearchFirst() {
                 <motion.div
                   key="dropdown"
                   className={styles.dropdown}
-                  initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
                   animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   data-lenis-prevent
                 >

@@ -875,11 +875,13 @@
   font-size: 34px;
   line-height: 40.32px;
   white-space: pre-line;
-  transition: color 0.35s ease, transform 0.35s ease;
+  transition: color 0.35s ease, font-size 0.35s ease, opacity 0.35s ease, transform 0.35s ease;
 }
 
 .focusedDialItem {
+  font-size: 34px;
   font-weight: 600;
+  line-height: 40.32px;
   background: linear-gradient(90deg, #FFFFFF 0%, #C1C1C1 23.56%);
   background-clip: text;
   -webkit-background-clip: text;
@@ -890,8 +892,10 @@
 }
 
 .adjacentDialItem {
+  font-size: 26px;
+  line-height: 32px;
   font-weight: 500;
-  color: rgba(255, 255, 255, 0.60);
+  color: rgba(255, 255, 255, 0.65);
 }
 
 .adjacentDialItem:hover {
@@ -899,8 +903,10 @@
 }
 
 .outerDialItem {
-  font-weight: 500;
-  color: rgba(255, 255, 255, 0.30);
+  font-size: 22px;
+  line-height: 28px;
+  font-weight: 450;
+  color: rgba(255, 255, 255, 0.35);
 }
 
 .outerDialItem:hover {

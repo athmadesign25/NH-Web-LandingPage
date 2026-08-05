@@ -7,7 +7,7 @@ import {
   motion,
   useReducedMotion,
 } from "framer-motion";
-import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight , Activity, FileText} from "lucide-react";
+import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight , Activity, FileText, X } from "lucide-react";
 import SplitText from "@/components/ui/SplitText";
 import styles from "./HeroSearchFirst.module.css";
 import Lottie from "lottie-react";
@@ -454,6 +454,7 @@ export default function HeroSearchFirst() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [isPulseActive, setIsPulseActive] = useState(false);
+  const [isPulseModalOpen, setIsPulseModalOpen] = useState(false);
   const [showPixelRipple, setShowPixelRipple] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
@@ -704,12 +705,10 @@ export default function HeroSearchFirst() {
 
   const hasSuggestions = filteredDoctors.length > 0 || filteredSpecs.length > 0 || filteredTreatments.length > 0 || filteredArticles.length > 0;
 
-  // Listen for openPulseModal event from floating Pulse AI button
+  // Listen for openPulseModal event from floating Pulse AI button to open centered modal
   useEffect(() => {
     function handleOpenPulse() {
-      setIsPulseActive(true);
-      setIsOpen(true);
-      setHasOpened(true);
+      setIsPulseModalOpen(true);
     }
     window.addEventListener("openPulseModal", handleOpenPulse);
     return () => window.removeEventListener("openPulseModal", handleOpenPulse);
@@ -1247,6 +1246,39 @@ export default function HeroSearchFirst() {
       {/* Aesthetic Bottom Corner Blur Frame Overlays */}
       <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
       <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
+
+      {/* Centered Pulse AI Modal (Triggered by Floating Action Button) */}
+      <AnimatePresence>
+        {isPulseModalOpen && (
+          <motion.div
+            key="pulse-modal-backdrop"
+            className={styles.pulseModalBackdrop}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsPulseModalOpen(false)}
+          >
+            <motion.div
+              className={styles.pulseModalContainer}
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Close Pulse AI Modal"
+                onClick={() => setIsPulseModalOpen(false)}
+                className={styles.pulseModalCloseBtn}
+              >
+                <X size={20} />
+              </button>
+              <PulseAIWorkspace onClose={() => setIsPulseModalOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </section>
   );
 }

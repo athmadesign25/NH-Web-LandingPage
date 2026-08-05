@@ -1791,4 +1791,56 @@
   line-height: 1.35;
 }
 
+/* Centered Pulse AI Modal (Triggered by Floating Action Button) */
+.pulseModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(11, 15, 25, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.pulseModalContainer {
+  position: relative;
+  width: min(1040px, 94vw);
+  height: min(820px, 86vh);
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pulseModalCloseBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.pulseModalCloseBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: #0f172a;
+  transform: scale(1.05);
+}
+
 

@@ -93,24 +93,16 @@
   transform: translateY(-50%) translateX(0);
 }
 
-/* Standalone Fully Rounded Floating Pulse AI Button (Bottom Right Corner) */
-.pulseFloatingBtn {
+/* Standalone Fully Rounded Floating Pulse AI Button Wrapper (Bottom Right Corner) */
+.pulseFloatingWrapper {
   position: fixed;
   bottom: clamp(24px, 4vh, 36px);
   right: clamp(20px, 3vw, 36px);
   z-index: 9000;
-  width: 56px;
-  height: 56px;
-  border-radius: 999px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: #061935;
-  cursor: pointer;
   display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
-  transition: opacity 0.4s ease, transform 0.4s ease, box-shadow 0.25s ease;
+  flex-direction: column;
+  align-items: flex-end;
+  transition: opacity 0.4s ease, transform 0.4s ease;
 }
 
 .pulseHidden {
@@ -123,6 +115,67 @@
   opacity: 1;
   pointer-events: auto;
   transform: translateY(0) scale(1);
+}
+
+/* Hover Popover Card aligned to right, positioned ABOVE pulse floating icon */
+.pulseHoverCard {
+  position: absolute;
+  bottom: calc(100% + 14px);
+  right: 0;
+  display: flex;
+  width: 259px;
+  padding: 34px 30px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 14px;
+  border-radius: 14px;
+  border: 1px solid rgba(225, 216, 216, 0.40);
+  background: linear-gradient(180deg, #034EA1 0%, #471F1F 100%);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 16px 36px rgba(0, 0, 0, 0.35);
+  pointer-events: none;
+  box-sizing: border-box;
+}
+
+.pulseCardTitle {
+  color: #FFF;
+  font-family: Geist, var(--font-sans), sans-serif;
+  font-size: 22px;
+  font-style: normal;
+  font-weight: 500;
+  line-height: normal;
+  letter-spacing: 0.4px;
+  margin: 0;
+  text-align: left;
+}
+
+.pulseCardSubtitle {
+  color: #C1C1C1;
+  font-family: Helvetica, var(--font-sans), sans-serif;
+  font-size: 16px;
+  font-style: normal;
+  font-weight: 400;
+  line-height: 1.35;
+  letter-spacing: 0.4px;
+  margin: 0;
+  text-align: left;
+}
+
+.pulseFloatingBtn {
+  position: relative;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  background: #061935;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s ease;
 }
 
 .pulseFloatingBtn:hover {
@@ -145,6 +198,58 @@
   width: 44px;
   height: 44px;
   object-fit: contain;
+}
+
+/* Centered Pulse AI Modal (Triggered from Floating Action Button wherever user is) */
+.pulseModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 999999;
+  background: rgba(11, 15, 25, 0.75);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+}
+
+.pulseModalContainer {
+  position: relative;
+  width: min(1040px, 94vw);
+  height: min(820px, 86vh);
+  background: #ffffff;
+  border-radius: 28px;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.5);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.pulseModalCloseBtn {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 100;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #4a5568;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.2s ease;
+}
+
+.pulseModalCloseBtn:hover {
+  background: rgba(0, 0, 0, 0.12);
+  color: #0f172a;
+  transform: scale(1.05);
 }
 
 /* Responsive styles (Mobile & Tablet) */

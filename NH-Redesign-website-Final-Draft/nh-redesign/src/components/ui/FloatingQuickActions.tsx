@@ -2,14 +2,17 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Calendar, Smartphone } from "lucide-react";
+import { Calendar, Smartphone, X } from "lucide-react";
+import { AnimatePresence, motion } from "framer-motion";
 import Lottie from "lottie-react";
 import pulseAnimation from "../../../public/assets/pulse animation.json";
+import PulseAIWorkspace from "../pulse-ai/PulseAIWorkspace";
 import styles from "./FloatingQuickActions.module.css";
 
 export default function FloatingQuickActions() {
   const [isVisible, setIsVisible] = useState(false);
   const [darkLinks, setDarkLinks] = useState<boolean[]>([false, false]);
+  const [isPulseModalOpen, setIsPulseModalOpen] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const linkRef0 = useRef<HTMLAnchorElement>(null);
@@ -82,8 +85,10 @@ export default function FloatingQuickActions() {
     };
   }, []);
 
+  const [isHovered, setIsHovered] = useState(false);
+
   const handlePulseClick = () => {
-    window.dispatchEvent(new CustomEvent("openPulseModal"));
+    setIsPulseModalOpen(true);
   };
 
   return (
@@ -120,17 +125,74 @@ export default function FloatingQuickActions() {
         </Link>
       </div>
 
-      {/* Standalone Fully Rounded Floating Pulse AI Button (Bottom Right Corner) */}
-      <button
-        type="button"
-        aria-label="Ask Pulse AI"
-        onClick={handlePulseClick}
-        className={`${styles.pulseFloatingBtn} ${isVisible ? styles.pulseVisible : styles.pulseHidden}`}
+      {/* Standalone Fully Rounded Floating Pulse AI Button + Hover Popover Card */}
+      <div
+        className={`${styles.pulseFloatingWrapper} ${isVisible ? styles.pulseVisible : styles.pulseHidden}`}
+        onMouseEnter={() => setIsHovered(true)}
+        onMouseLeave={() => setIsHovered(false)}
       >
-        <div className={styles.pulseLottieWrap}>
-          <Lottie animationData={pulseAnimation} className={styles.pulseLottie} loop={true} />
-        </div>
-      </button>
+        <AnimatePresence>
+          {isHovered && (
+            <motion.div
+              key="pulse-hover-card"
+              className={styles.pulseHoverCard}
+              initial={{ opacity: 0, y: 10, scale: 0.95 }}
+              animate={{ opacity: 1, y: 0, scale: 1 }}
+              exit={{ opacity: 0, y: 8, scale: 0.95 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+            >
+              <h4 className={styles.pulseCardTitle}>Ask Pulse AI</h4>
+              <p className={styles.pulseCardSubtitle}>
+                Book Doctors, describe your symptoms, analyze reports, ask a question..
+              </p>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        <button
+          type="button"
+          aria-label="Ask Pulse AI"
+          onClick={handlePulseClick}
+          className={styles.pulseFloatingBtn}
+        >
+          <div className={styles.pulseLottieWrap}>
+            <Lottie animationData={pulseAnimation} className={styles.pulseLottie} loop={true} />
+          </div>
+        </button>
+      </div>
+
+      {/* Centered Pulse AI Modal (Opens wherever user is on the page) */}
+      <AnimatePresence>
+        {isPulseModalOpen && (
+          <motion.div
+            key="global-pulse-modal-backdrop"
+            className={styles.pulseModalBackdrop}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={() => setIsPulseModalOpen(false)}
+          >
+            <motion.div
+              className={styles.pulseModalContainer}
+              initial={{ opacity: 0, scale: 0.94, y: 16 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.94, y: 16 }}
+              transition={{ type: "spring", damping: 26, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <button
+                type="button"
+                aria-label="Close Pulse AI Modal"
+                onClick={() => setIsPulseModalOpen(false)}
+                className={styles.pulseModalCloseBtn}
+              >
+                <X size={20} />
+              </button>
+              <PulseAIWorkspace onClose={() => setIsPulseModalOpen(false)} />
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 }

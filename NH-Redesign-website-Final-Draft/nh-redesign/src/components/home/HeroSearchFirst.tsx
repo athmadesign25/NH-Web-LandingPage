@@ -1246,39 +1246,6 @@ export default function HeroSearchFirst() {
       {/* Aesthetic Bottom Corner Blur Frame Overlays */}
       <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
       <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
-
-      {/* Centered Pulse AI Modal (Triggered by Floating Action Button) */}
-      <AnimatePresence>
-        {isPulseModalOpen && (
-          <motion.div
-            key="pulse-modal-backdrop"
-            className={styles.pulseModalBackdrop}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsPulseModalOpen(false)}
-          >
-            <motion.div
-              className={styles.pulseModalContainer}
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                aria-label="Close Pulse AI Modal"
-                onClick={() => setIsPulseModalOpen(false)}
-                className={styles.pulseModalCloseBtn}
-              >
-                <X size={20} />
-              </button>
-              <PulseAIWorkspace onClose={() => setIsPulseModalOpen(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
     </section>
   );
 }

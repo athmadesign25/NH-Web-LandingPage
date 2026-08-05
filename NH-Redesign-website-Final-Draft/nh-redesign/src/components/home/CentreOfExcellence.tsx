@@ -149,29 +149,29 @@ export default function CentreOfExcellence() {
     offset: ["start start", "end end"]
   });
 
-  // Top Section Scroll Animations (Sequential Staggered Reveal)
-  const eyebrowOpacity = useTransform(titleScrollProgress, [0.02, 0.16], [0, 1]);
-  const eyebrowY = useTransform(titleScrollProgress, [0.02, 0.16], [22, 0]);
-  const eyebrowBlurVal = useTransform(titleScrollProgress, [0.02, 0.16], [16, 0]);
+  // Top Section Scroll Animations (Reveal -> Static Scroll Dwell -> Clean Sharp Exit)
+  const eyebrowOpacity = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [0, 1, 1, 0]);
+  const eyebrowY = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [12, 0, 0, -32]);
+  const eyebrowBlurVal = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [8, 0, 0, 0]);
   const eyebrowFilter = useTransform(eyebrowBlurVal, (v) => `blur(${v}px)`);
 
-  const titleOpacity = useTransform(titleScrollProgress, [0.16, 0.36], [0, 1]);
-  const titleY = useTransform(titleScrollProgress, [0.16, 0.36], [22, 0]);
-  const titleBlurVal = useTransform(titleScrollProgress, [0.16, 0.36], [16, 0]);
+  const titleOpacity = useTransform(titleScrollProgress, [0.08, 0.16, 0.70, 0.88], [0, 1, 1, 0]);
+  const titleY = useTransform(titleScrollProgress, [0.08, 0.16, 0.70, 0.88], [12, 0, 0, -32]);
+  const titleBlurVal = useTransform(titleScrollProgress, [0.08, 0.16, 0.70, 0.88], [8, 0, 0, 0]);
   const titleFilter = useTransform(titleBlurVal, (v) => `blur(${v}px)`);
 
-  const subtitleOpacity = useTransform(titleScrollProgress, [0.36, 0.58], [0, 1]);
-  const subtitleY = useTransform(titleScrollProgress, [0.36, 0.58], [22, 0]);
-  const subtitleBlurVal = useTransform(titleScrollProgress, [0.36, 0.58], [16, 0]);
+  const subtitleOpacity = useTransform(titleScrollProgress, [0.14, 0.22, 0.70, 0.88], [0, 1, 1, 0]);
+  const subtitleY = useTransform(titleScrollProgress, [0.14, 0.22, 0.70, 0.88], [12, 0, 0, -32]);
+  const subtitleBlurVal = useTransform(titleScrollProgress, [0.14, 0.22, 0.70, 0.88], [8, 0, 0, 0]);
   const subtitleFilter = useTransform(subtitleBlurVal, (v) => `blur(${v}px)`);
 
-  // Progress stroke fills from 0% to 100% as user scrolls through text sequence
-  const strokeDashoffset = useTransform(titleScrollProgress, [0.02, 0.72], [84.823, 0]);
+  // Progress stroke fills smoothly as user scrolls through static dwell phase
+  const strokeDashoffset = useTransform(titleScrollProgress, [0.02, 0.70], [84.823, 0]);
 
-  // Indicator appears at start and fully disappears cleanly at end (0.75 to 0.88)
-  const indicatorOpacity = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [0, 1, 1, 0]);
-  const indicatorY = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [22, 0, 0, -14]);
-  const indicatorBlurVal = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [16, 0, 0, 0]);
+  // Indicator appears at start, stays static, then slides up & fades cleanly with zero blur (0.70 to 0.88)
+  const indicatorOpacity = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [0, 1, 1, 0]);
+  const indicatorY = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [12, 0, 0, -32]);
+  const indicatorBlurVal = useTransform(titleScrollProgress, [0.02, 0.10, 0.70, 0.88], [8, 0, 0, 0]);
   const indicatorFilter = useTransform(indicatorBlurVal, (v) => `blur(${v}px)`);
 
   useEffect(() => {
@@ -359,7 +359,7 @@ export default function CentreOfExcellence() {
                   y: subtitleY, 
                   filter: subtitleFilter 
                 }} 
-                className={`section-subtitle ${styles.sectionSubtitle}`}
+                className={styles.sectionSubtitle}
               >
                 Integrated expertise across tertiary and quaternary care,
                 <br />

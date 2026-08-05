@@ -211,7 +211,7 @@
   font-weight: 700;
   color: #ffffff !important;
   margin-top: 0;
-  margin-bottom: 24px;
+  margin-bottom: 10px;
   line-height: 1.22;
   letter-spacing: -0.025em;
   white-space: nowrap;
@@ -225,10 +225,13 @@
 
 .sectionSubtitle {
   font-size: clamp(16px, 1.3vw, 20px);
-  color: rgba(255, 255, 255, 0.85) !important;
+  font-weight: 400;
+  color: #FFFFFF !important;
   line-height: 1.65;
   max-width: 700px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .tierLabel {

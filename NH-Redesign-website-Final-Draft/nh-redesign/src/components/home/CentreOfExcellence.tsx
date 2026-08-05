@@ -149,29 +149,29 @@ export default function CentreOfExcellence() {
     offset: ["start start", "end end"]
   });
 
-  // Top Section Scroll Animations
-  const eyebrowOpacity = useTransform(titleScrollProgress, [0.03, 0.18], [0, 1]);
-  const eyebrowY = useTransform(titleScrollProgress, [0.03, 0.18], [22, 0]);
-  const eyebrowBlurVal = useTransform(titleScrollProgress, [0.03, 0.18], [16, 0]);
+  // Top Section Scroll Animations (Sequential Staggered Reveal)
+  const eyebrowOpacity = useTransform(titleScrollProgress, [0.02, 0.16], [0, 1]);
+  const eyebrowY = useTransform(titleScrollProgress, [0.02, 0.16], [22, 0]);
+  const eyebrowBlurVal = useTransform(titleScrollProgress, [0.02, 0.16], [16, 0]);
   const eyebrowFilter = useTransform(eyebrowBlurVal, (v) => `blur(${v}px)`);
 
-  const titleOpacity = useTransform(titleScrollProgress, [0.15, 0.32], [0, 1]);
-  const titleY = useTransform(titleScrollProgress, [0.15, 0.32], [22, 0]);
-  const titleBlurVal = useTransform(titleScrollProgress, [0.15, 0.32], [16, 0]);
+  const titleOpacity = useTransform(titleScrollProgress, [0.16, 0.36], [0, 1]);
+  const titleY = useTransform(titleScrollProgress, [0.16, 0.36], [22, 0]);
+  const titleBlurVal = useTransform(titleScrollProgress, [0.16, 0.36], [16, 0]);
   const titleFilter = useTransform(titleBlurVal, (v) => `blur(${v}px)`);
 
-  const subtitleOpacity = useTransform(titleScrollProgress, [0.28, 0.48], [0, 1]);
-  const subtitleY = useTransform(titleScrollProgress, [0.28, 0.48], [22, 0]);
-  const subtitleBlurVal = useTransform(titleScrollProgress, [0.28, 0.48], [16, 0]);
+  const subtitleOpacity = useTransform(titleScrollProgress, [0.36, 0.58], [0, 1]);
+  const subtitleY = useTransform(titleScrollProgress, [0.36, 0.58], [22, 0]);
+  const subtitleBlurVal = useTransform(titleScrollProgress, [0.36, 0.58], [16, 0]);
   const subtitleFilter = useTransform(subtitleBlurVal, (v) => `blur(${v}px)`);
 
-  // Progress stroke fills from 0% to 100% during title section scroll
-  const strokeDashoffset = useTransform(titleScrollProgress, [0.05, 0.85], [84.823, 0]);
+  // Progress stroke fills from 0% to 100% as user scrolls through text sequence
+  const strokeDashoffset = useTransform(titleScrollProgress, [0.02, 0.72], [84.823, 0]);
 
-  // Indicator appears at start and fully disappears cleanly at end (0.78 to 0.88)
-  const indicatorOpacity = useTransform(titleScrollProgress, [0.03, 0.18, 0.78, 0.88], [0, 1, 1, 0]);
-  const indicatorY = useTransform(titleScrollProgress, [0.03, 0.18, 0.78, 0.88], [22, 0, 0, -14]);
-  const indicatorBlurVal = useTransform(titleScrollProgress, [0.03, 0.18, 0.78, 0.88], [16, 0, 0, 0]);
+  // Indicator appears at start and fully disappears cleanly at end (0.75 to 0.88)
+  const indicatorOpacity = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [0, 1, 1, 0]);
+  const indicatorY = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [22, 0, 0, -14]);
+  const indicatorBlurVal = useTransform(titleScrollProgress, [0.02, 0.16, 0.78, 0.88], [16, 0, 0, 0]);
   const indicatorFilter = useTransform(indicatorBlurVal, (v) => `blur(${v}px)`);
 
   useEffect(() => {

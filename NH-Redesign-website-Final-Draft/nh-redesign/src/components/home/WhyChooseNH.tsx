@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
 import { ShieldCheck, Stethoscope, Microscope, Award } from "lucide-react";
 import styles from "./WhyChooseNH.module.css";
 
@@ -11,32 +11,28 @@ const FEATURE_CARDS = [
     title: "Clinical Excellence",
     subtitle: "Protocols and tracked outcomes for safer recovery paths",
     icon: ShieldCheck,
-    image: "/nurse-holding-tablet-with-heart-figure-cardiology-diagnosis.png",
-    video: "/Hero-Video-New.mp4",
+    image: "/clinical-excellence.png",
   },
   {
     id: "top-medical-experts",
     title: "Top Medical Experts",
     subtitle: "Senior specialists for complex procedures and continuity of care",
     icon: Stethoscope,
-    image: "/doctor_patient.png",
-    video: "/Doctor patient.mp4",
+    image: "/top-medical-experts.png",
   },
   {
     id: "advanced-technology",
     title: "Advanced Technology",
     subtitle: "Modern diagnostics and surgical platforms for precision treatment",
     icon: Microscope,
-    image: "/Advance Heart Care.png",
-    video: "/NH YT Vid 01.mp4",
+    image: "/advanced-technology.png",
   },
   {
     id: "patient-first-support",
     title: "Patient-First Support",
     subtitle: "Clear communication and care navigation for every family",
     icon: Award,
-    image: "/Digestive Health.png",
-    video: "/NH YT Vid 02.mp4",
+    image: "/patient-first-support.png",
   },
 ];
 
@@ -80,19 +76,25 @@ function FeatureCardItem({
   index: number;
   total: number;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
   const Icon = card.icon;
 
-  const handleMouseEnter = () => {
-    if (videoRef.current) {
-      videoRef.current.play().catch(() => {});
-    }
+  const mouseX = useMotionValue(0);
+  const mouseY = useMotionValue(0);
+
+  const parallaxX = useSpring(mouseX, { stiffness: 120, damping: 20 });
+  const parallaxY = useSpring(mouseY, { stiffness: 120, damping: 20 });
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    const x = (e.clientX - rect.left - rect.width / 2) / 12;
+    const y = (e.clientY - rect.top - rect.height / 2) / 12;
+    mouseX.set(x);
+    mouseY.set(y);
   };
 
   const handleMouseLeave = () => {
-    if (videoRef.current) {
-      videoRef.current.pause();
-    }
+    mouseX.set(0);
+    mouseY.set(0);
   };
 
   const cardRadiusClass =
@@ -105,25 +107,16 @@ function FeatureCardItem({
   return (
     <div
       className={`${styles.specialityCard} ${cardRadiusClass}`}
-      onMouseEnter={handleMouseEnter}
+      onMouseMove={handleMouseMove}
       onMouseLeave={handleMouseLeave}
     >
-      <img
+      <motion.img
         src={card.image}
         alt={card.title}
         className={styles.cardImage}
+        style={{ x: parallaxX, y: parallaxY, scale: 1.08 }}
         loading="lazy"
       />
-      {card.video && (
-        <video
-          ref={videoRef}
-          src={card.video}
-          className={styles.cardVideo}
-          muted
-          loop
-          playsInline
-        />
-      )}
       <div className={styles.cardTextWrap}>
         {/* Bottom Area: Icon Unit right above Card Title & Subtitle */}
         <div className={styles.cardBottomContent}>

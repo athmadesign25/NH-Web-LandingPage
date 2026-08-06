@@ -20,14 +20,24 @@
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: flex-start;
-  padding-top: clamp(80px, 12vh, 140px);
+  justify-content: center;
   align-items: center;
   background: transparent;
   overflow: hidden;
   border-radius: 0;
   margin-top: 0;
   box-shadow: none;
+}
+
+.centerContent {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  width: 100%;
+  max-width: 900px;
+  margin: 0 auto;
 }
 
 .neatCanvas {

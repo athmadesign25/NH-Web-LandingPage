@@ -7,7 +7,7 @@
 
 .section {
   position: relative;
-  background: #001735;
+  background: #F1F7FF;
   overflow: hidden;
   padding: 140px 0 440px;
   min-height: 1200px;
@@ -79,7 +79,6 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 16px;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 .eyebrowDash {
@@ -92,13 +91,13 @@
 .sectionTitle {
   font-size: 42px;
   font-weight: 800;
-  color: #FFFFFF;
+  color: #111827;
   margin-bottom: 12px;
 }
 
 .header .section-subtitle {
   text-align: center;
-  color: rgba(255, 255, 255, 0.8);
+  color: #4b5563;
 }
 
 .carouselWrap {

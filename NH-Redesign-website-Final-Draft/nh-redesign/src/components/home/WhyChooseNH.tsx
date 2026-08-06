@@ -1,155 +1,212 @@
 "use client";
 
-import { motion, useMotionValue, useTransform, useSpring } from "framer-motion";
-import React from "react";
-import { Award, Microscope, Stethoscope, ShieldCheck } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { ShieldCheck, Stethoscope, Microscope, Award } from "lucide-react";
 import styles from "./WhyChooseNH.module.css";
 
-const featureCards = [
+const FEATURE_CARDS = [
   {
-    tone: "blue",
-    icon: ShieldCheck,
+    id: "clinical-excellence",
     title: "Clinical Excellence",
-    descriptionLines: ["Protocols and tracked outcomes", "for safer recovery paths"],
+    subtitle: "Protocols and tracked outcomes for safer recovery paths",
+    icon: ShieldCheck,
+    image: "/nurse-holding-tablet-with-heart-figure-cardiology-diagnosis.png",
+    video: "/Hero-Video-New.mp4",
   },
   {
-    tone: "amber",
-    icon: Stethoscope,
+    id: "top-medical-experts",
     title: "Top Medical Experts",
-    descriptionLines: ["Senior specialists for complex", "procedures and continuity of care"],
+    subtitle: "Senior specialists for complex procedures and continuity of care",
+    icon: Stethoscope,
+    image: "/doctor_patient.png",
+    video: "/Doctor patient.mp4",
   },
   {
-    tone: "green",
-    icon: Microscope,
+    id: "advanced-technology",
     title: "Advanced Technology",
-    descriptionLines: ["Modern diagnostics and surgical", "platforms for precision treatment"],
+    subtitle: "Modern diagnostics and surgical platforms for precision treatment",
+    icon: Microscope,
+    image: "/Advance Heart Care.png",
+    video: "/NH YT Vid 01.mp4",
   },
   {
-    tone: "violet",
-    icon: Award,
+    id: "patient-first-support",
     title: "Patient-First Support",
-    descriptionLines: ["Clear communication and care", "navigation for every family"],
+    subtitle: "Clear communication and care navigation for every family",
+    icon: Award,
+    image: "/Digestive Health.png",
+    video: "/NH YT Vid 02.mp4",
   },
 ];
-
-function ParallaxFeatureCard({ card, index }: { card: typeof featureCards[0]; index: number }) {
-  const cardRef = React.useRef<HTMLElement>(null);
-  const x = useMotionValue(0);
-  const y = useMotionValue(0);
-
-  const rotateX = useSpring(useTransform(y, [-0.5, 0.5], [4, -4]), { stiffness: 120, damping: 22 });
-  const rotateY = useSpring(useTransform(x, [-0.5, 0.5], [-4, 4]), { stiffness: 120, damping: 22 });
-  const shiftX = useSpring(useTransform(x, [-0.5, 0.5], [-5, 5]), { stiffness: 120, damping: 22 });
-  const shiftY = useSpring(useTransform(y, [-0.5, 0.5], [-3, 3]), { stiffness: 120, damping: 22 });
-
-  const handleMouseMove = (event: React.MouseEvent<HTMLElement>) => {
-    if (!cardRef.current) return;
-    const rect = cardRef.current.getBoundingClientRect();
-    const mouseX = event.clientX - rect.left;
-    const mouseY = event.clientY - rect.top;
-
-    const normX = mouseX / rect.width - 0.5;
-    const normY = mouseY / rect.height - 0.5;
-
-    x.set(normX);
-    y.set(normY);
-
-    cardRef.current.style.setProperty("--mx", `${mouseX}px`);
-    cardRef.current.style.setProperty("--my", `${mouseY}px`);
-  };
-
-  const handleMouseLeave = () => {
-    x.set(0);
-    y.set(0);
-    if (cardRef.current) {
-      cardRef.current.style.setProperty("--mx", "50%");
-      cardRef.current.style.setProperty("--my", "50%");
-    }
-  };
-
-  const Icon = card.icon;
-
-  return (
-    <motion.article
-      ref={cardRef}
-      className={`${styles.featureCard} ${styles[`tone${card.tone[0].toUpperCase()}${card.tone.slice(1)}`]}`}
-      initial={{ opacity: 0, y: 16 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true, amount: 0.25 }}
-      transition={{ duration: 0.45, delay: index * 0.07 }}
-      style={{
-        rotateX,
-        rotateY,
-        x: shiftX,
-        y: shiftY,
-        transformStyle: "preserve-3d",
-      }}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      <div className={styles.featureIcon}>
-        <Icon size={30} />
-      </div>
-      <h3 className={styles.featureTitle}>{card.title}</h3>
-      <p className={styles.featureDescription}>
-        <span>{card.descriptionLines[0]}</span>
-        <span>{card.descriptionLines[1]}</span>
-      </p>
-    </motion.article>
-  );
-}
 
 const accreditations = [
   {
     key: "jci",
     title: "JCI Accredited",
     short: "JCI",
-    logo: "/accreditations/jci.png",
+    logo: "/Joint Commission International accreditation logo.png",
     alt: "Joint Commission International accreditation logo",
   },
   {
     key: "nabh",
     title: "NABH Certified Nursing Services",
     short: "NABH",
-    logo: "/accreditations/nabh.png",
+    logo: "/NABH certified nursing services logo.png",
     alt: "NABH certified nursing services logo",
   },
   {
     key: "nabl",
     title: "NABL Accredited Laboratories",
     short: "NABL",
-    logo: "/accreditations/nabl.png",
+    logo: "/NABL accreditation board logo.png",
     alt: "NABL accreditation board logo",
   },
   {
     key: "cap",
     title: "CAP Accredited",
     short: "CAP",
-    logo: "/accreditations/cap.png",
+    logo: "/College of American Pathologists accredited logo.png",
     alt: "College of American Pathologists accredited logo",
   },
 ];
 
-export default function WhyChooseNH() {
-  const [failedLogos, setFailedLogos] = React.useState<Record<string, boolean>>({});
+function FeatureCardItem({
+  card,
+  index,
+  total,
+}: {
+  card: typeof FEATURE_CARDS[0];
+  index: number;
+  total: number;
+}) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const Icon = card.icon;
+
+  const handleMouseEnter = () => {
+    if (videoRef.current) {
+      videoRef.current.play().catch(() => {});
+    }
+  };
+
+  const handleMouseLeave = () => {
+    if (videoRef.current) {
+      videoRef.current.pause();
+    }
+  };
+
+  const cardRadiusClass =
+    index === 0
+      ? styles.firstCard
+      : index === total - 1
+      ? styles.lastCard
+      : styles.middleCard;
 
   return (
-    <section className={`section ${styles.section}`} id="why-choose-nh">
-      <div className="container">
+    <div
+      className={`${styles.specialityCard} ${cardRadiusClass}`}
+      onMouseEnter={handleMouseEnter}
+      onMouseLeave={handleMouseLeave}
+    >
+      <img
+        src={card.image}
+        alt={card.title}
+        className={styles.cardImage}
+        loading="lazy"
+      />
+      {card.video && (
+        <video
+          ref={videoRef}
+          src={card.video}
+          className={styles.cardVideo}
+          muted
+          loop
+          playsInline
+        />
+      )}
+      <div className={styles.cardTextWrap}>
+        {/* Bottom Area: Icon Unit right above Card Title & Subtitle */}
+        <div className={styles.cardBottomContent}>
+          <div className={styles.iconBox}>
+            <Icon size={24} color="#FFFFFF" />
+          </div>
+          <span className={styles.specialityName}>{card.title}</span>
+          <p className={styles.specialitySubtitle}>{card.subtitle}</p>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export default function WhyChooseNH() {
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const [translateXMax, setTranslateXMax] = useState(0);
+  const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
+
+  const { scrollYProgress } = useScroll({
+    target: scrollContainerRef,
+    offset: ["start start", "end end"],
+  });
+
+  // Calculate exact translation shift so right edge of 4th card stops aligned at right page margin
+  useEffect(() => {
+    const updateMax = () => {
+      if (gridRef.current && gridRef.current.children.length > 0) {
+        const scrollWidth = gridRef.current.scrollWidth;
+        const viewportWidth = window.innerWidth;
+        const computedStyle = window.getComputedStyle(gridRef.current);
+        const paddingLeft = parseFloat(computedStyle.paddingLeft) || 32;
+
+        // Total shift distance so 4th card's right edge stops at (viewportWidth - paddingLeft)
+        const maxShift = scrollWidth - viewportWidth + paddingLeft;
+        setTranslateXMax(maxShift > 0 ? -maxShift : 0);
+      }
+    };
+
+    updateMax();
+    const timeout = setTimeout(updateMax, 150);
+    window.addEventListener("resize", updateMax);
+
+    return () => {
+      clearTimeout(timeout);
+      window.removeEventListener("resize", updateMax);
+    };
+  }, []);
+
+  const x = useTransform(scrollYProgress, [0, 1], [0, translateXMax]);
+
+  return (
+    <div ref={scrollContainerRef} className={styles.scrollContainer} id="why-choose-nh">
+      <section className={`section ${styles.stickySection}`}>
+        {/* Section Header */}
         <div className={styles.header}>
-          <div className="section-eyebrow">BEST IN HEALTHCARE</div>
-          <h2 className="section-title">Why Choose Narayana Health?</h2>
-          <p className={`section-subtitle ${styles.headerSubtitle}`}>
+          <div className="section-eyebrow" style={{ color: "var(--color-primary, #034EA2)" }}>BEST IN HEALTHCARE</div>
+          <h2 className={styles.sectionTitle}>Why Choose Narayana Health?</h2>
+          <p className={styles.sectionSubtitle}>
             Where your health &amp; well-being comes first, always.
           </p>
         </div>
 
-        <div className={styles.featuresGrid}>
-          {featureCards.map((card, index) => (
-            <ParallaxFeatureCard key={card.title} card={card} index={index} />
-          ))}
+        {/* Horizontal Ribbon Track (Pinned to Page Scroll) */}
+        <div className={styles.specialitiesGridWrap}>
+          <motion.div
+            ref={gridRef}
+            className={styles.specialitiesGrid}
+            style={{ x }}
+          >
+            {FEATURE_CARDS.map((card, idx) => (
+              <FeatureCardItem
+                key={card.title}
+                card={card}
+                index={idx}
+                total={FEATURE_CARDS.length}
+              />
+            ))}
+          </motion.div>
         </div>
 
+        {/* Accreditation Badges Row (Transparent background, no card wrapper, new PNG logos) */}
         <div className={styles.badgesWrap}>
           <div className={styles.badgesRow}>
             {accreditations.map((item, index) => (
@@ -166,12 +223,14 @@ export default function WhyChooseNH() {
                   />
                 )}
                 <span className={styles.badgeTitle}>{item.title}</span>
-                {index < accreditations.length - 1 && <div className={styles.badgeDivider} aria-hidden="true" />}
+                {index < accreditations.length - 1 && (
+                  <div className={styles.badgeDivider} aria-hidden="true" />
+                )}
               </div>
             ))}
           </div>
         </div>
-      </div>
-    </section>
+      </section>
+    </div>
   );
 }

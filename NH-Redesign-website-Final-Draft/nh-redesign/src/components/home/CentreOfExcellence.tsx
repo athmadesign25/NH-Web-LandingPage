@@ -100,8 +100,8 @@ const SPECIALTIES_DATA = [
   }
 ];
 
-const DIAL_ITEM_GAP = 28;
-const DIAL_ITEM_HEIGHT = 40.32;
+const DIAL_ITEM_GAP = 20;
+const DIAL_ITEM_HEIGHT = 30;
 
 const dialItemVariants = {
   initial: (dir: number) => ({

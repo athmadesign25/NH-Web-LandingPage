@@ -1,9 +1,9 @@
 "use client";
 
 import Image from "next/image";
-import { motion, useMotionValue, useSpring } from "framer-motion";
+import { motion, useMotionValue, useSpring, useScroll, useTransform } from "framer-motion";
 import { ChevronLeft, ChevronRight, Play, Quote } from "lucide-react";
-import React from "react";
+import React, { useRef } from "react";
 import styles from "./PatientStories.module.css";
 
 const stories = [
@@ -46,7 +46,17 @@ const stories = [
 ];
 
 export default function PatientStories() {
-  const containerRef = React.useRef<HTMLDivElement>(null);
+  const sectionRef = useRef<HTMLElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Scale up on scroll from 0.92 to 1.0 filling current state
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "center center"],
+  });
+
+  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
+  const borderRadius = useTransform(scrollYProgress, [0, 1], [24, 0]);
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -99,111 +109,122 @@ export default function PatientStories() {
   ];
 
   return (
-    <section className={`section ${styles.section}`} id="patient-stories">
-      <div className={`container ${styles.contentContainer}`}>
-        {/* Section Header */}
-        <motion.div 
-          className={styles.header}
-          initial={{ opacity: 0, y: 24 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.2 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div className={styles.eyebrowWrap}>
-            <div className="section-eyebrow" style={{ marginBottom: 0 }}>PATIENT STORIES</div>
-            <div className={styles.eyebrowDash} />
-          </div>
-          <h2 className={`section-title ${styles.sectionTitle}`}>Lives Changed, Stories Told</h2>
-          <p className="section-subtitle">
-            Real patients. Real outcomes. Thousands of life-changing stories.
-          </p>
-        </motion.div>
-      </div>
-
-      <div 
-        ref={containerRef} 
-        className={styles.carouselWrap}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+    <section ref={sectionRef} className={styles.sectionWrap}>
+      <motion.div
+        className={`section ${styles.section}`}
+        id="patient-stories"
+        style={{
+          scale,
+          borderRadius,
+          transformOrigin: "bottom center",
+          willChange: "transform, border-radius",
+        }}
       >
-        {/* Background Image Grid */}
-        <div className={styles.backgroundGridWrap}>
-          <div className={styles.backgroundGrid}>
-            {backgroundGridItems.map((src, i) => (
-              src ? (
-                <motion.div 
-                  key={`bg-${i}`} 
-                  className={styles.gridImageItem}
-                  initial={{ opacity: 0, scale: 0.85 }}
-                  whileInView={{ opacity: 1, scale: 1 }}
-                  viewport={{ once: true, amount: 0.1 }}
-                  transition={{ duration: 0.5, delay: i * 0.05 }}
-                >
-                  <Image src={src} alt="" fill sizes="25vw" style={{ objectFit: "cover" }} />
-                </motion.div>
-              ) : (
-                <div key={`bg-empty-${i}`} />
-              )
-            ))}
-          </div>
-          <div className={styles.gridOverlay} />
+        <div className={`container ${styles.contentContainer}`}>
+          {/* Section Header */}
+          <motion.div 
+            className={styles.header}
+            initial={{ opacity: 0, y: 24 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.2 }}
+            transition={{ duration: 0.5 }}
+          >
+            <div className={styles.eyebrowWrap}>
+              <div className="section-eyebrow" style={{ marginBottom: 0 }}>PATIENT STORIES</div>
+              <div className={styles.eyebrowDash} />
+            </div>
+            <h2 className={`section-title ${styles.sectionTitle}`}>Lives Changed, Stories Told</h2>
+            <p className="section-subtitle">
+              Real patients. Real outcomes. Thousands of life-changing stories.
+            </p>
+          </motion.div>
         </div>
 
-        <motion.div 
-          className={styles.marqueeContainer}
-          style={{ x: parallaxX, y: parallaxY }}
-          initial={{ opacity: 0, y: 40 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true, amount: 0.1 }}
-          transition={{ duration: 0.8, delay: 0.6 }}
+        <div 
+          ref={containerRef} 
+          className={styles.carouselWrap}
+          onMouseMove={handleMouseMove}
+          onMouseLeave={handleMouseLeave}
         >
-          <div className={styles.marqueeContent}>
-            {allItems.map((item, i) => {
-              if (item.type === "text") {
-                const story = item.data;
+          {/* Background Image Grid */}
+          <div className={styles.backgroundGridWrap}>
+            <div className={styles.backgroundGrid}>
+              {backgroundGridItems.map((src, i) => (
+                src ? (
+                  <motion.div 
+                    key={`bg-${i}`} 
+                    className={styles.gridImageItem}
+                    initial={{ opacity: 0, scale: 0.85 }}
+                    whileInView={{ opacity: 1, scale: 1 }}
+                    viewport={{ once: true, amount: 0.1 }}
+                    transition={{ duration: 0.5, delay: i * 0.05 }}
+                  >
+                    <Image src={src} alt="" fill sizes="25vw" style={{ objectFit: "cover" }} />
+                  </motion.div>
+                ) : (
+                  <div key={`bg-empty-${i}`} />
+                )
+              ))}
+            </div>
+            <div className={styles.gridOverlay} />
+          </div>
+
+          <motion.div 
+            className={styles.marqueeContainer}
+            style={{ x: parallaxX, y: parallaxY }}
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, amount: 0.1 }}
+            transition={{ duration: 0.8, delay: 0.6 }}
+          >
+            <div className={styles.marqueeContent}>
+              {allItems.map((item, i) => {
+                if (item.type === "text") {
+                  const story = item.data;
+                  return (
+                    <article key={`story-${story.id}-${i}`} className={styles.card}>
+                      <div className={styles.quoteIconWrap}>
+                        <Quote size={40} className={styles.quoteIcon} fill="var(--color-primary)" stroke="none" />
+                      </div>
+                      <p className={styles.quote}>{story.quote}</p>
+                      <div className={styles.patient}>
+                        <div className={styles.avatar}>
+                          <Image src={story.image} alt={story.name} fill sizes="48px" style={{ objectFit: "cover" }} />
+                        </div>
+                        <div>
+                          <h4 className={styles.patientName}>{story.name}</h4>
+                          <p className={styles.patientMeta}>{story.condition}</p>
+                        </div>
+                      </div>
+                    </article>
+                  );
+                }
+
+                const video = item.data;
                 return (
-                  <article key={`story-${story.id}-${i}`} className={styles.card}>
-                    <div className={styles.quoteIconWrap}>
-                      <Quote size={40} className={styles.quoteIcon} fill="var(--color-primary)" stroke="none" />
-                    </div>
-                    <p className={styles.quote}>{story.quote}</p>
-                    <div className={styles.patient}>
-                      <div className={styles.avatar}>
-                        <Image src={story.image} alt={story.name} fill sizes="48px" style={{ objectFit: "cover" }} />
+                  <article key={`video-${video.videoId}-${i}`} className={`${styles.card} ${styles.videoCard}`}>
+                    <a
+                      href={`https://www.youtube.com/watch?v=${video.videoId}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className={styles.videoLink}
+                    >
+                      <div className={styles.videoThumbWrap}>
+                        <Image src={video.thumb} alt={video.title} fill sizes="(max-width: 768px) 90vw, 420px" className={styles.videoThumb} />
+                        <div className={styles.videoOverlay} />
+                        <div className={styles.playButtonWrapper}>
+                          <Play size={28} fill="var(--color-primary)" stroke="var(--color-primary)" />
+                        </div>
+                        <div className={styles.videoTitle}>{video.title}</div>
                       </div>
-                      <div>
-                        <h4 className={styles.patientName}>{story.name}</h4>
-                        <p className={styles.patientMeta}>{story.condition}</p>
-                      </div>
-                    </div>
+                    </a>
                   </article>
                 );
-              }
-
-              const video = item.data;
-              return (
-                <article key={`video-${video.videoId}-${i}`} className={`${styles.card} ${styles.videoCard}`}>
-                  <a
-                    href={`https://www.youtube.com/watch?v=${video.videoId}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className={styles.videoLink}
-                  >
-                    <div className={styles.videoThumbWrap}>
-                      <Image src={video.thumb} alt={video.title} fill sizes="(max-width: 768px) 90vw, 420px" className={styles.videoThumb} />
-                      <div className={styles.videoOverlay} />
-                      <div className={styles.playButtonWrapper}>
-                        <Play size={28} fill="var(--color-primary)" stroke="var(--color-primary)" />
-                      </div>
-                      <div className={styles.videoTitle}>{video.title}</div>
-                    </div>
-                  </a>
-                </article>
-              );
-            })}
-          </div>
-        </motion.div>
-      </div>
+              })}
+            </div>
+          </motion.div>
+        </div>
+      </motion.div>
     </section>
   );
 }

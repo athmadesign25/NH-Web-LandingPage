@@ -1,6 +1,13 @@
+.sectionWrap {
+  position: relative;
+  width: 100%;
+  background: #001735;
+  overflow: hidden;
+}
+
 .section {
   position: relative;
-  background: linear-gradient(180deg, #fcfcfc 0%, #fcfcfc 45%, #f2f7ff 100%);
+  background: #001735;
   overflow: hidden;
   padding: 140px 0 440px;
   min-height: 1200px;
@@ -72,6 +79,7 @@
   flex-direction: column;
   align-items: center;
   margin-bottom: 16px;
+  color: rgba(255, 255, 255, 0.9);
 }
 
 .eyebrowDash {
@@ -84,13 +92,13 @@
 .sectionTitle {
   font-size: 42px;
   font-weight: 800;
-  color: #111827;
+  color: #FFFFFF;
   margin-bottom: 12px;
 }
 
 .header .section-subtitle {
   text-align: center;
-  color: #4b5563;
+  color: rgba(255, 255, 255, 0.8);
 }
 
 .carouselWrap {

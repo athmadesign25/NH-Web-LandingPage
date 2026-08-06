@@ -14,20 +14,19 @@ export default function HomePage() {
     <>
       <FloatingQuickActions />
       
-      {/* Hero section will be positioned fixed behind the document flow */}
+      {/* Hero section in normal document flow */}
       <HeroSearchFirst />
       
-      {/* Overlapping Content Section Flow: CentreOfExcellence & subsequent sections scroll seamlessly over sticky hero */}
+      {/* Subsequent sections flow naturally after hero */}
       <div 
         style={{ 
           position: "relative", 
-          zIndex: 10, 
           background: "#ffffff",
           borderRadius: 0,
           marginTop: 0
         }}
       >
-        <div style={{ background: "linear-gradient(135deg, #f5eff2 0%, #cbe1fc 100%)", borderRadius: 0 }}>
+        <div style={{ background: "transparent", borderRadius: 0 }}>
           <CentreOfExcellence />
         </div>
         <PatientStories />

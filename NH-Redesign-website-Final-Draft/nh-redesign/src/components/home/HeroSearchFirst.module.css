@@ -1,14 +1,24 @@
 .hero {
   --hero-width: min(700px, 90vw);
-  position: sticky;
-  top: 0;
-  left: 0;
+  position: relative;
   width: 100%;
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
+  z-index: 2;
+  background: transparent;
+}
+
+.videoBgContainer {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   z-index: 1;
-  background: #0B0F19;
+  overflow: hidden;
+  transform-origin: top center;
+  will-change: transform, border-radius;
 }
 
 .neatCanvas {

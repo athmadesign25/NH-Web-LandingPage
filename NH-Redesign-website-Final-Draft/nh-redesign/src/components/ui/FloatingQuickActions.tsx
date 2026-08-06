@@ -58,6 +58,8 @@ export default function FloatingQuickActions() {
             id === "hero-section-search-first" ||
             className.includes("HeroSearchFirst") ||
             className.includes("CentreOfExcellence") ||
+            className.includes("specialityCard") ||
+            className.includes("specialitiesGrid") ||
             className.includes("HealthPackages_section") ||
             className.includes("AppDownloadBanner") ||
             className.includes("Footer") ||

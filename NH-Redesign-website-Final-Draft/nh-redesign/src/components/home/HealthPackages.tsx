@@ -77,9 +77,9 @@ export default function HealthPackages() {
         <div className={styles.header}>
           <div className={styles.titleWrap}>
             <div className="section-eyebrow">HEALTH PACKAGES</div>
-            <SplitText text="Preventive Health Packages" tag="h2" className={styles.title} />
+            <SplitText text="Recommended Health Packages" tag="h2" className={styles.title} />
             <p className={`section-subtitle ${styles.subtitle}`}>
-              Proactive healthcare designed for you. Choose from our specialized screening packages to stay ahead of health risks.
+              Designed by doctors for your care
             </p>
           </div>
         </div>

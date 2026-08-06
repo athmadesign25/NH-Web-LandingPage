@@ -6,6 +6,8 @@ import {
   AnimatePresence,
   motion,
   useReducedMotion,
+  useScroll,
+  useTransform,
 } from "framer-motion";
 import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight , Activity, FileText, X } from "lucide-react";
 import SplitText from "@/components/ui/SplitText";
@@ -458,6 +460,21 @@ export default function HeroSearchFirst() {
   const [showPixelRipple, setShowPixelRipple] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
+  const heroRef = useRef<HTMLElement>(null);
+
+  const { scrollYProgress } = useScroll({
+    target: heroRef,
+    offset: ["start start", "end start"],
+  });
+
+  // Scale hero container down by 8% (from 1.0 to 0.92) from bottom, left, right as user scrolls, then lock
+  const videoScale = useTransform(scrollYProgress, [0, 0.45], [1, 0.92]);
+  const videoRadius = useTransform(scrollYProgress, [0, 0.45], ["0px", "20px"]);
+  const videoShadow = useTransform(
+    scrollYProgress,
+    [0, 0.45],
+    ["0px 0px 0px rgba(0, 0, 0, 0)", "0px 20px 50px rgba(0, 0, 0, 0.5)"]
+  );
 
   // Pause background video when search is active
   useEffect(() => {
@@ -738,19 +755,27 @@ export default function HeroSearchFirst() {
   }, [isOpen]);
 
   return (
-    <section className={styles.hero} id="hero-section-search-first">
-      {/* Full-screen Background Video */}
-      <video
-        ref={videoRef}
-        src="/Hero-Video-New.mp4"
-        autoPlay
-        muted
-        loop
-        playsInline
-        className={styles.bgVideo}
-      />
-      <div className={styles.videoOverlay} />
-      <PixelRipple trigger={showPixelRipple} />
+    <section ref={heroRef} className={styles.hero} id="hero-section-search-first">
+      {/* Hero Unit with 8% Scroll Scale-Down Effect */}
+      <motion.div
+        className={styles.videoBgContainer}
+        style={{
+          scale: videoScale,
+          borderRadius: videoRadius,
+          boxShadow: videoShadow,
+        }}
+      >
+        <video
+          ref={videoRef}
+          src="/Hero-Video-New.mp4"
+          autoPlay
+          muted
+          loop
+          playsInline
+          className={styles.bgVideo}
+        />
+        <div className={styles.videoOverlay} />
+        <PixelRipple trigger={showPixelRipple} />
 
       {/* Bottom Hero Layout: Left Unit (Title + Search) & Right Unit (Stats Stack) */}
       <div className={styles.bottomHeroContainer}>
@@ -1246,6 +1271,7 @@ export default function HeroSearchFirst() {
       {/* Aesthetic Bottom Corner Blur Frame Overlays */}
       <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
       <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
+      </motion.div>
     </section>
   );
 }

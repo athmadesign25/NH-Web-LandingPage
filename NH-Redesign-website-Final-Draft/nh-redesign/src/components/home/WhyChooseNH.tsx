@@ -1,38 +1,29 @@
 "use client";
 
-import React, { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, useMotionValue, useSpring } from "framer-motion";
-import { ShieldCheck, Stethoscope, Microscope, Award } from "lucide-react";
+import React, { useState } from "react";
+import { motion } from "framer-motion";
 import styles from "./WhyChooseNH.module.css";
 
-const FEATURE_CARDS = [
+const featureCards = [
   {
-    id: "clinical-excellence",
+    video: "/6254600_Person_People_1280x720.mp4",
     title: "Clinical Excellence",
-    subtitle: "Protocols and tracked outcomes for safer recovery paths",
-    icon: ShieldCheck,
-    image: "/clinical-excellence.png",
+    descriptionLines: ["Protocols and tracked outcomes", "for safer recovery paths"],
   },
   {
-    id: "top-medical-experts",
+    image: "/whychoose/experts.png",
     title: "Top Medical Experts",
-    subtitle: "Senior specialists for complex procedures and continuity of care",
-    icon: Stethoscope,
-    image: "/top-medical-experts.png",
+    descriptionLines: ["Senior specialists for complex", "procedures and continuity of care"],
   },
   {
-    id: "advanced-technology",
+    image: "/whychoose/technology.png",
     title: "Advanced Technology",
-    subtitle: "Modern diagnostics and surgical platforms for precision treatment",
-    icon: Microscope,
-    image: "/advanced-technology.png",
+    descriptionLines: ["Modern diagnostics and surgical", "platforms for precision treatment"],
   },
   {
-    id: "patient-first-support",
+    video: "/NH YT Vid 03.mp4",
     title: "Patient-First Support",
-    subtitle: "Clear communication and care navigation for every family",
-    icon: Award,
-    image: "/patient-first-support.png",
+    descriptionLines: ["Clear communication and care", "navigation for every family"],
   },
 ];
 
@@ -67,139 +58,66 @@ const accreditations = [
   },
 ];
 
-function FeatureCardItem({
-  card,
-  index,
-  total,
-}: {
-  card: typeof FEATURE_CARDS[0];
-  index: number;
-  total: number;
-}) {
-  const Icon = card.icon;
-
-  const mouseX = useMotionValue(0);
-  const mouseY = useMotionValue(0);
-
-  const parallaxX = useSpring(mouseX, { stiffness: 120, damping: 20 });
-  const parallaxY = useSpring(mouseY, { stiffness: 120, damping: 20 });
-
-  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    const x = (e.clientX - rect.left - rect.width / 2) / 12;
-    const y = (e.clientY - rect.top - rect.height / 2) / 12;
-    mouseX.set(x);
-    mouseY.set(y);
-  };
-
-  const handleMouseLeave = () => {
-    mouseX.set(0);
-    mouseY.set(0);
-  };
-
-  const cardRadiusClass =
-    index === 0
-      ? styles.firstCard
-      : index === total - 1
-      ? styles.lastCard
-      : styles.middleCard;
-
-  return (
-    <div
-      className={`${styles.specialityCard} ${cardRadiusClass}`}
-      onMouseMove={handleMouseMove}
-      onMouseLeave={handleMouseLeave}
-    >
-      <motion.img
-        src={card.image}
-        alt={card.title}
-        className={styles.cardImage}
-        style={{ x: parallaxX, y: parallaxY, scale: 1.08 }}
-        loading="lazy"
-      />
-      <div className={styles.cardTextWrap}>
-        {/* Bottom Area: Icon Unit right above Card Title & Subtitle */}
-        <div className={styles.cardBottomContent}>
-          <div className={styles.iconBox}>
-            <Icon size={24} color="#FFFFFF" />
-          </div>
-          <span className={styles.specialityName}>{card.title}</span>
-          <p className={styles.specialitySubtitle}>{card.subtitle}</p>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export default function WhyChooseNH() {
-  const scrollContainerRef = useRef<HTMLDivElement>(null);
-  const gridRef = useRef<HTMLDivElement>(null);
-  const [translateXMax, setTranslateXMax] = useState(0);
   const [failedLogos, setFailedLogos] = useState<Record<string, boolean>>({});
 
-  const { scrollYProgress } = useScroll({
-    target: scrollContainerRef,
-    offset: ["start start", "end end"],
-  });
-
-  // Calculate exact translation shift so right edge of 4th card stops aligned at right page margin
-  useEffect(() => {
-    const updateMax = () => {
-      if (gridRef.current && gridRef.current.children.length > 0) {
-        const scrollWidth = gridRef.current.scrollWidth;
-        const viewportWidth = window.innerWidth;
-        const computedStyle = window.getComputedStyle(gridRef.current);
-        const paddingLeft = parseFloat(computedStyle.paddingLeft) || 32;
-
-        // Total shift distance so 4th card's right edge stops at (viewportWidth - paddingLeft)
-        const maxShift = scrollWidth - viewportWidth + paddingLeft;
-        setTranslateXMax(maxShift > 0 ? -maxShift : 0);
-      }
-    };
-
-    updateMax();
-    const timeout = setTimeout(updateMax, 150);
-    window.addEventListener("resize", updateMax);
-
-    return () => {
-      clearTimeout(timeout);
-      window.removeEventListener("resize", updateMax);
-    };
-  }, []);
-
-  const x = useTransform(scrollYProgress, [0, 1], [0, translateXMax]);
-
   return (
-    <div ref={scrollContainerRef} className={styles.scrollContainer} id="why-choose-nh">
-      <section className={`section ${styles.stickySection}`}>
+    <section className={styles.section} id="why-choose-nh">
+      <div className={styles.container}>
         {/* Section Header */}
         <div className={styles.header}>
-          <div className="section-eyebrow" style={{ color: "var(--color-primary, #034EA2)" }}>BEST IN HEALTHCARE</div>
+          <div className="section-eyebrow" style={{ color: "#034EA2" }}>
+            BEST IN HEALTHCARE
+          </div>
           <h2 className={styles.sectionTitle}>Why Choose Narayana Health?</h2>
-          <p className={styles.sectionSubtitle}>
+          <p className={styles.headerSubtitle}>
             Where your health &amp; well-being comes first, always.
           </p>
         </div>
 
-        {/* Horizontal Ribbon Track (Pinned to Page Scroll) */}
-        <div className={styles.specialitiesGridWrap}>
-          <motion.div
-            ref={gridRef}
-            className={styles.specialitiesGrid}
-            style={{ x }}
-          >
-            {FEATURE_CARDS.map((card, idx) => (
-              <FeatureCardItem
-                key={card.title}
-                card={card}
-                index={idx}
-                total={FEATURE_CARDS.length}
-              />
-            ))}
-          </motion.div>
+        {/* 4 Staggered Feature Cards with Image/Video Directional Hover Tilt */}
+        <div className={styles.featuresGrid}>
+          {featureCards.map((card, index) => (
+            <motion.article
+              key={card.title}
+              className={styles.featureCard}
+              initial={{ opacity: 0, y: 50 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, amount: 0.15 }}
+              transition={{ duration: 0.8, delay: index * 0.1, ease: [0.16, 1, 0.3, 1] }}
+            >
+              <div className={styles.featureIllustration}>
+                {card.video ? (
+                  <div className={styles.videoWrapper}>
+                    <video
+                      src={card.video}
+                      autoPlay
+                      loop
+                      muted
+                      playsInline
+                      className={styles.featureVideo}
+                    />
+                  </div>
+                ) : (
+                  <img
+                    src={card.image}
+                    alt={card.title}
+                    className={styles.featureImage}
+                    loading="lazy"
+                  />
+                )}
+              </div>
+              <h3 className={styles.featureTitle}>{card.title}</h3>
+              <p className={styles.featureDescription}>
+                {card.descriptionLines.map((line, i) => (
+                  <span key={i}>{line}</span>
+                ))}
+              </p>
+            </motion.article>
+          ))}
         </div>
 
-        {/* Accreditation Badges Row (Transparent background, no card wrapper, new PNG logos) */}
+        {/* Accreditation Badges Row preserved from working repo */}
         <div className={styles.badgesWrap}>
           <div className={styles.badgesRow}>
             {accreditations.map((item, index) => (
@@ -223,7 +141,7 @@ export default function WhyChooseNH() {
             ))}
           </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </section>
   );
 }

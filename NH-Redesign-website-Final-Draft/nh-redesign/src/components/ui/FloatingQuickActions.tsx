@@ -2,25 +2,36 @@
 
 import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { Calendar, Smartphone, X } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion";
+import { Calendar, Smartphone } from "lucide-react";
 import Lottie from "lottie-react";
 import pulseAnimation from "../../../public/assets/pulse animation.json";
 import PulseAIWorkspace from "../pulse-ai/PulseAIWorkspace";
+import fabStyles from "../pulse-ai/GlobalPulseFAB.module.css";
 import styles from "./FloatingQuickActions.module.css";
 
 export default function FloatingQuickActions() {
   const [isVisible, setIsVisible] = useState(false);
   const [darkLinks, setDarkLinks] = useState<boolean[]>([false, false]);
-  const [isPulseModalOpen, setIsPulseModalOpen] = useState(false);
+  const [isPulseWorkspaceOpen, setIsPulseWorkspaceOpen] = useState(false);
+  const [showExplainer, setShowExplainer] = useState(false);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const linkRef0 = useRef<HTMLAnchorElement>(null);
   const linkRef1 = useRef<HTMLAnchorElement>(null);
 
+  // Explainer banner timer
+  useEffect(() => {
+    const timer1 = setTimeout(() => setShowExplainer(true), 2000);
+    const timer2 = setTimeout(() => setShowExplainer(false), 8000);
+    return () => {
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
   useEffect(() => {
     const handleScrollAndTheme = () => {
-      // Floating buttons appear after scrolling past hero section into Centre of Excellence
+      // Floating buttons appear after scrolling past hero section (100vh)
       const shouldBeVisible = window.scrollY >= window.innerHeight - 100;
       setIsVisible(shouldBeVisible);
 
@@ -87,12 +98,6 @@ export default function FloatingQuickActions() {
     };
   }, []);
 
-  const [isHovered, setIsHovered] = useState(false);
-
-  const handlePulseClick = () => {
-    setIsPulseModalOpen(true);
-  };
-
   return (
     <>
       {/* Quick Health Actions Bar (Right Vertically Centered) */}
@@ -118,7 +123,7 @@ export default function FloatingQuickActions() {
         <Link
           ref={linkRef1}
           className={`${styles.link} ${darkLinks[1] ? styles.linkOnDark : ""}`}
-          href="#app-download"
+          href="#app-download-banner"
         >
           <span className={styles.iconWrap}>
             <Smartphone size={17} />
@@ -127,74 +132,31 @@ export default function FloatingQuickActions() {
         </Link>
       </div>
 
-      {/* Standalone Fully Rounded Floating Pulse AI Button + Hover Popover Card */}
+      {/* Global Pulse Button FAB from Pulse-AI repo (Appears on scroll) */}
       <div
-        className={`${styles.pulseFloatingWrapper} ${isVisible ? styles.pulseVisible : styles.pulseHidden}`}
-        onMouseEnter={() => setIsHovered(true)}
-        onMouseLeave={() => setIsHovered(false)}
+        className={`${fabStyles.fabContainer} ${isVisible ? styles.pulseVisible : styles.pulseHidden}`}
       >
-        <AnimatePresence>
-          {isHovered && (
-            <motion.div
-              key="pulse-hover-card"
-              className={styles.pulseHoverCard}
-              initial={{ opacity: 0, y: 10, scale: 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              transition={{ duration: 0.2, ease: "easeOut" }}
-            >
-              <h4 className={styles.pulseCardTitle}>Ask Pulse AI</h4>
-              <p className={styles.pulseCardSubtitle}>
-                Book Doctors, describe your symptoms, analyze reports, ask a question..
-              </p>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <div className={`${fabStyles.explainerBox} ${showExplainer ? fabStyles.explainerBoxVisible : ""}`}>
+          <div className={fabStyles.explainerTitle}>Ask Pulse AI</div>
+          <div className={fabStyles.explainerSubtitle}>Your smart health assistant</div>
+        </div>
 
         <button
           type="button"
-          aria-label="Ask Pulse AI"
-          onClick={handlePulseClick}
-          className={styles.pulseFloatingBtn}
+          className={fabStyles.fabButton}
+          onClick={() => setIsPulseWorkspaceOpen(true)}
+          aria-label="Open Pulse AI"
         >
-          <div className={styles.pulseLottieWrap}>
-            <Lottie animationData={pulseAnimation} className={styles.pulseLottie} loop={true} />
+          <div className={fabStyles.pulseAnim}>
+            <Lottie animationData={pulseAnimation} loop={true} />
           </div>
         </button>
       </div>
 
-      {/* Centered Pulse AI Modal (Opens wherever user is on the page) */}
-      <AnimatePresence>
-        {isPulseModalOpen && (
-          <motion.div
-            key="global-pulse-modal-backdrop"
-            className={styles.pulseModalBackdrop}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setIsPulseModalOpen(false)}
-          >
-            <motion.div
-              className={styles.pulseModalContainer}
-              initial={{ opacity: 0, scale: 0.94, y: 16 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.94, y: 16 }}
-              transition={{ type: "spring", damping: 26, stiffness: 320 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                type="button"
-                aria-label="Close Pulse AI Modal"
-                onClick={() => setIsPulseModalOpen(false)}
-                className={styles.pulseModalCloseBtn}
-              >
-                <X size={20} />
-              </button>
-              <PulseAIWorkspace onClose={() => setIsPulseModalOpen(false)} />
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/* Pulse AI Workspace Modal */}
+      {isPulseWorkspaceOpen && (
+        <PulseAIWorkspace onClose={() => setIsPulseWorkspaceOpen(false)} />
+      )}
     </>
   );
 }

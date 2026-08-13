@@ -114,18 +114,18 @@ export default function HealthPackages() {
                 </div>
 
                 <div className={styles.cardBottom}>
-                  <ul className={styles.featureList}>
-                    {pkg.features.map((feature, i) => (
-                      <li key={i} className={styles.featureItem}>
-                        <CheckCircle2 size={16} className={styles.checkIcon} />
-                        <span>{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
+                  <div className={styles.featuresUnit}>
+                    <ul className={styles.featureList}>
+                      {pkg.features.map((feature, i) => (
+                        <li key={i} className={styles.featureItem}>
+                          <CheckCircle2 size={16} className={styles.featureIcon} />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
 
-                  <button
-                    className={`${styles.bookBtn} ${pkg.popular ? styles.bookBtnPrimary : styles.bookBtnSecondary}`}
-                  >
+                  <button className={styles.bookBtn}>
                     Book Package
                   </button>
                 </div>

@@ -1,7 +1,7 @@
 .sectionWrap {
   position: relative;
   width: 100%;
-  background: #001735;
+  background: #FFFFFF;
   overflow: hidden;
 }
 
@@ -304,8 +304,6 @@
   min-height: calc(1.32em * 2);
   z-index: 2;
 }
-
-
 
 @media (max-width: 768px) {
   .section {

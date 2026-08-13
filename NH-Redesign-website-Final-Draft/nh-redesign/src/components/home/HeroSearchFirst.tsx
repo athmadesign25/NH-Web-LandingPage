@@ -9,11 +9,12 @@ import {
   useScroll,
   useTransform,
 } from "framer-motion";
-import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight , Activity, FileText, X } from "lucide-react";
+import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight, Activity, FileText, X, Video, Building2 } from "lucide-react";
 import SplitText from "@/components/ui/SplitText";
 import styles from "./HeroSearchFirst.module.css";
 import Lottie from "lottie-react";
 import pulseAnimation from "../../../public/assets/pulse animation.json";
+import starAnimation from "../../../public/assets/AI Searching 2.json";
 import PixelRipple from "./PixelRipple";
 import PulseAIWorkspace from "../pulse-ai/PulseAIWorkspace";
 
@@ -456,8 +457,46 @@ export default function HeroSearchFirst() {
   const [isOpen, setIsOpen] = useState(false);
   const [hasOpened, setHasOpened] = useState(false);
   const [isPulseActive, setIsPulseActive] = useState(false);
-  const [isPulseModalOpen, setIsPulseModalOpen] = useState(false);
+  const [isPulseAnalyzed, setIsPulseAnalyzed] = useState(false);
+  const [hasSubmittedQuery, setHasSubmittedQuery] = useState(false);
+  const [showGenericMatchesInPulse, setShowGenericMatchesInPulse] = useState(false);
+  const [simulatedUserLocation, setSimulatedUserLocation] = useState<"same_city" | "nearby" | "far_away">("same_city");
+  const [pulseInitialAction, setPulseInitialAction] = useState<string | null>(null);
+  const [pulseInitialActionData, setPulseInitialActionData] = useState<any>(null);
+  const [isUserLoggedIn, setIsUserLoggedIn] = useState(true);
   const [showPixelRipple, setShowPixelRipple] = useState(false);
+
+  // Sync login state from sessionStorage
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = sessionStorage.getItem("isLoggedIn");
+      setIsUserLoggedIn(stored !== "false");
+    }
+    const handleLoginChange = () => {
+      const stored = sessionStorage.getItem("isLoggedIn");
+      setIsUserLoggedIn(stored !== "false");
+    };
+    window.addEventListener("login-state-changed", handleLoginChange);
+    return () => window.removeEventListener("login-state-changed", handleLoginChange);
+  }, []);
+
+  const handlePulseLaunchWithAction = (action: string, doctorData: any) => {
+    setPulseInitialAction(action);
+    setPulseInitialActionData(doctorData);
+    setIsPulseActive(true);
+  };
+
+  const handleKnowYourHealthClick = (query: string) => {
+    setSearchQuery(query);
+    if (!isUserLoggedIn) {
+      handlePulseLaunchWithAction("require_login_module", { moduleName: "Know your health", query });
+    } else {
+      setIsPulseActive(true);
+    }
+  };
+
+  const isConversational = searchQuery.trim().split(" ").length > 3 ||
+                           /have|fever|cough|tomorrow|symptom|feel|pain/i.test(searchQuery.trim());
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -476,28 +515,48 @@ export default function HeroSearchFirst() {
     ["0px 0px 0px rgba(0, 0, 0, 0)", "0px 20px 50px rgba(0, 0, 0, 0.5)"]
   );
 
-  // Pause background video when search is active
+  // Smoothly slow-down then pause video when search is open
   useEffect(() => {
+    let intervalId: NodeJS.Timeout | undefined;
     if (videoRef.current) {
       if (isOpen) {
-        videoRef.current.pause();
+        let rate = videoRef.current.playbackRate;
+        intervalId = setInterval(() => {
+          if (videoRef.current && isOpen) {
+            rate -= 0.05;
+            if (rate <= 0.1) {
+              videoRef.current.pause();
+              videoRef.current.playbackRate = 1.0;
+              clearInterval(intervalId);
+            } else {
+              videoRef.current.playbackRate = rate;
+            }
+          } else {
+            clearInterval(intervalId);
+          }
+        }, 30);
       } else {
-        videoRef.current.play().catch((err) => {
-          console.log("Background video play failed:", err);
-        });
+        clearInterval(intervalId);
+        videoRef.current.playbackRate = 1.0;
+        videoRef.current.play().catch((err) => console.log("Playback prevented:", err));
       }
     }
+    return () => clearInterval(intervalId);
   }, [isOpen]);
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isPulseActive) {
-      // Delay ripple slightly to sync with the chat expansion animation (0.4s)
+      document.body.style.overflow = "hidden";
       timer = setTimeout(() => setShowPixelRipple(true), 300);
     } else {
+      document.body.style.overflow = "";
       setShowPixelRipple(false);
     }
-    return () => clearTimeout(timer);
+    return () => {
+      document.body.style.overflow = "";
+      clearTimeout(timer);
+    };
   }, [isPulseActive]);
 
   const [lastSearch, setLastSearch] = useState<string | null>(null);
@@ -603,9 +662,12 @@ export default function HeroSearchFirst() {
     }
   }, []);
 
-  // Reset dropdown tab to Doctors when typing/query changes
+  // Reset dropdown tab and inline analysis state when query changes
   useEffect(() => {
     setActiveDropdownTab("doctors_specialities");
+    setIsPulseAnalyzed(false);
+    setHasSubmittedQuery(false);
+    setShowGenericMatchesInPulse(false);
   }, [searchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -616,9 +678,24 @@ export default function HeroSearchFirst() {
         localStorage.setItem("nh_last_search", query);
         setLastSearch(query);
       }
-      router.push(`/search?q=${encodeURIComponent(query)}`);
-      setIsOpen(false);
-      setIsPulseActive(false);
+
+      // Pulse Trigger Heuristic — conversational queries bubble through Pulse AI stages
+      const isConvQuery = query.split(" ").length > 3 ||
+                          /have|fever|cough|tomorrow|symptom|feel|pain/i.test(query);
+
+      if (isConvQuery) {
+        if (!hasSubmittedQuery) {
+          setHasSubmittedQuery(true);
+        } else if (!isPulseAnalyzed) {
+          setIsPulseAnalyzed(true);
+        } else {
+          setIsPulseActive(true);
+          setIsOpen(false);
+        }
+      } else {
+        router.push(`/search?q=${encodeURIComponent(query)}`);
+        setIsOpen(false);
+      }
     }
   };
 
@@ -720,23 +797,30 @@ export default function HeroSearchFirst() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
 
-  const hasSuggestions = filteredDoctors.length > 0 || filteredSpecs.length > 0 || filteredTreatments.length > 0 || filteredArticles.length > 0;
+  const conversationalSpecs = [
+    { name: "General Physician", slug: "general-physician", image: "/Specialities icons/General Medicine.svg" },
+    { name: "ENT", slug: "ent", image: "/Specialities icons/Lab test default icon.svg" }
+  ];
 
-  // Listen for openPulseModal event from floating Pulse AI button to open centered modal
-  useEffect(() => {
-    function handleOpenPulse() {
-      setIsPulseModalOpen(true);
-    }
-    window.addEventListener("openPulseModal", handleOpenPulse);
-    return () => window.removeEventListener("openPulseModal", handleOpenPulse);
-  }, []);
+  const conversationalDoctors = [
+    { name: "Dr. Pradeep R Kumar", speciality: "General Physician", hospital: "Mazumdar Shaw Medical Centre, Bangalore", photo: "/assets/doctor_1.png" },
+    { name: "Dr. Rammaya Murthey", speciality: "General Physician", hospital: "Narayana Institute of Cardiac Sciences, Bangalore", photo: "/assets/doctor_2.png" },
+    { name: "Dr. Vikas Yadav", speciality: "ENT Specialist", hospital: "Narayana City Clinic, Bangalore", photo: "/assets/doctor_1.png" }
+  ];
 
-  // Close dropdown on click outside and reset search query
+  const displaySpecs = isConversational && (filteredSpecs.length === 0 || /fever|cough|symptom|headache|stomach|pain|feel/i.test(searchQuery))
+    ? conversationalSpecs
+    : filteredSpecs.slice(0, 2);
+
+  const displayDoctors = isConversational && (filteredDoctors.length === 0 || /fever|cough|symptom|headache|stomach|pain|feel/i.test(searchQuery))
+    ? conversationalDoctors
+    : filteredDoctors.slice(0, 3);
+
+  // Close dropdown on click outside
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
         setIsOpen(false);
-        setIsPulseActive(false);
         setSearchQuery("");
       }
     }
@@ -777,7 +861,63 @@ export default function HeroSearchFirst() {
         <div className={styles.videoOverlay} />
         <PixelRipple trigger={showPixelRipple} />
 
-      {/* Bottom Hero Layout: Left Unit (Title + Search) & Right Unit (Stats Stack) */}
+        {/* Top-Right Stats Vertical Stack - Positioned absolutely at top-right below nav */}
+        <motion.div 
+          className={styles.rightStatsUnit}
+          animate={{ 
+            opacity: isOpen ? 0 : 1, 
+            y: isOpen ? -20 : 0,
+            pointerEvents: isOpen ? "none" : "auto"
+          }}
+          transition={{ duration: 0.35, ease: "easeOut" }}
+        >
+          {STATS_DATA.map((stat, idx) => {
+            const cardDuration = 1.2;
+            const cardDelay = 0.4 + idx * 1.25;
+            return (
+              <motion.div
+                key={idx}
+                className={styles.statUnit}
+                initial={{ opacity: 0, y: 16, filter: "blur(14px)" }}
+                animate={{ 
+                  opacity: isOpen ? 0 : 1, 
+                  y: 0, 
+                  filter: "blur(0px)" 
+                }}
+                transition={{ 
+                  delay: cardDelay, 
+                  duration: 0.6, 
+                  ease: [0.25, 1, 0.5, 1] 
+                }}
+              >
+                <div className={styles.statStroke}>
+                  <motion.div 
+                    className={styles.statStrokeFill}
+                    initial={{ height: "0%" }}
+                    animate={{ height: isOpen ? "0%" : "100%" }}
+                    transition={{ 
+                      delay: cardDelay, 
+                      duration: cardDuration, 
+                      ease: [0.25, 1, 0.5, 1] 
+                    }}
+                  >
+                    <div className={styles.statStrokeGlowTip} />
+                  </motion.div>
+                </div>
+                <div className={styles.statContent}>
+                  <span className={styles.statNumber}>
+                    <CountUp end={stat.target} suffix={stat.suffix} delay={cardDelay} duration={1200} />
+                  </span>
+                  <span className={styles.statSubtext}>
+                    {stat.line1}<br />{stat.line2}
+                  </span>
+                </div>
+              </motion.div>
+            );
+          })}
+        </motion.div>
+
+      {/* Bottom Hero Layout: Left Unit (Title + Search) */}
       <div className={styles.bottomHeroContainer}>
         {/* Left Content Unit */}
         <div className={styles.leftContentUnit}>
@@ -843,46 +983,50 @@ export default function HeroSearchFirst() {
                 className={`${styles.glowWrap} ${isApproach ? styles.glowWrapApproach : ""}`}
               >
                 <div className={styles.searchGlow} aria-hidden="true" />
-                <div ref={searchContainerRef} className={`${styles.searchContainer} ${styles.glow} ${isOpen ? styles.searchContainerActive : ""}`}>
+                <div ref={searchContainerRef} className={`${styles.searchContainer} ${isOpen ? styles.searchContainerActive : ""}`}>
                   <svg className={styles.glowContainer}>
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
                     <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
                   </svg>
-                  <div 
-                    className={styles.pulseIconWrapper} 
+                  <div
+                    className={`${styles.searchIconWrapper} ${styles.searchIconPulse}`}
                     onClick={(e) => {
-                      if (!isOpen) {
-                        setIsOpen(true);
-                        setHasOpened(true);
-                        e.preventDefault();
-                        return;
+                      e.stopPropagation();
+                      if (isConversational) {
+                        if (!isPulseAnalyzed) {
+                          setIsPulseAnalyzed(true);
+                        } else {
+                          setIsPulseActive(true);
+                          setIsOpen(false);
+                        }
+                      } else {
+                        setIsPulseActive(true);
                       }
-                      setIsPulseActive(true);
                     }}
+                    title="Open Pulse AI"
+                    style={{ cursor: "pointer" }}
                   >
-                    <Lottie animationData={pulseAnimation} className={styles.pulseIcon} loop={true} />
-                    <span className={styles.pulseText}>Ask Pulse</span>
+                    <Search className={styles.searchIcon} size={18} />
                   </div>
-                  <div className={styles.searchInputUnit}>
-                    <div className={styles.searchIconWrapper}>
-                      <Search className={styles.searchIcon} size={18} />
-                    </div>
-                    <input
-                      type="text"
-                      placeholder="Book Doctors, Find Specialities or Treatments.."
-                      value={searchQuery}
-                      onChange={(e) => {
-                        setSearchQuery(e.target.value);
-                        setIsOpen(true);
-                        setHasOpened(true);
-                      }}
-                      onFocus={() => {
-                        setIsOpen(true);
-                        setHasOpened(true);
-                      }}
-                      className={styles.searchInput}
-                    />
-                  </div>
+                  <input
+                    id="hero-search-input"
+                    type="text"
+                    placeholder="Search doctors, specialities, or treatments..."
+                    value={searchQuery}
+                    autoComplete="off"
+                    autoCorrect="off"
+                    spellCheck={false}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setIsOpen(true);
+                      setHasOpened(true);
+                    }}
+                    onFocus={() => {
+                      setIsOpen(true);
+                      setHasOpened(true);
+                    }}
+                    className={styles.searchInput}
+                  />
                 </div>
               </div>
             )}
@@ -910,22 +1054,140 @@ export default function HeroSearchFirst() {
                   transition={{ duration: 0.2, ease: "easeOut" }}
                   data-lenis-prevent
                 >
-          {!searchQuery.trim() ? (
-            <div className={styles.popularSearches}>
-              <div className={styles.popularTitle}>what people are searching for :</div>
-              <div className={styles.popularTags}>
-                {["chest pain", "cancer", "surgery", "liver"].map((tag) => (
-                  <button
-                    key={tag}
-                    type="button"
-                    onClick={() => setSearchQuery(tag)}
-                    className={styles.popularTagBtn}
+                  {/* Location Simulation Bar */}
+                  <div 
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      padding: "6px 12px",
+                      background: "#f8fafc",
+                      borderRadius: "12px",
+                      marginBottom: "10px",
+                      border: "1px solid #e2e8f0",
+                      flexShrink: 0
+                    }}
                   >
-                    {tag}
-                  </button>
-                ))}
-              </div>
-            </div>
+                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
+                      📍 Simulating Location:
+                    </span>
+                    <div style={{ display: "flex", gap: "6px" }}>
+                      <button
+                        type="button"
+                        onClick={() => setSimulatedUserLocation("same_city")}
+                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "same_city" ? "#16a34a" : "white", color: simulatedUserLocation === "same_city" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
+                      >
+                        Same City
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSimulatedUserLocation("nearby")}
+                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "nearby" ? "#ea580c" : "white", color: simulatedUserLocation === "nearby" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
+                      >
+                        Nearby (100km)
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setSimulatedUserLocation("far_away")}
+                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "far_away" ? "#7c3aed" : "white", color: simulatedUserLocation === "far_away" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
+                      >
+                        Far Away (Video)
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Location alert banner when not same city */}
+                  {searchQuery.trim() && simulatedUserLocation !== "same_city" && (
+                    <div 
+                      style={{
+                        padding: "8px 12px",
+                        background: simulatedUserLocation === "nearby" ? "#fffbeb" : "#faf5ff",
+                        border: simulatedUserLocation === "nearby" ? "1px solid #fef3c7" : "1px solid #f3e8ff",
+                        borderRadius: "10px",
+                        color: simulatedUserLocation === "nearby" ? "#b45309" : "#6b21a8",
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        marginBottom: "10px",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "6px",
+                        flexShrink: 0
+                      }}
+                    >
+                      {simulatedUserLocation === "nearby" ? (
+                        <span>📍 No Narayana Health facilities found in your city. Showing matches from the nearest available facility (within 100km).</span>
+                      ) : (
+                        <span>💻 No facilities available in your area. Showing doctors available for online video consultation.</span>
+                      )}
+                    </div>
+                  )}
+          {!searchQuery.trim() ? (
+                    <div className={styles.popularSearchesContainer}>
+                      {/* Popular Tags */}
+                      <div className={styles.popularSearches}>
+                        <div className={styles.popularTitle}>what people are searching for :</div>
+                        <div className={styles.popularTags}>
+                          {["chest pain", "cancer", "surgery", "liver"].map((tag) => (
+                            <button
+                              key={tag}
+                              type="button"
+                              onClick={() => setSearchQuery(tag)}
+                              className={styles.popularTagBtn}
+                            >
+                              {tag}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Pulse AI Intent-Driven Entry Points */}
+                      <div className={styles.dropdownPulseDivider}>
+                        <span>Ask Pulse AI Workspace</span>
+                      </div>
+
+                      <div className={styles.entryCardsContainer}>
+                        <div 
+                          className={`${styles.entryCard} ${styles.blueThemeCard}`}
+                          onClick={() => {
+                            setSearchQuery("Find doctor");
+                            setIsPulseActive(true);
+                          }}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <div className={styles.entryCardHeader}>
+                            <div className={styles.entryCardBannerWrap}>
+                              <img src="/pulse_find_doctor_banner.png" alt="Find the right doctor" className={styles.entryCardBannerImg} />
+                            </div>
+                            <div className={styles.entryCardMeta}>
+                              <h3 className={styles.entryCardTitle}>Find the right doctor</h3>
+                              <p className={styles.entryCardSubtitle}>Book the consultation you need</p>
+                            </div>
+                            <div className={styles.entryCardChevronBtn}>
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+                        </div>
+
+                        <div 
+                          className={`${styles.entryCard} ${styles.tealThemeCard}`}
+                          onClick={() => handleKnowYourHealthClick("Know your health")}
+                          style={{ cursor: "pointer" }}
+                        >
+                          <div className={styles.entryCardHeader}>
+                            <div className={styles.entryCardBannerWrap}>
+                              <img src="/pulse_health_insights_banner.png" alt="Know your health" className={styles.entryCardBannerImg} />
+                            </div>
+                            <div className={styles.entryCardMeta}>
+                              <h3 className={styles.entryCardTitle}>Know your health</h3>
+                              <p className={styles.entryCardSubtitle}>Get insights from medical history</p>
+                            </div>
+                            <div className={styles.entryCardChevronBtn}>
+                              <ChevronRight size={16} />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
           ) : (
             <>
               {/* Tabs Selector at the top */}
@@ -1225,52 +1487,12 @@ export default function HeroSearchFirst() {
             </AnimatePresence>
           </motion.form>
         </div>
-
-        {/* Right Stats Vertical Stack */}
-        <motion.div 
-          className={styles.rightStatsUnit}
-          animate={{ 
-            opacity: isOpen ? 0 : 1, 
-            y: isOpen ? 20 : 0,
-            pointerEvents: isOpen ? "none" : "auto"
-          }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-        >
-          {STATS_DATA.map((stat, idx) => {
-            const cardDelay = 0.4 + idx * 0.15;
-            return (
-              <motion.div
-                key={idx}
-                className={styles.statCard}
-                initial={{ opacity: 0, x: 30, filter: "blur(12px)" }}
-                animate={{ 
-                  opacity: isOpen ? 0 : 1, 
-                  x: 0, 
-                  filter: "blur(0px)" 
-                }}
-                transition={{ 
-                  delay: cardDelay, 
-                  duration: 1.0, 
-                  ease: [0.16, 1, 0.3, 1] 
-                }}
-              >
-                <span className={styles.statNumber}>
-                  <CountUp end={stat.target} suffix={stat.suffix} delay={cardDelay} duration={1400} />
-                </span>
-                <span className={styles.statSubtext}>
-                  {stat.line1}
-                  <br />
-                  {stat.line2}
-                </span>
-              </motion.div>
-            );
-          })}
-        </motion.div>
       </div>
 
-      {/* Aesthetic Bottom Corner Blur Frame Overlays */}
-      <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
-      <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
+        {/* Aesthetic Bottom Corner Blur Frame Overlays */}
+
+        <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
+        <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
       </motion.div>
     </section>
   );

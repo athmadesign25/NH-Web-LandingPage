@@ -1708,100 +1708,283 @@
 }
 
 .rightStatsUnit {
+  position: absolute;
+  top: clamp(88px, 12vh, 130px);
+  right: clamp(20px, 3vw, 40px);
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
-  gap: 12px;
-  flex-shrink: 0;
-  z-index: 5;
+  align-items: flex-start;
+  gap: clamp(18px, 2.5vh, 28px);
+  z-index: 10;
+  pointer-events: auto;
 }
 
-.statCard {
+.statUnit {
+  display: flex;
+  align-items: stretch;
+  gap: 16px;
   position: relative;
+  text-align: left;
+}
+
+/* Glassy vertical stroke anchor container - stretches to match full height of stat card content */
+.statStroke {
+  position: relative;
+  width: 3.5px;
+  height: auto;
+  min-height: 60px;
+  align-self: stretch;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 0.5px solid rgba(255, 255, 255, 0.2);
   overflow: hidden;
-  display: flex;
-  width: 200px;
-  padding: 14px 16px;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.08) 0%, rgba(255, 255, 255, 0.02) 100%);
-  backdrop-filter: blur(6px);
-  -webkit-backdrop-filter: blur(6px);
-  border: 1px solid rgba(255, 255, 255, 0.12);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-  box-sizing: border-box;
-  transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+  flex-shrink: 0;
+  box-shadow: inset 0 0 4px rgba(255, 255, 255, 0.08), 0 2px 8px rgba(0, 0, 0, 0.2);
 }
 
-.statCard:hover {
-  transform: translateY(-2px);
-  background: linear-gradient(135deg, rgba(255, 255, 255, 0.12) 0%, rgba(255, 255, 255, 0.04) 100%);
-  border-color: rgba(255, 255, 255, 0.25);
-}
-
-.statCard::before {
-  content: "";
+/* Glassy stroke fill line synchronized with dial progress */
+.statStrokeFill {
   position: absolute;
   top: 0;
-  left: -150%;
+  left: 0;
   width: 100%;
-  height: 100%;
-  background: linear-gradient(
-    90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.15) 50%,
-    transparent 100%
-  );
-  transform: skewX(-25deg);
-  pointer-events: none;
-  z-index: 2;
-  animation: cardGlowWipe 6s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  border-radius: 999px;
+  background: linear-gradient(180deg, rgba(255, 255, 255, 1) 0%, rgba(240, 242, 245, 0.85) 60%, rgba(200, 205, 215, 0.4) 100%);
+  box-shadow: 0 0 10px rgba(255, 255, 255, 0.8), 0 0 16px rgba(255, 255, 255, 0.4);
+  transform-origin: top;
 }
 
-@keyframes cardGlowWipe {
-  0% {
-    left: -150%;
-    opacity: 0;
-  }
-  10% {
-    opacity: 1;
-  }
-  30% {
-    left: 150%;
-    opacity: 0;
-  }
-  100% {
-    left: 150%;
-    opacity: 0;
-  }
+.statStrokeGlowTip {
+  position: absolute;
+  bottom: -1px;
+  left: -2px;
+  right: -2px;
+  height: 5px;
+  border-radius: 50%;
+  background: #ffffff;
+  box-shadow: 0 0 10px #ffffff, 0 0 14px rgba(255, 255, 255, 0.7);
+}
+
+.statContent {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+  min-width: 170px;
+  box-sizing: border-box;
 }
 
 .statNumber {
   color: #ffffff;
-  text-align: center;
+  text-align: left;
   font-family: Inter, var(--font-sans), sans-serif;
-  font-size: 22px;
+  font-size: clamp(22px, 2vw, 28px);
   font-style: normal;
   font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.01em;
+  line-height: 1.15;
+  letter-spacing: -0.015em;
   white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+  font-feature-settings: "tnum" 1;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
 }
 
 .statSubtext {
-  color: rgba(255, 255, 255, 0.7);
-  text-align: center;
+  color: rgba(255, 255, 255, 0.75);
+  text-align: left;
   font-family: Inter, var(--font-sans), sans-serif;
-  font-size: 12px;
+  font-size: clamp(12px, 1vw, 13.5px);
   font-style: normal;
   font-weight: 400;
   line-height: 1.35;
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.45);
+}
+
+/* ====== Pulse-AI Search Bar & Dropdown Entry Cards ====== */
+
+/* Spinning conic border on search icon = indicates Pulse AI is clickable */
+.searchIconPulse {
+  position: relative;
+}
+.searchIconPulse::before {
+  content: "";
+  position: absolute;
+  inset: -2.5px;
+  border-radius: 50%;
+  padding: 2px;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 20%,
+    rgba(219, 39, 119, 0.8) 50%,
+    rgba(99, 102, 241, 1) 75%,
+    rgba(219, 39, 119, 0.8) 90%,
+    transparent 100%
+  );
+  -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+  animation: spinBorder 2.5s linear infinite;
+  pointer-events: none;
+}
+.searchIconPulse::after {
+  content: "";
+  position: absolute;
+  inset: -3px;
+  border-radius: 50%;
+  background: conic-gradient(
+    from var(--border-angle, 0deg),
+    transparent 20%,
+    rgba(219, 39, 119, 0.3) 50%,
+    rgba(99, 102, 241, 0.35) 75%,
+    transparent 100%
+  );
+  filter: blur(6px);
+  animation: spinBorder 2.5s linear infinite;
+  pointer-events: none;
+}
+.searchIconPulse:hover {
+  background: rgba(255, 255, 255, 0.25);
+  box-shadow: 0 0 18px rgba(219, 39, 119, 0.35), 0 0 12px rgba(99, 102, 241, 0.3);
+}
+
+@property --border-angle {
+  syntax: "<angle>";
+  inherits: true;
+  initial-value: 0deg;
+}
+
+@keyframes spinBorder {
+  to { --border-angle: 360deg; }
+}
+
+/* Popular searches container with Pulse AI entry cards below */
+.popularSearchesContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+/* Divider between popular tags and Pulse AI entry cards */
+.dropdownPulseDivider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 4px 0;
+}
+.dropdownPulseDivider::before,
+.dropdownPulseDivider::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: #e2e8f0;
+}
+.dropdownPulseDivider span {
+  font-size: 11px;
+  font-weight: 700;
+  color: #94a3b8;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* Entry cards container (row layout) */
+.entryCardsContainer {
+  display: flex;
+  flex-direction: row;
+  gap: 16px;
+  width: 100%;
+}
+@media (max-width: 640px) {
+  .entryCardsContainer {
+    flex-direction: column;
+  }
+}
+
+/* Individual entry card */
+.entryCard {
+  flex: 1;
+  border-radius: 16px;
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.02);
+}
+.entryCard:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.06);
+}
+.blueThemeCard {
+  background: linear-gradient(180deg, #EBF3FC 0%, #DDEBFA 100%);
+  border: 1px solid rgba(191, 219, 254, 0.6);
+}
+.tealThemeCard {
+  background: linear-gradient(180deg, #E6F8F6 0%, #D4F4EF 100%);
+  border: 1px solid rgba(153, 246, 228, 0.6);
+}
+.entryCardHeader {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+}
+.entryCardBannerWrap {
+  width: 52px;
+  height: 46px;
+  border-radius: 8px;
+  overflow: hidden;
+  flex-shrink: 0;
+  background: #ffffff;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+}
+.entryCardBannerImg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+.entryCardMeta {
+  flex: 1;
+  min-width: 0;
+}
+.entryCardTitle {
+  font-size: 14.5px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 2px 0;
+}
+.entryCardSubtitle {
+  font-size: 11.5px;
+  font-weight: 500;
+  color: #475569;
+  margin: 0;
+}
+.entryCardChevronBtn {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #0284c7;
+  flex-shrink: 0;
+  backdrop-filter: blur(4px);
+  transition: all 0.2s ease;
+}
+.tealThemeCard .entryCardChevronBtn {
+  color: #0d9488;
+}
+.entryCardHeader:hover .entryCardChevronBtn {
+  background: #ffffff;
+  transform: translateX(2px);
 }
 
 /* Centered Pulse AI Modal (Triggered by Floating Action Button) */
+
 .pulseModalBackdrop {
   position: fixed;
   inset: 0;

@@ -941,26 +941,6 @@ export default function HeroSearchFirst() {
               </defs>
             </svg>
           </div>
-
-          <div className={`${styles.titleUnit} ${isOpen ? styles.titleHidden : ""}`}>
-            <motion.h1
-              className={styles.headline}
-              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.2, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Trusted Care, Every Day
-            </motion.h1>
-            <motion.p 
-              className={styles.subHeadline}
-              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.45, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Compassion Backed by Expertise
-            </motion.p>
-          </div>
-
           <motion.form
             ref={searchRef}
             onSubmit={handleSearch}
@@ -1486,6 +1466,27 @@ export default function HeroSearchFirst() {
               ) : null}
             </AnimatePresence>
           </motion.form>
+
+          {/* 2. Title Unit (positioned below search bar) */}
+          <div className={`${styles.titleUnit} ${isOpen ? styles.titleHidden : ""}`}>
+            <motion.h1
+              className={styles.headline}
+              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.4, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              Trusted Care, Every Day
+            </motion.h1>
+            <motion.p 
+              className={styles.subHeadline}
+              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
+              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+              transition={{ delay: 0.6, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
+            >
+              Compassion Backed by Expertise
+            </motion.p>
+          </div>
+
         </div>
       </div>
 

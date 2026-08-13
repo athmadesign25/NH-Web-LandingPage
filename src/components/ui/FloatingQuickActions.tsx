@@ -68,10 +68,8 @@ export default function FloatingQuickActions() {
           if (
             id === "hero-section-search-first" ||
             className.includes("HeroSearchFirst") ||
-            className.includes("CentreOfExcellence") ||
             className.includes("specialityCard") ||
             className.includes("specialitiesGrid") ||
-            className.includes("HealthPackages_section") ||
             className.includes("AppDownloadBanner") ||
             className.includes("Footer") ||
             tag === "FOOTER"

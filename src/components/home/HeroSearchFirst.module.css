@@ -54,6 +54,15 @@
   transition: background 0.4s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
+.searchBackdropOverlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(6, 9, 20, 0.6);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  z-index: 4;
+}
+
 .videoOverlayActive {
   position: absolute;
   inset: 0;
@@ -64,7 +73,7 @@
 
 .bottomHeroContainer {
   position: absolute;
-  bottom: clamp(32px, 5vh, 52px);
+  bottom: clamp(140px, 20vh, 210px);
   left: 0;
   right: 0;
   width: 100%;
@@ -86,6 +95,7 @@
   align-items: flex-start;
   max-width: 600px;
   width: 100%;
+  padding-bottom: 24px;
 }
 
 .textReadabilityBlurWrap {
@@ -96,7 +106,7 @@
   height: auto;
   aspect-ratio: 852 / 608;
   pointer-events: none;
-  z-index: -1;
+  z-index: 3;
   opacity: 1;
   transition: opacity 0.4s ease;
   overflow: visible;
@@ -1712,7 +1722,7 @@
 .rightStatsUnit {
   position: absolute;
   top: clamp(88px, 12vh, 130px);
-  right: clamp(20px, 3vw, 40px);
+  right: clamp(24px, 4vw, 56px);
   display: flex;
   flex-direction: column;
   align-items: flex-start;

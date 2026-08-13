@@ -861,6 +861,41 @@ export default function HeroSearchFirst() {
         <div className={styles.videoOverlay} />
         <PixelRipple trigger={showPixelRipple} />
 
+        {/* Readability Blurry Shape Backdrop - pinned to hero container's bottom-left corner */}
+        <div className={`${styles.textReadabilityBlurWrap} ${isOpen ? styles.textReadabilityBlurHidden : ""}`} aria-hidden="true">
+          <svg
+            width="852"
+            height="608"
+            viewBox="0 0 852 608"
+            fill="none"
+            xmlns="http://www.w3.org/2000/svg"
+            className={styles.textReadabilitySvg}
+          >
+            <rect width="852" height="608" fill="black" fillOpacity="0.02"/>
+            <rect width="852" height="608" fill="url(#paint0_radial_413_359)" fillOpacity="0.6"/>
+            <defs>
+              <radialGradient id="paint0_radial_413_359" cx="0" cy="0" r="1" gradientTransform="matrix(176.211 -473.5 663.523 281.072 266.191 608)" gradientUnits="userSpaceOnUse">
+                <stop offset="0.510447" stopColor="#0E1126"/>
+                <stop offset="1" stopColor="#666666" stopOpacity="0"/>
+              </radialGradient>
+            </defs>
+          </svg>
+        </div>
+
+        {/* Backdrop overlay shown below the search popover when the search bar is active */}
+        <AnimatePresence>
+          {isOpen && !isPulseActive && (
+            <motion.div
+              className={styles.searchBackdropOverlay}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.3, ease: "easeOut" }}
+              aria-hidden="true"
+            />
+          )}
+        </AnimatePresence>
+
         {/* Top-Right Stats Vertical Stack - Positioned absolutely at top-right below nav */}
         <motion.div 
           className={styles.rightStatsUnit}
@@ -921,26 +956,6 @@ export default function HeroSearchFirst() {
       <div className={styles.bottomHeroContainer}>
         {/* Left Content Unit */}
         <div className={styles.leftContentUnit}>
-          {/* Readability Blurry Shape Backdrop */}
-          <div className={`${styles.textReadabilityBlurWrap} ${isOpen ? styles.textReadabilityBlurHidden : ""}`} aria-hidden="true">
-            <svg 
-              width="852" 
-              height="608" 
-              viewBox="0 0 852 608" 
-              fill="none" 
-              xmlns="http://www.w3.org/2000/svg"
-              className={styles.textReadabilitySvg}
-            >
-              <rect width="852" height="608" fill="black" fillOpacity="0.02"/>
-              <rect width="852" height="608" fill="url(#paint0_radial_413_359)" fillOpacity="0.6"/>
-              <defs>
-                <radialGradient id="paint0_radial_413_359" cx="0" cy="0" r="1" gradientTransform="matrix(176.211 -473.5 663.523 281.072 266.191 608)" gradientUnits="userSpaceOnUse">
-                  <stop offset="0.510447" stopColor="#0E1126"/>
-                  <stop offset="1" stopColor="#666666" stopOpacity="0"/>
-                </radialGradient>
-              </defs>
-            </svg>
-          </div>
           <motion.form
             ref={searchRef}
             onSubmit={handleSearch}

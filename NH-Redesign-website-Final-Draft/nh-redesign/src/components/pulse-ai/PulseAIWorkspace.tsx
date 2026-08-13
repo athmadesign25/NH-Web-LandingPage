@@ -4744,9 +4744,8 @@ function PulseTrigger({ onClick }: { onClick: () => void }) {
         flexShrink: 0,
         transition: "background 0.2s"
       }}>
-        <img src="/Logo/Pulse bubble.svg" alt="Pulse Bubble" style={{ width: "26px", height: "26px" }} />
+        <img src="/assets/Pulse AI icon.png" alt="Pulse AI" style={{ width: "26px", height: "26px", objectFit: "contain" }} />
       </div>
-
       {/* Text message (only when expanded) */}
       <AnimatePresence>
         {isExpanded && (

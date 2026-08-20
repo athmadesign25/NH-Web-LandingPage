@@ -95,14 +95,13 @@ function CardPointerTicker() {
 
           <motion.span
             className={styles.pointerText}
-            initial={{ backgroundPosition: "100% 0" }}
-            animate={{
-              backgroundPosition: ["100% 0", "-100% 0"],
-            }}
+            initial={{ backgroundPosition: "150% 0" }}
+            animate={{ backgroundPosition: "-150% 0" }}
             transition={{
-              duration: 1.2,
+              duration: 1.0,
               delay: 0.35,
               ease: "easeInOut",
+              repeat: 0,
             }}
           >
             {currentItem}

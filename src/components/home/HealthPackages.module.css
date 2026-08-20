@@ -282,12 +282,13 @@
   background: linear-gradient(
     90deg,
     #ffffff 0%,
-    #ffffff 40%,
+    #ffffff 45%,
     #70C5FF 50%,
-    #ffffff 60%,
+    #ffffff 55%,
     #ffffff 100%
   );
-  background-size: 300% 100%;
+  background-size: 200% 100%;
+  background-repeat: no-repeat;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;

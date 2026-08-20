@@ -273,36 +273,29 @@
   box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
 }
 
-.textWrap {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  overflow: hidden;
-}
-
 .pointerText {
-  color: #FFFFFF;
   font-family: Inter, sans-serif;
   font-size: 24px;
   font-weight: 500;
   line-height: 1.2;
   white-space: nowrap;
-}
-
-.shimmerOverlay {
-  position: absolute;
-  top: -10%;
-  bottom: -10%;
-  left: 0;
-  width: 50%;
   background: linear-gradient(
     90deg,
-    transparent 0%,
-    rgba(255, 255, 255, 0.85) 50%,
-    transparent 100%
+    #FFFFFF 0%,
+    #FFFFFF 35%,
+    #E0F4FF 48%,
+    #80D4FF 50%,
+    #E0F4FF 52%,
+    #FFFFFF 65%,
+    #FFFFFF 100%
   );
-  pointer-events: none;
-  mix-blend-mode: overlay;
+  background-size: 250% 100%;
+  background-repeat: no-repeat;
+  background-position: 0% 0%;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  color: transparent;
 }
 
 

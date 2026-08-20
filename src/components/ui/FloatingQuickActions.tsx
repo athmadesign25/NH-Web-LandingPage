@@ -67,7 +67,9 @@ export default function FloatingQuickActions() {
           // Check if top-most visible section under this link is a dark section
           if (
             id === "hero-section-search-first" ||
+            id === "patient-stories" ||
             className.includes("HeroSearchFirst") ||
+            className.includes("PatientStories") ||
             className.includes("specialityCard") ||
             className.includes("specialitiesGrid") ||
             className.includes("AppDownloadBanner") ||

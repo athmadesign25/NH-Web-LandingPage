@@ -154,7 +154,7 @@ function GlobalNeatBackground() {
 
 export default function HomePage() {
   return (
-    <div style={{ position: "relative", width: "100%", overflow: "hidden", background: "transparent" }}>
+    <div style={{ position: "relative", width: "100%", overflowX: "clip", background: "transparent" }}>
       <FloatingQuickActions />
       
       {/* Master container with seamless NeatGradient background extending behind Hero AND CentreOfExcellence */}

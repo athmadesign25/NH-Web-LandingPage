@@ -196,9 +196,7 @@ function SpecialityCardItem({ spec }: { spec: typeof SPECIALITIES[0] }) {
       <div className={styles.cardTextWrap}>
         {spec.stats && (
           <div className={styles.cardStats}>
-            <div className={styles.metricValue}>
-              <RollingNumber value={spec.stats.value} isHovered={isHovered} />
-            </div>
+            <div className={styles.metricValue}>{spec.stats.value}</div>
             <div className={styles.metricLabel}>{spec.stats.label}</div>
           </div>
         )}
@@ -216,34 +214,25 @@ export default function CentreOfExcellence() {
   const titleTrackRef = useRef<HTMLDivElement>(null);
   const gridSectionRef = useRef<HTMLDivElement>(null);
 
-  // 1. Sticky Header Track Scroll Sequence (140vh track = balanced stuck scroll room)
+  // 1. Sticky Header Track Scroll Sequence
   const { scrollYProgress: titleScrollProgress } = useScroll({
     target: titleTrackRef,
-    offset: ["start start", "end end"],
+    offset: ["start 80%", "end end"],
   });
 
-  // Fast, immediate reveals upon scrolling into sticky section
-  const eyebrowOpacity = useTransform(titleScrollProgress, [0.00, 0.05, 0.85, 0.98], [0, 1, 1, 0]);
-  const eyebrowY = useTransform(titleScrollProgress, [0.00, 0.05, 0.85, 0.98], [12, 0, 0, -16]);
-  const eyebrowBlurVal = useTransform(titleScrollProgress, [0.00, 0.05, 0.85, 0.98], [6, 0, 0, 0]);
-  const eyebrowFilter = useTransform(eyebrowBlurVal, (v) => (v <= 0.2 ? "none" : `blur(${v}px)`));
+  const eyebrowOpacity = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [1, 1, 1, 0]);
+  const eyebrowY = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [10, 0, 0, -16]);
 
-  const titleOpacity = useTransform(titleScrollProgress, [0.02, 0.08, 0.85, 0.98], [0, 1, 1, 0]);
-  const titleY = useTransform(titleScrollProgress, [0.02, 0.08, 0.85, 0.98], [16, 0, 0, -16]);
-  const titleBlurVal = useTransform(titleScrollProgress, [0.02, 0.08, 0.85, 0.98], [8, 0, 0, 0]);
-  const titleFilter = useTransform(titleBlurVal, (v) => (v <= 0.2 ? "none" : `blur(${v}px)`));
+  const titleOpacity = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [1, 1, 1, 0]);
+  const titleY = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [12, 0, 0, -16]);
 
-  // Subtitle reveals immediately by 0.12 progress so it is ALWAYS 100% visible
-  const subtitleOpacity = useTransform(titleScrollProgress, [0.04, 0.12, 0.85, 0.98], [0, 1, 1, 0]);
-  const subtitleY = useTransform(titleScrollProgress, [0.04, 0.12, 0.85, 0.98], [16, 0, 0, -16]);
-  const subtitleBlurVal = useTransform(titleScrollProgress, [0.04, 0.12, 0.85, 0.98], [6, 0, 0, 0]);
-  const subtitleFilter = useTransform(subtitleBlurVal, (v) => (v <= 0.2 ? "none" : `blur(${v}px)`));
+  const subtitleOpacity = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [1, 1, 1, 0]);
+  const subtitleY = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [12, 0, 0, -16]);
 
-  // Progress stroke fills smoothly from 0% to 100% as user scrolls through the stuck section
   const strokeProgressHeight = useTransform(titleScrollProgress, [0.04, 0.75], ["0%", "100%"]);
 
-  const indicatorOpacity = useTransform(titleScrollProgress, [0.00, 0.05, 0.85, 0.98], [0, 1, 1, 0]);
-  const indicatorY = useTransform(titleScrollProgress, [0.00, 0.05, 0.85, 0.98], [10, 0, 0, -12]);
+  const indicatorOpacity = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [1, 1, 1, 0]);
+  const indicatorY = useTransform(titleScrollProgress, [0.00, 0.04, 0.88, 0.98], [10, 0, 0, -12]);
 
   // 2. Animated Grid Reveal Section
   const { scrollYProgress: gridScrollProgress } = useScroll({
@@ -254,6 +243,10 @@ export default function CentreOfExcellence() {
   const gridScale = useTransform(gridScrollProgress, [0, 1], [0.94, 1.0]);
   const gridRadius = useTransform(gridScrollProgress, [0, 1], ["24px", "0px"]);
   const gridOpacity = useTransform(gridScrollProgress, [0, 0.6], [0, 1]);
+
+  // White 8px stroke around grid wrapper, disappears when section reaches full horizontal state (gridScrollProgress -> 1)
+  const gridBorderWidth = useTransform(gridScrollProgress, [0, 0.9, 1], ["8px", "8px", "0px"]);
+  const gridBorderColor = useTransform(gridScrollProgress, [0, 0.9, 1], ["#FFFFFF", "#FFFFFF", "transparent"]);
 
   return (
     <div ref={wrapperRef} className={styles.wrapper}>
@@ -266,8 +259,7 @@ export default function CentreOfExcellence() {
                 style={{
                   opacity: eyebrowOpacity,
                   y: eyebrowY,
-                  filter: eyebrowFilter,
-                  color: "#0F172A",
+                  color: "#000000",
                   marginBottom: "28px",
                 }}
                 className="section-eyebrow"
@@ -279,7 +271,6 @@ export default function CentreOfExcellence() {
                 style={{
                   opacity: titleOpacity,
                   y: titleY,
-                  filter: titleFilter,
                 }}
                 className={styles.sectionTitle}
               >
@@ -290,7 +281,6 @@ export default function CentreOfExcellence() {
                 style={{
                   opacity: subtitleOpacity,
                   y: subtitleY,
-                  filter: subtitleFilter,
                 }}
                 className={styles.sectionSubtitle}
               >
@@ -328,6 +318,9 @@ export default function CentreOfExcellence() {
             scale: gridScale,
             borderRadius: gridRadius,
             opacity: gridOpacity,
+            borderWidth: gridBorderWidth,
+            borderStyle: "solid",
+            borderColor: gridBorderColor,
             transformOrigin: "center top",
           }}
         >

@@ -1,145 +1,262 @@
 "use client";
 
-import { motion, Variants } from "framer-motion";
-import Image from "next/image";
-import { CheckCircle2, ChevronRight } from "lucide-react";
+import React, { useRef, useState, useEffect } from "react";
+import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
 import SplitText from "@/components/ui/SplitText";
 import styles from "./HealthPackages.module.css";
-import Link from "next/link";
 
-const packages = [
+const packageCardsData = [
   {
-    id: "basic-health",
-    title: "Basic Health Checkup",
-    image: "/Health Checkup/Basic health.png",
-    description: "Essential screenings for a healthy lifestyle",
-    idealFor: "Ideal for under 30 yrs",
-    features: [
-      "Complete Blood Count (CBC)",
-      "Lipid Profile (Cholesterol)",
-      "Liver Function Test",
-      "Physician Consultation",
-    ],
-    popular: false,
+    id: "package-1",
+    title: "Healthy Heart Package",
+    overview:
+      "Heart focused screening to assess key risk markers and heart health",
+    bgImage: "/Healthy-Heart-Package.png",
   },
   {
-    id: "comprehensive-master",
-    title: "Master Health Check",
-    image: "/Health Checkup/Master health.png",
-    description: "Advanced diagnostic profile with cardiac and specialist consults.",
-    idealFor: "Ideal for 30-50 yrs",
-    features: [
-      "Cardiac Risk Markers (ECG, TMT)",
-      "Kidney & Liver Function",
-      "Thyroid Profile",
-      "Cardiologist Consultation",
-      "Dietary Counseling",
-    ],
-    popular: true,
+    id: "package-2",
+    title: "Wellness 360 Health Package",
+    overview:
+      "Comprehensive health check covering major systems and key markers",
+    bgImage: "/Wellness-360-Health-Package.png",
   },
   {
-    id: "senior-citizen",
-    title: "Senior Citizen Wellness",
-    image: "/Health Checkup/Senior Citizen.png",
-    description: "Specialized screenings tailored for age-related health monitoring.",
-    idealFor: "50+ years",
-    features: [
-      "Bone Mineral Density",
-      "Prostate/Breast Screening",
-      "Vitamin D & B12 Levels",
-      "Geriatric Consultation",
-    ],
-    popular: false,
+    id: "package-3",
+    title: "Healthy Heart Package",
+    overview:
+      "Heart focused screening to assess key risk markers and heart health",
+    bgImage: "/Healthy-Heart-Package.png",
   },
 ];
 
-const containerVariants: Variants = {
-  hidden: { opacity: 0 },
-  visible: {
-    opacity: 1,
-    transition: { staggerChildren: 0.15 },
-  },
-};
+const pointerItems = [
+  "Total Cholesterol",
+  "HDL Cholesterol",
+  "LDL Cholesterol",
+  "Triglycerides",
+  "VLDL Cholesterol",
+  "Total Cholesterol / HDL Ratio",
+  "Fasting Blood Glucose",
+  "HbA1c",
+  "High-Sensitivity C-Reactive Protein (hs-CRP)",
+  "Apolipoprotein B (ApoB)",
+  "Lipoprotein (a) [Lp(a)]",
+  "Homocysteine",
+  "Creatinine",
+  "Uric Acid",
+  "AST (SGOT)",
+  "ALT (SGPT)",
+  "Haemoglobin",
+  "Thyroid-Stimulating Hormone (TSH)",
+];
 
-const cardVariants: Variants = {
-  hidden: { opacity: 0, y: 30 },
-  visible: { 
-    opacity: 1, 
-    y: 0,
-    transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] }
-  },
-};
+function CardPointerTicker() {
+  const [index, setIndex] = useState(0);
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setIndex((prev) => (prev + 1) % pointerItems.length);
+    }, 2800);
+    return () => clearInterval(timer);
+  }, []);
+
+  const currentItem = pointerItems[index];
+
+  return (
+    <div className={styles.pointerContainer}>
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={currentItem}
+          initial={{ opacity: 0, filter: "blur(10px)", x: -12 }}
+          animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
+          exit={{ opacity: 0, filter: "blur(10px)", x: 12 }}
+          transition={{ duration: 0.45, ease: "easeOut" }}
+          className={styles.pointerItem}
+        >
+          <div className={styles.checkCircle}>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="#FFFFFF"
+              strokeWidth="3"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <motion.path
+                d="M20 6L9 17l-5-5"
+                initial={{ pathLength: 0, opacity: 0 }}
+                animate={{ pathLength: 1, opacity: 1 }}
+                transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+              />
+            </svg>
+          </div>
+
+          <motion.span
+            className={styles.pointerText}
+            initial={{ textShadow: "0 0 0px rgba(255,255,255,0)" }}
+            animate={{
+              textShadow: [
+                "0 0 0px rgba(255,255,255,0)",
+                "0 0 20px rgba(255,255,255,0.95), 0 0 35px rgba(255,255,255,0.7)",
+                "0 0 6px rgba(255,255,255,0.3)",
+              ],
+            }}
+            transition={{
+              duration: 0.8,
+              delay: 0.45,
+              ease: "easeOut",
+            }}
+          >
+            {currentItem}
+          </motion.span>
+        </motion.div>
+      </AnimatePresence>
+    </div>
+  );
+}
 
 export default function HealthPackages() {
+  const trackRef = useRef<HTMLDivElement>(null);
+
+  // scrollYProgress over the 300vh sticky scroll runway
+  const { scrollYProgress } = useScroll({
+    target: trackRef,
+    offset: ["start start", "end end"],
+  });
+
+  // ── Card 1 ──
+  const card1Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [1.0, 1.0, 0.82]);
+  const card1BlurPx = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [0, 0, 12]);
+  const card1Blur = useTransform(card1BlurPx, (v) => `blur(${v}px)`);
+  const card1DimOpacity = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [0, 0, 0.5]);
+
+  // ── Card 2 ──
+  const card2Y = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 1.0], ["110%", "110%", "0%", "0%"]);
+  const card2Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 0.55, 0.87, 1.0], [0.82, 0.82, 1.0, 1.0, 0.82, 0.82]);
+  const card2Radius = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 1.0], ["20px", "20px", "0px", "0px"]);
+  const card2BlurPx = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0, 0, 12, 12]);
+  const card2Blur = useTransform(card2BlurPx, (v) => `blur(${v}px)`);
+  const card2DimOpacity = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0, 0, 0.5, 0.5]);
+
+  // ── Card 3 ──
+  const card3Y = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], ["110%", "110%", "0%", "0%"]);
+  const card3Scale = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0.82, 0.82, 1.0, 1.0]);
+  const card3Radius = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], ["20px", "20px", "0px", "0px"]);
+
   return (
-    <section className={`section ${styles.section}`} id="health-packages">
+    <div className={styles.sectionWrap} id="health-packages">
+      {/* Header scrolls naturally with the page */}
       <div className="container">
         <div className={styles.header}>
           <div className={styles.titleWrap}>
             <div className="section-eyebrow">HEALTH PACKAGES</div>
-            <SplitText text="Recommended Health Packages" tag="h2" className={styles.title} />
+            <SplitText
+              text="Recommended Health Packages"
+              tag="h2"
+              className={styles.title}
+            />
             <p className={`section-subtitle ${styles.subtitle}`}>
               Designed by doctors for your care
             </p>
           </div>
         </div>
+      </div>
 
-        <motion.div 
-          className={styles.grid}
-          variants={containerVariants}
-          initial="hidden"
-          whileInView="visible"
-          viewport={{ once: true, amount: 0.2 }}
-        >
-          {packages.map((pkg) => (
-            <motion.div 
-              key={pkg.id} 
-              className={`${styles.card} ${pkg.popular ? styles.popularCard : ""}`}
-              variants={cardVariants}
-              whileHover={{ y: -8, transition: { duration: 0.3, ease: "easeOut" } }}
+      {/* Sticky Scroll Runway: Card 1 scrolls up until top edge hits navbar, then pins */}
+      <div ref={trackRef} className={styles.stackTrack}>
+        <div className={styles.stickyViewport}>
+          <div className={styles.cardsLayer}>
+            {/* CARD 1 (Bottom) — sharp corners, full size at start */}
+            <motion.div
+              className={styles.cardContainer}
+              style={{
+                zIndex: 1,
+                scale: card1Scale,
+                filter: card1Blur,
+                borderRadius: "0px",
+                transformOrigin: "center top",
+                backgroundImage: `url(${packageCardsData[0].bgImage})`,
+              }}
             >
-              {pkg.popular && <div className={styles.popularBadge}>MOST RECOMMENDED</div>}
-              
-              <div className={styles.iconWrap}>
-                <Image src={pkg.image} alt={pkg.title} fill style={{ objectFit: 'cover', objectPosition: 'center 15%' }} sizes="(max-width: 768px) 100vw, 33vw" unoptimized />
+              <motion.div
+                className={styles.cardDimOverlay}
+                style={{ opacity: card1DimOpacity }}
+              />
+              <div className={styles.cardTextUnit}>
+                <h3 className={styles.cardMainTitle}>
+                  {packageCardsData[0].title}
+                </h3>
+                <p className={styles.cardOverview}>
+                  {packageCardsData[0].overview}
+                </p>
               </div>
-              
-              <div className={styles.cardContent}>
-                <div className={styles.cardTop}>
-                  <h3 className={styles.cardTitle}>{pkg.title}</h3>
-                  <p className={styles.cardDesc}>{pkg.description}</p>
-                  <div className={styles.idealBadgeWrap}>
-                    <span className={styles.idealBadge}>{pkg.idealFor}</span>
-                  </div>
-                </div>
-
-                <div className={styles.cardBottom}>
-                  <div className={styles.featuresUnit}>
-                    <ul className={styles.featureList}>
-                      {pkg.features.map((feature, i) => (
-                        <li key={i} className={styles.featureItem}>
-                          <CheckCircle2 size={16} className={styles.featureIcon} />
-                          <span>{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-
-                  <button className={styles.bookBtn}>
-                    Book Package
-                  </button>
-                </div>
-              </div>
+              <CardPointerTicker />
+              <a href="#" className={styles.viewPackageBtn}>
+                View Package
+              </a>
             </motion.div>
-          ))}
-        </motion.div>
 
-        <div className={styles.footerCta}>
-          <Link href="/health-packages" className={styles.viewAllBtn}>
-            View All Packages <ChevronRight size={16} />
-          </Link>
+            {/* CARD 2 (Middle) — enters rounded, becomes sharp at full width */}
+            <motion.div
+              className={styles.cardContainer}
+              style={{
+                zIndex: 2,
+                y: card2Y,
+                scale: card2Scale,
+                filter: card2Blur,
+                borderRadius: card2Radius,
+                transformOrigin: "center top",
+                backgroundImage: `url(${packageCardsData[1].bgImage})`,
+              }}
+            >
+              <motion.div
+                className={styles.cardDimOverlay}
+                style={{ opacity: card2DimOpacity }}
+              />
+              <div className={styles.cardTextUnit}>
+                <h3 className={styles.cardMainTitle}>
+                  {packageCardsData[1].title}
+                </h3>
+                <p className={styles.cardOverview}>
+                  {packageCardsData[1].overview}
+                </p>
+              </div>
+              <CardPointerTicker />
+              <a href="#" className={styles.viewPackageBtn}>
+                View Package
+              </a>
+            </motion.div>
+
+            {/* CARD 3 (Top) — enters rounded, becomes sharp at full width */}
+            <motion.div
+              className={styles.cardContainer}
+              style={{
+                zIndex: 3,
+                y: card3Y,
+                scale: card3Scale,
+                borderRadius: card3Radius,
+                transformOrigin: "center top",
+                backgroundImage: `url(${packageCardsData[2].bgImage})`,
+              }}
+            >
+              <div className={styles.cardTextUnit}>
+                <h3 className={styles.cardMainTitle}>
+                  {packageCardsData[2].title}
+                </h3>
+                <p className={styles.cardOverview}>
+                  {packageCardsData[2].overview}
+                </p>
+              </div>
+              <CardPointerTicker />
+              <a href="#" className={styles.viewPackageBtn}>
+                View Package
+              </a>
+            </motion.div>
+          </div>
         </div>
       </div>
-    </section>
+    </div>
   );
 }

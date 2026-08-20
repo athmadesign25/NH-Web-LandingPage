@@ -866,9 +866,9 @@
   background: transparent !important;
   border: none !important;
   box-shadow: none !important;
-  width: auto;
-  height: auto;
-  border-radius: 0;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
   margin-right: 0;
   flex-shrink: 0;
 }

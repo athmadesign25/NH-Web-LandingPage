@@ -22,6 +22,9 @@ export const metadata: Metadata = {
     description: "World-Class Care, Close to Home",
     type: "website",
   },
+  icons: {
+    icon: "/favicon.svg",
+  },
 };
 
 export default function RootLayout({

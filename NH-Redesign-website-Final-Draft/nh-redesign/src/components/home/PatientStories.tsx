@@ -49,14 +49,17 @@ export default function PatientStories() {
   const sectionRef = useRef<HTMLElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // Scale up on scroll from 0.92 to 1.0 filling current state
+  // Scale up on scroll from 0.782 to 1.0 so it fills horizontally by the time section reaches top nav
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "center center"],
+    offset: ["start end", "start 80px"],
   });
 
-  const scale = useTransform(scrollYProgress, [0, 1], [0.92, 1]);
-  const borderRadius = useTransform(scrollYProgress, [0, 1], [24, 0]);
+  const rawScale = useTransform(scrollYProgress, [0, 0.88, 1], [0.782, 0.98, 1]);
+  const rawBorderRadius = useTransform(scrollYProgress, [0, 0.92, 1], [24, 24, 0]);
+
+  const scale = useSpring(rawScale, { stiffness: 140, damping: 28, restDelta: 0.001 });
+  const borderRadius = useSpring(rawBorderRadius, { stiffness: 180, damping: 26, restDelta: 0.01 });
 
   const mouseX = useMotionValue(0);
   const mouseY = useMotionValue(0);
@@ -116,7 +119,7 @@ export default function PatientStories() {
         style={{
           scale,
           borderRadius,
-          transformOrigin: "bottom center",
+          transformOrigin: "top center",
           willChange: "transform, border-radius",
         }}
       >

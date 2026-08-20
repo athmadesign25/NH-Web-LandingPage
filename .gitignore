@@ -33,3 +33,5 @@
 
 # typescript
 **/*.tsbuildinfo
+.vercel
+.env*

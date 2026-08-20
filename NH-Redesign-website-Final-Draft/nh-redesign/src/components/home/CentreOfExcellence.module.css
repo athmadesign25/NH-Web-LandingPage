@@ -58,8 +58,8 @@
 
 .sectionTitle {
   font-size: clamp(28px, 3.4vw, 48px);
-  font-weight: 700;
-  color: #0F172A !important;
+  font-weight: 800;
+  color: #000000 !important;
   margin-top: 0;
   margin-bottom: 20px;
   line-height: 1.22;
@@ -75,8 +75,8 @@
 
 .sectionSubtitle {
   font-size: clamp(16px, 1.3vw, 20px);
-  font-weight: 500;
-  color: #0F172A !important;
+  font-weight: 600;
+  color: #000000 !important;
   line-height: 1.65;
   max-width: 720px;
   margin: 0 auto;
@@ -245,24 +245,11 @@
   width: 100%;
 }
 
-/* Metric stats appear ONLY on hover as specified in reference repo */
+/* Metric stats visible upfront with transparent/grey normal state -> white/current grey on hover */
 .cardStats {
-  opacity: 0;
-  max-height: 0;
-  overflow: hidden;
-  transform: translateY(10px);
-  filter: blur(4px);
-  transition: all 0.32s cubic-bezier(0.16, 1, 0.3, 1);
   display: flex;
   flex-direction: column;
   gap: 2px;
-}
-
-.specialityCard:hover .cardStats {
-  opacity: 1;
-  max-height: 65px;
-  transform: translateY(0);
-  filter: blur(0);
   margin-bottom: 8px;
 }
 
@@ -270,17 +257,27 @@
   font-family: Inter, var(--font-sans), sans-serif;
   font-size: 28px;
   font-weight: 700;
-  color: #FFFFFF;
+  color: rgba(255, 255, 255, 0.72);
   line-height: 1.1;
   letter-spacing: -0.01em;
+  transition: color 0.3s ease;
+}
+
+.specialityCard:hover .metricValue {
+  color: #FFFFFF;
 }
 
 .metricLabel {
   font-family: Inter, var(--font-sans), sans-serif;
   font-size: 12px;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.85);
+  color: rgba(255, 255, 255, 0.65);
   line-height: 1.3;
+  transition: color 0.3s ease;
+}
+
+.specialityCard:hover .metricLabel {
+  color: rgba(255, 255, 255, 0.95);
 }
 
 .specialityName {

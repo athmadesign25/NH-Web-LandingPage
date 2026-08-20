@@ -93,19 +93,20 @@ function CardPointerTicker() {
             </svg>
           </div>
 
-          <motion.span
-            className={styles.pointerText}
-            initial={{ backgroundPosition: "100% 0" }}
-            animate={{ backgroundPosition: "-100% 0" }}
-            transition={{
-              duration: 1.8,
-              delay: 0.35,
-              ease: "easeInOut",
-              repeat: 0,
-            }}
-          >
-            {currentItem}
-          </motion.span>
+          <div className={styles.textWrap}>
+            <span className={styles.pointerText}>{currentItem}</span>
+            <motion.div
+              key={`shimmer-${currentItem}`}
+              className={styles.shimmerOverlay}
+              initial={{ x: "-100%" }}
+              animate={{ x: "250%" }}
+              transition={{
+                duration: 1.2,
+                delay: 0.35,
+                ease: "easeInOut",
+              }}
+            />
+          </div>
         </motion.div>
       </AnimatePresence>
     </div>

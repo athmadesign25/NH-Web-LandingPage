@@ -85,7 +85,7 @@ function CardPointerTicker() {
               strokeLinejoin="round"
             >
               <motion.path
-                d="M20 6L9 17l-5-5"
+                d="M4 12l5 5L20 6"
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
@@ -95,18 +95,19 @@ function CardPointerTicker() {
 
           <motion.span
             className={styles.pointerText}
-            initial={{ textShadow: "0 0 0px rgba(255,255,255,0)" }}
+            initial={{ opacity: 0.85, filter: "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))" }}
             animate={{
-              textShadow: [
-                "0 0 0px rgba(255,255,255,0)",
-                "0 0 20px rgba(255,255,255,0.95), 0 0 35px rgba(255,255,255,0.7)",
-                "0 0 6px rgba(255,255,255,0.3)",
+              opacity: [0.85, 1, 1, 0.95],
+              filter: [
+                "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
+                "brightness(1.25) drop-shadow(0 0 8px rgba(255,255,255,0.45))",
+                "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
               ],
             }}
             transition={{
-              duration: 0.8,
-              delay: 0.45,
-              ease: "easeOut",
+              duration: 0.7,
+              delay: 0.4,
+              ease: "easeInOut",
             }}
           >
             {currentItem}

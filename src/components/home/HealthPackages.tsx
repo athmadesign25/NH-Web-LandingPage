@@ -95,18 +95,13 @@ function CardPointerTicker() {
 
           <motion.span
             className={styles.pointerText}
-            initial={{ opacity: 0.85, filter: "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))" }}
+            initial={{ backgroundPosition: "100% 0" }}
             animate={{
-              opacity: [0.85, 1, 1, 0.95],
-              filter: [
-                "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
-                "brightness(1.25) drop-shadow(0 0 8px rgba(255,255,255,0.45))",
-                "brightness(1) drop-shadow(0 0 0px rgba(255,255,255,0))",
-              ],
+              backgroundPosition: ["100% 0", "-100% 0"],
             }}
             transition={{
-              duration: 0.7,
-              delay: 0.4,
+              duration: 1.2,
+              delay: 0.35,
               ease: "easeInOut",
             }}
           >

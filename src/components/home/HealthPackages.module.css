@@ -1,12 +1,12 @@
 .sectionWrap {
   position: relative;
   width: 100%;
-  background: linear-gradient(180deg, #0345A1 0%, #122c54 12%, #0F233A 25%, #061323 50%, #061323 100%);
+  background: #FCFCFC;
   padding-top: 160px; /* Space after Patient Stories */
 }
 
 .sectionWrap :global(.section-eyebrow) {
-  color: #FFFFFF !important;
+  color: #034EA2 !important;
   text-align: center;
   margin-left: auto;
   margin-right: auto;
@@ -41,7 +41,7 @@
 .title {
   font-size: clamp(26px, 3vw, 44px);
   font-weight: 800;
-  color: #FFFFFF;
+  color: #0F172A;
   line-height: 1.18;
   letter-spacing: -0.025em;
   margin-bottom: 8px;
@@ -58,7 +58,7 @@
 
 .subtitle {
   font-size: 18px;
-  color: rgba(255, 255, 255, 0.78);
+  color: #475569;
   line-height: 1.6;
   text-align: center;
   width: 100%;

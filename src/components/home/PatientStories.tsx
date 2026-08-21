@@ -321,14 +321,22 @@ function StoryCard({
 export default function PatientStories() {
   const sectionRef = useRef<HTMLElement>(null);
 
-  // Entry scroll scale & border-radius animation
+  // Scroll animation: entry scale (0.782 -> 1.0) & exit scale (1.0 -> 0.90 / 10% shrink when scrolling past)
   const { scrollYProgress } = useScroll({
     target: sectionRef,
-    offset: ["start end", "start 80px"],
+    offset: ["start end", "end start"],
   });
 
-  const rawScale = useTransform(scrollYProgress, [0, 0.88, 1], [0.782, 0.98, 1]);
-  const rawBorderRadius = useTransform(scrollYProgress, [0, 0.92, 1], [24, 24, 0]);
+  const rawScale = useTransform(
+    scrollYProgress,
+    [0, 0.28, 0.65, 1.0],
+    [0.782, 1.0, 1.0, 0.90]
+  );
+  const rawBorderRadius = useTransform(
+    scrollYProgress,
+    [0, 0.28, 0.65, 1.0],
+    [24, 0, 0, 16]
+  );
 
   const scale = useSpring(rawScale, { stiffness: 140, damping: 28, restDelta: 0.001 });
   const borderRadius = useSpring(rawBorderRadius, { stiffness: 180, damping: 26, restDelta: 0.01 });

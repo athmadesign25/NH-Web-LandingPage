@@ -1,15 +1,20 @@
 "use client";
 
 import React, { useState, useEffect, useRef } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import {
   AnimatePresence,
   motion,
   useReducedMotion,
-  useScroll,
+  useMotionValue,
   useTransform,
+  useScroll,
+  animate,
+  useInView,
+  useSpring,
 } from "framer-motion";
-import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight, Activity, FileText, X, Video, Building2 } from "lucide-react";
+import { MapPin, FlaskConical, Droplets, Shield, Search, ChevronRight , Activity, FileText, Video, Building2 } from "lucide-react";
 import SplitText from "@/components/ui/SplitText";
 import styles from "./HeroSearchFirst.module.css";
 import Lottie from "lottie-react";
@@ -17,6 +22,22 @@ import pulseAnimation from "../../../public/assets/pulse animation.json";
 import starAnimation from "../../../public/assets/AI Searching 2.json";
 import PixelRipple from "./PixelRipple";
 import PulseAIWorkspace from "../pulse-ai/PulseAIWorkspace";
+import { searchHealthcare, getCityId, NH_CITIES, type NormalizedResults } from "@/lib/searchService";
+
+const STAT_GROUPS = [
+  [
+    { value: 5000, suffix: "+", label: "Robotic Surgeries\nPerformed" },
+    { value: 550000, suffix: "+", label: "Cardiac Consults\nAnnually" },
+    { value: 33000, suffix: "+", label: "Image Guided\nProcedures" },
+    { value: 8000, suffix: "+", label: "Solid Organ\nTransplants" }
+  ],
+  [
+    { value: 80000, suffix: "+", label: "Chemotherapy Sessions\nAnnually" },
+    { value: 15000, suffix: "+", label: "Joint Replacements\nPerformed" },
+    { value: 2000, suffix: "+", label: "Bone Marrow\nTransplants" },
+    { value: 120000, suffix: "+", label: "Dialysis Sessions\nAnnually" }
+  ]
+];
 
 const popularTags = ["chest pain", "cancer", "surgery", "liver"];
 
@@ -102,7 +123,19 @@ const specialitiesData = [
   }
 ];
 
-const doctorsData = [
+type DoctorData = {
+  name: string;
+  speciality: string;
+  location: string;
+  hospital: string;
+  additionalHospitals?: number;
+  photo: string;
+  keywords: string[];
+  consultationModes?: "hospital" | "video" | "both";
+  availability?: { hospital?: string; video?: string };
+};
+
+const doctorsData: DoctorData[] = [
   {
     name: "Dr. Ravi Prakash",
     speciality: "Cardiology",
@@ -154,6 +187,46 @@ const doctorsData = [
     keywords: ["cardiology", "heart", "rajiv", "menon", "doctor", "specialist", "cardiologist"]
   },
   {
+    name: "Dr. Amit Bansal",
+    speciality: "Cardiology",
+    location: "Mumbai",
+    hospital: "NH Children's Hospital, Mumbai",
+    photo: "/assets/doctor_1.png",
+    keywords: ["cardiology", "heart", "amit", "bansal", "doctor", "specialist", "cardiologist"]
+  },
+  {
+    name: "Dr. Kavita Reddy",
+    speciality: "Cardiology",
+    location: "Bengaluru",
+    hospital: "Narayana Institute of Cardiac Sciences, Bangalore",
+    photo: "/assets/doctor_2.png",
+    keywords: ["cardiology", "heart", "kavita", "reddy", "doctor", "specialist", "cardiologist"]
+  },
+  {
+    name: "Dr. Sameer Desai",
+    speciality: "Cardiology",
+    location: "Guwahati",
+    hospital: "Narayana Superspeciality Hospital, Guwahati",
+    photo: "/assets/doctor_3.png",
+    keywords: ["cardiology", "heart", "sameer", "desai", "doctor", "specialist", "cardiologist"]
+  },
+  {
+    name: "Dr. Ananya Singh",
+    speciality: "Cardiology",
+    location: "Kolkata",
+    hospital: "Narayana Superspeciality Hospital, Howrah, kolkata",
+    photo: "/assets/doctor_1.png",
+    keywords: ["cardiology", "heart", "ananya", "singh", "doctor", "specialist", "cardiologist"]
+  },
+  {
+    name: "Dr. Vikram Joshi",
+    speciality: "Cardiology",
+    location: "Bengaluru",
+    hospital: "Narayana Multispeciality Hospital, HSR Bangalore",
+    photo: "/assets/doctor_2.png",
+    keywords: ["cardiology", "heart", "vikram", "joshi", "doctor", "specialist", "cardiologist"]
+  },
+  {
     name: "Dr. Priya Sharma",
     speciality: "Neurology",
     location: "Mumbai",
@@ -179,6 +252,16 @@ const doctorsData = [
     keywords: ["orthopaedics", "bone", "joint", "sunita", "patel", "doctor", "specialist"]
   }
 ];
+
+const getRealtimePulseResponse = (query: string) => {
+  return {
+    suggestedSpec: "Cardiology",
+    suggestedDoc: doctorsData[0],
+    empathy: "I understand you are feeling unwell. Let's find a doctor for you.",
+    slot: "Today, 4:00 PM",
+    recommendedDocs: doctorsData.slice(0, 3)
+  };
+};
 
 const doctorRoles = [
   {
@@ -372,101 +455,59 @@ function HighlightMatch({ text, query }: { text: string; query: string }) {
 }
 
 
-
-
-function CountUp({
-  end,
-  duration = 1600,
-  delay = 0,
-  suffix = "+",
-}: {
-  end: number;
-  duration?: number;
-  delay?: number;
-  suffix?: string;
-}) {
-  const [count, setCount] = useState(0);
+function CountingNumber({ value, suffix = "", duration = 2 }: { value: number, suffix?: string, duration?: number }) {
+  const ref = useRef(null);
+  const isInView = useInView(ref, { once: true, margin: "-10px" });
+  const count = useMotionValue(0);
+  const rounded = useTransform(count, (latest) => {
+    const num = Math.round(latest);
+    if (num >= 100000) {
+      return (num / 100000).toLocaleString('en-IN', { maximumFractionDigits: 1 }) + 'L' + suffix;
+    } else if (num >= 1000) {
+      return (num / 1000).toLocaleString('en-IN', { maximumFractionDigits: 1 }) + 'K' + suffix;
+    }
+    return num.toLocaleString('en-IN') + suffix;
+  });
 
   useEffect(() => {
-    let startTime: number | null = null;
-    let animationFrameId: number;
+    if (isInView) {
+      const animation = animate(count, value, { duration, ease: "easeOut" });
+      return animation.stop;
+    }
+  }, [isInView, value, count, duration]);
 
-    const timer = setTimeout(() => {
-      const step = (timestamp: number) => {
-        if (!startTime) startTime = timestamp;
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        const easeProgress = 1 - Math.pow(1 - progress, 3);
-        setCount(Math.floor(easeProgress * end));
-
-        if (progress < 1) {
-          animationFrameId = requestAnimationFrame(step);
-        } else {
-          setCount(end);
-        }
-      };
-      animationFrameId = requestAnimationFrame(step);
-    }, delay * 1000);
-
-    return () => {
-      clearTimeout(timer);
-      cancelAnimationFrame(animationFrameId);
-    };
-  }, [end, duration, delay]);
-
-  return (
-    <span>
-      {count.toLocaleString("en-IN")}
-      {suffix}
-    </span>
-  );
+  return <motion.span ref={ref}>{rounded}</motion.span>;
 }
-
-const STATS_DATA = [
-  {
-    target: 5000,
-    suffix: "+",
-    line1: "Robotic Surgeries",
-    line2: "Performed",
-  },
-  {
-    target: 550000,
-    suffix: "+",
-    line1: "Cardiac Consults",
-    line2: "Annually",
-  },
-  {
-    target: 33000,
-    suffix: "+",
-    line1: "Image Guided",
-    line2: "Procedures",
-  },
-  {
-    target: 8000,
-    suffix: "+",
-    line1: "Solid Organ",
-    line2: "Transplants",
-  },
-];
 
 export default function HeroSearchFirst() {
 
   const router = useRouter();
   const [searchQuery, setSearchQuery] = useState("");
-  const [activeDropdownTab, setActiveDropdownTab] = useState<"doctors_specialities" | "treatments_tests" | "articles">("doctors_specialities");
+  const [activeDropdownTab, setActiveDropdownTab] = useState<"doctors" | "specialties" | "treatments_tests" | "articles">("doctors");
   const [selectedLocation, setSelectedLocation] = useState("All Locations");
   const [isOpen, setIsOpen] = useState(false);
+  const [activeIndex, setActiveIndex] = React.useState(0);
+  const [currentStatGroup, setCurrentStatGroup] = React.useState(0);
+
+  React.useEffect(() => {
+    const interval = setInterval(() => {
+      setCurrentStatGroup(prev => (prev + 1) % STAT_GROUPS.length);
+    }, 8000);
+    return () => clearInterval(interval);
+  }, []);
+
   const [hasOpened, setHasOpened] = useState(false);
   const [isPulseActive, setIsPulseActive] = useState(false);
   const [isPulseAnalyzed, setIsPulseAnalyzed] = useState(false);
   const [hasSubmittedQuery, setHasSubmittedQuery] = useState(false);
   const [showGenericMatchesInPulse, setShowGenericMatchesInPulse] = useState(false);
   const [simulatedUserLocation, setSimulatedUserLocation] = useState<"same_city" | "nearby" | "far_away">("same_city");
+  const [showPixelRipple, setShowPixelRipple] = useState(false);
+
   const [pulseInitialAction, setPulseInitialAction] = useState<string | null>(null);
   const [pulseInitialActionData, setPulseInitialActionData] = useState<any>(null);
   const [isUserLoggedIn, setIsUserLoggedIn] = useState(true);
-  const [showPixelRipple, setShowPixelRipple] = useState(false);
 
-  // Sync login state from sessionStorage
   useEffect(() => {
     if (typeof window !== "undefined") {
       const stored = sessionStorage.getItem("isLoggedIn");
@@ -478,6 +519,19 @@ export default function HeroSearchFirst() {
     };
     window.addEventListener("login-state-changed", handleLoginChange);
     return () => window.removeEventListener("login-state-changed", handleLoginChange);
+  }, []);
+
+  useEffect(() => {
+    const handleOpenPulse = () => {
+      setHasOpened(true);
+      setIsPulseActive(true);
+      // Give time for layout to shift before animating content
+      setTimeout(() => setIsPulseAnalyzed(true), 300);
+      setSearchQuery("");
+      setHasSubmittedQuery(false);
+    };
+    window.addEventListener("openPulseAI", handleOpenPulse);
+    return () => window.removeEventListener("openPulseAI", handleOpenPulse);
   }, []);
 
   const handlePulseLaunchWithAction = (action: string, doctorData: any) => {
@@ -495,59 +549,14 @@ export default function HeroSearchFirst() {
     }
   };
 
-  const isConversational = searchQuery.trim().split(" ").length > 3 ||
-                           /have|fever|cough|tomorrow|symptom|feel|pain/i.test(searchQuery.trim());
-
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const heroRef = useRef<HTMLElement>(null);
-
-  const { scrollYProgress } = useScroll({
-    target: heroRef,
-    offset: ["start start", "end start"],
-  });
-
-  // Scale hero container down by 8% (from 1.0 to 0.92) from bottom, left, right as user scrolls, then lock
-  const videoScale = useTransform(scrollYProgress, [0, 0.45], [1, 0.92]);
-  const videoRadius = useTransform(scrollYProgress, [0, 0.45], ["0px", "20px"]);
-  const videoShadow = useTransform(
-    scrollYProgress,
-    [0, 0.45],
-    ["0px 0px 0px rgba(0, 0, 0, 0)", "0px 20px 50px rgba(0, 0, 0, 0.5)"]
-  );
-
-  // Smoothly slow-down then pause video when search is open
-  useEffect(() => {
-    let intervalId: NodeJS.Timeout | undefined;
-    if (videoRef.current) {
-      if (isOpen) {
-        let rate = videoRef.current.playbackRate;
-        intervalId = setInterval(() => {
-          if (videoRef.current && isOpen) {
-            rate -= 0.05;
-            if (rate <= 0.1) {
-              videoRef.current.pause();
-              videoRef.current.playbackRate = 1.0;
-              clearInterval(intervalId);
-            } else {
-              videoRef.current.playbackRate = rate;
-            }
-          } else {
-            clearInterval(intervalId);
-          }
-        }, 30);
-      } else {
-        clearInterval(intervalId);
-        videoRef.current.playbackRate = 1.0;
-        videoRef.current.play().catch((err) => console.log("Playback prevented:", err));
-      }
-    }
-    return () => clearInterval(intervalId);
-  }, [isOpen]);
+  const isConversational = searchQuery.trim().split(/\s+/).filter(Boolean).length > 4 || 
+                          /have|fever|cough|tomorrow|symptom|feel|pain/i.test(searchQuery.trim());
 
   useEffect(() => {
     let timer: NodeJS.Timeout;
     if (isPulseActive) {
       document.body.style.overflow = "hidden";
+      // Delay ripple slightly to sync with the chat expansion animation (0.4s)
       timer = setTimeout(() => setShowPixelRipple(true), 300);
     } else {
       document.body.style.overflow = "";
@@ -558,90 +567,36 @@ export default function HeroSearchFirst() {
       clearTimeout(timer);
     };
   }, [isPulseActive]);
-
   const [lastSearch, setLastSearch] = useState<string | null>(null);
+
+  // --- API integration state ---
+  const [apiData, setApiData] = useState<NormalizedResults | null>(null);
+  const [isApiLoading, setIsApiLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
   const searchRef = useRef<HTMLFormElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
   const prefersReducedMotion = useReducedMotion();
 
-  // Cursor-reactive global window tracking logic for search bar glow
-  const glowWrapRef = useRef<HTMLDivElement>(null);
-  const searchContainerRef = useRef<HTMLDivElement>(null);
+  // Scroll Animation Logic
+  const containerRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: containerRef,
+    offset: ["start start", "center start"]
+  });
 
-  const targetGlowRef = useRef({ mx: 400, my: 30, strength: 0.55, r: 65, g: 99, b: 236 });
-  const currentGlowRef = useRef({ mx: 400, my: 30, strength: 0.55, r: 65, g: 99, b: 236 });
-  const [isApproach, setIsApproach] = useState(false);
+  const smoothProgress = useSpring(scrollYProgress, {
+    stiffness: 80,
+    damping: 25,
+    mass: 1,
+    restDelta: 0.001
+  });
 
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    const handleGlobalPointerMove = (e: PointerEvent) => {
-      if (!searchContainerRef.current || !glowWrapRef.current) return;
-
-      const wrapRect = glowWrapRef.current.getBoundingClientRect();
-      const containerRect = searchContainerRef.current.getBoundingClientRect();
-
-      const px = e.clientX - wrapRect.left;
-      const py = e.clientY - wrapRect.top;
-
-      const dx = Math.max(containerRect.left - e.clientX, 0, e.clientX - containerRect.right);
-      const dy = Math.max(containerRect.top - e.clientY, 0, e.clientY - containerRect.bottom);
-      const dist = Math.sqrt(dx * dx + dy * dy);
-
-      // Ambient 0.50 brightness across full screen (1200px range), smoothly ramping up to 1.0 when near
-      const proximity = Math.max(0, Math.min(1, 1 - dist / 1200));
-      const strength = 0.50 + 0.50 * (proximity * proximity);
-
-      setIsApproach(dist < 180);
-
-      // Horizontal color interpolation: Blue (#4163EC) on left -> Pink (#AA3040) on right
-      const f = Math.max(0, Math.min(1, (e.clientX - containerRect.left) / containerRect.width));
-      const r = Math.round(65 + f * (170 - 65));
-      const g = Math.round(99 + f * (48 - 99));
-      const b = Math.round(236 + f * (64 - 236));
-
-      targetGlowRef.current = { mx: px, my: py, strength, r, g, b };
-    };
-
-    window.addEventListener("pointermove", handleGlobalPointerMove, { passive: true });
-    return () => window.removeEventListener("pointermove", handleGlobalPointerMove);
-  }, [prefersReducedMotion]);
-
-  useEffect(() => {
-    if (prefersReducedMotion) return;
-
-    let rafId: number;
-
-    const loop = () => {
-      const target = targetGlowRef.current;
-      const current = currentGlowRef.current;
-
-      current.mx += (target.mx - current.mx) * 0.15;
-      current.my += (target.my - current.my) * 0.15;
-      current.strength += (target.strength - current.strength) * 0.15;
-      current.r += (target.r - current.r) * 0.15;
-      current.g += (target.g - current.g) * 0.15;
-      current.b += (target.b - current.b) * 0.15;
-
-      if (glowWrapRef.current) {
-        glowWrapRef.current.style.setProperty("--mx", `${current.mx.toFixed(1)}px`);
-        glowWrapRef.current.style.setProperty("--my", `${current.my.toFixed(1)}px`);
-        glowWrapRef.current.style.setProperty("--glow-strength", current.strength.toFixed(3));
-        glowWrapRef.current.style.setProperty(
-          "--glow-color",
-          `${Math.round(current.r)}, ${Math.round(current.g)}, ${Math.round(current.b)}`
-        );
-      }
-
-      rafId = requestAnimationFrame(loop);
-    };
-
-    rafId = requestAnimationFrame(loop);
-
-    return () => {
-      cancelAnimationFrame(rafId);
-    };
-  }, [prefersReducedMotion]);
-
+  // Complete the animation over 100% of the wrapper's extra scroll distance
+  const heroScale = useTransform(smoothProgress, [0, 1], [1, 0.85]);
+  // Border radius from 0 to 8px
+  const heroRadius = useTransform(smoothProgress, [0, 1], ["0px", "16px"]);
 
   const handleScrollDown = () => {
     const nextSection = document.getElementById("hero-section")?.nextElementSibling;
@@ -662,12 +617,50 @@ export default function HeroSearchFirst() {
     }
   }, []);
 
-  // Reset dropdown tab and inline analysis state when query changes
+  // Debounced API call — fires from first character, cancels stale requests
   useEffect(() => {
-    setActiveDropdownTab("doctors_specialities");
-    setIsPulseAnalyzed(false);
-    setHasSubmittedQuery(false);
-    setShowGenericMatchesInPulse(false);
+    if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+    if (abortControllerRef.current) abortControllerRef.current.abort();
+
+    const trimmedQuery = searchQuery.trim();
+    if (!trimmedQuery) {
+      setApiData(null);
+      setIsApiLoading(false);
+      return;
+    }
+
+    setIsApiLoading(true);
+    const cityId = getCityId(selectedLocation);
+
+    debounceTimerRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      abortControllerRef.current = controller;
+      try {
+        const results = await searchHealthcare(trimmedQuery, cityId, controller.signal);
+        if (!controller.signal.aborted) {
+          setApiData(results);
+          setIsApiLoading(false);
+        }
+      } catch (err: unknown) {
+        if (err instanceof Error && err.name === "AbortError") return;
+        if (!controller.signal.aborted) {
+          console.error("[Search API]", err);
+          setApiData(null);
+          setIsApiLoading(false);
+        }
+      }
+    }, 280);
+
+    return () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current);
+      if (abortControllerRef.current) abortControllerRef.current.abort();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchQuery, selectedLocation]);
+
+  // Reset dropdown tab to Doctors when typing/query changes
+  useEffect(() => {
+    setActiveDropdownTab("doctors");
   }, [searchQuery]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -678,24 +671,9 @@ export default function HeroSearchFirst() {
         localStorage.setItem("nh_last_search", query);
         setLastSearch(query);
       }
-
-      // Pulse Trigger Heuristic — conversational queries bubble through Pulse AI stages
-      const isConvQuery = query.split(" ").length > 3 ||
-                          /have|fever|cough|tomorrow|symptom|feel|pain/i.test(query);
-
-      if (isConvQuery) {
-        if (!hasSubmittedQuery) {
-          setHasSubmittedQuery(true);
-        } else if (!isPulseAnalyzed) {
-          setIsPulseAnalyzed(true);
-        } else {
-          setIsPulseActive(true);
-          setIsOpen(false);
-        }
-      } else {
-        router.push(`/search?q=${encodeURIComponent(query)}`);
-        setIsOpen(false);
-      }
+      router.push(`/search?q=${encodeURIComponent(query)}`);
+      setIsOpen(false);
+      setIsPulseActive(false);
     }
   };
 
@@ -797,26 +775,90 @@ export default function HeroSearchFirst() {
       .sort((a, b) => b.score - a.score)
       .slice(0, 6);
 
-  const conversationalSpecs = [
-    { name: "General Physician", slug: "general-physician", image: "/Specialities icons/General Medicine.svg" },
-    { name: "ENT", slug: "ent", image: "/Specialities icons/Lab test default icon.svg" }
-  ];
+  const hasSuggestions = filteredDoctors.length > 0 || filteredSpecs.length > 0 || filteredTreatments.length > 0 || filteredArticles.length > 0;
 
-  const conversationalDoctors = [
-    { name: "Dr. Pradeep R Kumar", speciality: "General Physician", hospital: "Mazumdar Shaw Medical Centre, Bangalore", photo: "/assets/doctor_1.png" },
-    { name: "Dr. Rammaya Murthey", speciality: "General Physician", hospital: "Narayana Institute of Cardiac Sciences, Bangalore", photo: "/assets/doctor_2.png" },
-    { name: "Dr. Vikas Yadav", speciality: "ENT Specialist", hospital: "Narayana City Clinic, Bangalore", photo: "/assets/doctor_1.png" }
-  ];
+  // --- Derive display data: prefer API results when available, fall back to static ---
+  const useApiData = apiData !== null && searchQuery.trim() !== "";
 
-  const displaySpecs = isConversational && (filteredSpecs.length === 0 || /fever|cough|symptom|headache|stomach|pain|feel/i.test(searchQuery))
-    ? conversationalSpecs
-    : filteredSpecs.slice(0, 2);
+  const displayDoctors = useApiData
+    ? apiData!.doctors.slice(0, 6).map((d) => ({
+        name: d.name,
+        speciality: d.speciality,
+        location: d.hospital,
+        hospital: d.hospital,
+        additionalHospitals: undefined as number | undefined,
+        photo: d.photo,
+        keywords: [] as string[],
+        consultationModes: (
+          d.vcEnabled && (d.apptEnabled || d.walkinEnabled) ? "both"
+            : d.vcEnabled ? "video"
+            : "hospital"
+        ) as "both" | "video" | "hospital",
+        availability: d.availability,
+      }))
+    : filteredDoctors;
 
-  const displayDoctors = isConversational && (filteredDoctors.length === 0 || /fever|cough|symptom|headache|stomach|pain|feel/i.test(searchQuery))
-    ? conversationalDoctors
-    : filteredDoctors.slice(0, 3);
+  const displaySpecs = useApiData
+    ? apiData!.specialities.slice(0, 6).map((s) => ({
+        name: s.name,
+        slug: s.slug,
+        image: s.image,
+        keywords: [] as string[],
+        matchingKeyword: null as string | null,
+      }))
+    : filteredSpecs;
 
-  // Close dropdown on click outside
+  const displaySubSpecs = useApiData
+    ? apiData!.subSpecialities.slice(0, 6).map((s) => ({
+        name: s.name,
+        slug: s.slug,
+        image: s.image,
+        parentSpeciality: s.parentSpeciality,
+      }))
+    : [];
+
+  const loading = isApiLoading && !apiData;
+  const tabCounts = {
+    doctors: loading ? -1 : useApiData ? apiData!.doctors.length : filteredDoctors.length,
+    specialties: loading ? -1 : useApiData
+      ? apiData!.specialities.length + apiData!.subSpecialities.length
+      : filteredSpecs.length,
+    treatments: loading ? -1 : useApiData
+      ? apiData!.procedures.length + apiData!.treatments.length
+      : filteredTreatments.length,
+    articles: loading ? -1 : useApiData ? apiData!.blogs.length : filteredArticles.length,
+  };
+
+  // Combine procedures + treatments for the "Procedures & Treatments" tab
+  const displayProcedureItems = useApiData
+    ? apiData!.procedures.map((p) => ({
+        name: p.name,
+        type: "Procedures" as const,
+        speciality: p.speciality,
+        image: p.image,
+      }))
+    : filteredOnlyTreatments;
+
+  const displayTreatmentItems = useApiData
+    ? apiData!.treatments.map((t) => ({
+        name: t.name,
+        type: "Treatments" as const,
+        speciality: t.speciality,
+        image: t.image,
+      }))
+    : [];
+
+  const displayArticles = useApiData
+    ? apiData!.blogs.slice(0, 6).map((b) => ({
+        name: b.name,
+        keywords: [] as string[],
+        image: b.image,
+        description: b.speciality || "",
+        matchingKeyword: null as string | null,
+      }))
+    : filteredArticles;
+
+  // Close dropdown on click outside and reset search query
   useEffect(() => {
     function handleClickOutside(event: MouseEvent) {
       if (searchRef.current && !searchRef.current.contains(event.target as Node)) {
@@ -825,298 +867,191 @@ export default function HeroSearchFirst() {
       }
     }
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+  
+  return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // Set glow effect SVG rect rx dynamically from computed border-radius + 6px offset for outside glow
+  // Control video playback based on search state or Pulse AI state
   useEffect(() => {
-    if (searchContainerRef.current) {
-      const computedRx = parseFloat(window.getComputedStyle(searchContainerRef.current).borderRadius) || 27;
-      const rx = `${computedRx + 6}px`;
-      const rects = searchContainerRef.current.querySelectorAll<SVGRectElement>(`.${styles.glowBlur}, .${styles.glowLine}`);
-      rects.forEach(rect => rect.setAttribute("rx", rx));
+    let intervalId: NodeJS.Timeout | undefined = undefined;
+    
+    if (videoRef.current) {
+      if (isOpen || isPulseActive) {
+        // Smoothly slow down the video
+        let rate = videoRef.current.playbackRate;
+        intervalId = setInterval(() => {
+          if (videoRef.current && (isOpen || isPulseActive)) {
+            rate -= 0.05; // Decrease rate gradually
+            if (rate <= 0.1) {
+              videoRef.current.pause();
+              videoRef.current.playbackRate = 1.0; // reset for next play
+              clearInterval(intervalId);
+            } else {
+              videoRef.current.playbackRate = rate;
+            }
+          } else {
+            clearInterval(intervalId);
+          }
+        }, 30); // ~600ms total duration
+      } else {
+        clearInterval(intervalId);
+        videoRef.current.playbackRate = 1.0;
+        videoRef.current.play().catch((err) => {
+          console.log("Playback prevented:", err);
+        });
+      }
     }
-  }, [isOpen]);
+    return () => clearInterval(intervalId);
+  }, [isOpen, isPulseActive]);
 
   return (
-    <section ref={heroRef} className={styles.hero} id="hero-section-search-first">
-      {/* Hero Unit with 8% Scroll Scale-Down Effect */}
-      <motion.div
-        className={styles.videoBgContainer}
+    <div ref={containerRef} style={{ height: "130vh", position: "relative", zIndex: isPulseActive ? 9999 : 1, background: "#ffffff" }}>
+      <motion.section 
+        className={styles.hero} 
+        id="hero-section-search-first"
         style={{
-          scale: videoScale,
-          borderRadius: videoRadius,
-          boxShadow: videoShadow,
+          scale: heroScale,
+          borderRadius: heroRadius,
         }}
       >
         <video
-          ref={videoRef}
-          src="/Hero-Video-New.mp4"
-          autoPlay
-          muted
-          loop
-          playsInline
-          className={styles.bgVideo}
-        />
-        <div className={styles.videoOverlay} />
-        <PixelRipple trigger={showPixelRipple} />
+        ref={videoRef}
+        src="/videos/Hero-Video-New.mp4"
+        autoPlay
+        muted
+        loop
+        playsInline
+        className={styles.bgVideo}
+      />
+      <div className={`${styles.videoOverlay} ${isOpen && !isPulseActive ? styles.videoOverlayActive : ""}`} />
 
-        {/* Readability Blurry Shape Backdrop - pinned to hero container's bottom-left corner */}
-        <div className={`${styles.textReadabilityBlurWrap} ${isOpen ? styles.textReadabilityBlurHidden : ""}`} aria-hidden="true">
-          <svg
-            width="852"
-            height="608"
-            viewBox="0 0 852 608"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-            className={styles.textReadabilitySvg}
-          >
-            <rect width="852" height="608" fill="black" fillOpacity="0.02"/>
-            <rect width="852" height="608" fill="url(#paint0_radial_413_359)" fillOpacity="0.6"/>
-            <defs>
-              <radialGradient id="paint0_radial_413_359" cx="0" cy="0" r="1" gradientTransform="matrix(176.211 -473.5 663.523 281.072 266.191 608)" gradientUnits="userSpaceOnUse">
-                <stop offset="0.510447" stopColor="#0E1126"/>
-                <stop offset="1" stopColor="#666666" stopOpacity="0"/>
-              </radialGradient>
-            </defs>
-          </svg>
-        </div>
-
-        {/* Backdrop overlay shown below the search popover when the search bar is active */}
-        <AnimatePresence>
-          {isOpen && !isPulseActive && (
-            <motion.div
-              className={styles.searchBackdropOverlay}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={{ duration: 0.3, ease: "easeOut" }}
-              aria-hidden="true"
-            />
-          )}
-        </AnimatePresence>
-
-        {/* Top-Right Stats Vertical Stack - Positioned absolutely at top-right below nav */}
+      <div className={styles.metricsSideWrap}>
         <motion.div 
-          className={styles.rightStatsUnit}
-          animate={{ 
-            opacity: isOpen ? 0 : 1, 
-            y: isOpen ? -20 : 0,
-            pointerEvents: isOpen ? "none" : "auto"
-          }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
+          initial={{ opacity: 0, y: 30, filter: "blur(8px)" }}
+          animate={isOpen ? { opacity: 0, y: 20, filter: "blur(8px)", pointerEvents: "none" } : { opacity: 1, y: 0, filter: "blur(0px)", pointerEvents: "auto" }}
+          transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1] }}
+          className={styles.metricsRow}
         >
-          {STATS_DATA.map((stat, idx) => {
-            const cardDuration = 1.2;
-            const cardDelay = 0.4 + idx * 1.25;
-            return (
-              <motion.div
-                key={idx}
-                className={styles.statUnit}
-                initial={{ opacity: 0, y: 16, filter: "blur(14px)" }}
-                animate={{ 
-                  opacity: isOpen ? 0 : 1, 
-                  y: 0, 
-                  filter: "blur(0px)" 
-                }}
-                transition={{ 
-                  delay: cardDelay, 
-                  duration: 0.6, 
-                  ease: [0.25, 1, 0.5, 1] 
-                }}
-              >
-                <div className={styles.statStroke}>
-                  <motion.div 
-                    className={styles.statStrokeFill}
-                    initial={{ height: "0%" }}
-                    animate={{ height: isOpen ? "0%" : "100%" }}
-                    transition={{ 
-                      delay: cardDelay, 
-                      duration: cardDuration, 
-                      ease: [0.25, 1, 0.5, 1] 
-                    }}
-                  >
-                    <div className={styles.statStrokeGlowTip} />
-                  </motion.div>
-                </div>
-                <div className={styles.statContent}>
-                  <span className={styles.statNumber}>
-                    <CountUp end={stat.target} suffix={stat.suffix} delay={cardDelay} duration={1200} />
-                  </span>
-                  <span className={styles.statSubtext}>
-                    {stat.line1}<br />{stat.line2}
-                  </span>
-                </div>
-              </motion.div>
-            );
-          })}
-        </motion.div>
-
-      {/* Bottom Hero Layout: Left Unit (Title + Search) */}
-      <div className={styles.bottomHeroContainer}>
-        {/* Left Content Unit */}
-        <div className={styles.leftContentUnit}>
-          <motion.form
-            ref={searchRef}
-            onSubmit={handleSearch}
-            className={`${styles.searchBarForm} ${isOpen ? styles.searchBarFormActive : ""}`}
-            initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-            animate={{ 
-              opacity: 1,
-              y: 0,
-              filter: "blur(0px)"
-            }}
-            style={{ filter: "none", zIndex: isOpen ? 99999 : 60 }}
-            transition={
-              hasOpened 
-                ? { duration: 0.2, ease: "easeOut" } 
-                : { delay: 0.7, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          >
-            {!isPulseActive && (
-              <div
-                ref={glowWrapRef}
-                className={`${styles.glowWrap} ${isApproach ? styles.glowWrapApproach : ""}`}
-              >
-                <div className={styles.searchGlow} aria-hidden="true" />
-                <div ref={searchContainerRef} className={`${styles.searchContainer} ${isOpen ? styles.searchContainerActive : ""}`}>
-                  <svg className={styles.glowContainer}>
-                    <rect pathLength={100} strokeLinecap="round" className={styles.glowBlur} />
-                    <rect pathLength={100} strokeLinecap="round" className={styles.glowLine} />
-                  </svg>
-                  <div
-                    className={`${styles.searchIconWrapper} ${styles.searchIconPulse}`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      if (isConversational) {
-                        if (!isPulseAnalyzed) {
-                          setIsPulseAnalyzed(true);
-                        } else {
-                          setIsPulseActive(true);
-                          setIsOpen(false);
-                        }
-                      } else {
-                        setIsPulseActive(true);
-                      }
-                    }}
-                    title="Open Pulse AI"
-                    style={{ cursor: "pointer" }}
-                  >
-                    <Search className={styles.searchIcon} size={18} />
-                  </div>
-                  <input
-                    id="hero-search-input"
-                    type="text"
-                    placeholder="Search doctors, specialities, or treatments..."
-                    value={searchQuery}
-                    autoComplete="off"
-                    autoCorrect="off"
-                    spellCheck={false}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setIsOpen(true);
-                      setHasOpened(true);
-                    }}
-                    onFocus={() => {
-                      setIsOpen(true);
-                      setHasOpened(true);
-                    }}
-                    className={styles.searchInput}
-                  />
-                </div>
-              </div>
-            )}
-
-            {/* Progressive Search Dropdown */}
-            <AnimatePresence mode="wait">
-              {isPulseActive ? (
-                <motion.div
-                  key="pulse-workspace"
-                  className={styles.pulseWorkspaceContainer}
-                  initial={{ height: 56, opacity: 0.5 }}
-                  animate={{ height: "75vh", opacity: 1 }}
-                  exit={{ height: 56, opacity: 0 }}
-                  transition={{ duration: 0.4, ease: "easeInOut" }}
+          {STAT_GROUPS[currentStatGroup].map((stat, i) => (
+            <div className={styles.metricItem} key={i}>
+              <AnimatePresence mode="wait">
+                <motion.div 
+                  key={stat.label}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  transition={{ duration: 0.25, delay: i * 0.05, ease: "easeOut" }}
+                  style={{ display: "flex", flexDirection: "column" }}
                 >
-                   <PulseAIWorkspace onClose={() => setIsPulseActive(false)} />
+                  <div className={styles.metricValue}>
+                    <CountingNumber value={stat.value} suffix={stat.suffix} />
+                  </div>
+                  <div className={styles.metricLabel}>
+                    {stat.label.split('\n').map((line, idx) => (
+                      <React.Fragment key={idx}>
+                        {line}
+                        {idx !== stat.label.split('\n').length - 1 && <br/>}
+                      </React.Fragment>
+                    ))}
+                  </div>
                 </motion.div>
-              ) : isOpen ? (
-                <motion.div
-                  key="dropdown"
-                  className={styles.dropdown}
-                  initial={{ opacity: 0, y: -10, scale: 0.98 }}
-                  animate={{ opacity: 1, y: 0, scale: 1 }}
-                  exit={{ opacity: 0, y: -10, scale: 0.98 }}
-                  transition={{ duration: 0.2, ease: "easeOut" }}
-                  data-lenis-prevent
-                >
-                  {/* Location Simulation Bar */}
-                  <div 
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "space-between",
-                      padding: "6px 12px",
-                      background: "#f8fafc",
-                      borderRadius: "12px",
-                      marginBottom: "10px",
-                      border: "1px solid #e2e8f0",
-                      flexShrink: 0
-                    }}
-                  >
-                    <span style={{ fontSize: "11px", fontWeight: 700, color: "#475569", display: "flex", alignItems: "center", gap: "4px" }}>
-                      📍 Simulating Location:
-                    </span>
-                    <div style={{ display: "flex", gap: "6px" }}>
-                      <button
-                        type="button"
-                        onClick={() => setSimulatedUserLocation("same_city")}
-                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "same_city" ? "#16a34a" : "white", color: simulatedUserLocation === "same_city" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
-                      >
-                        Same City
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSimulatedUserLocation("nearby")}
-                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "nearby" ? "#ea580c" : "white", color: simulatedUserLocation === "nearby" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
-                      >
-                        Nearby (100km)
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setSimulatedUserLocation("far_away")}
-                        style={{ padding: "4px 10px", borderRadius: "9999px", fontSize: "10.5px", fontWeight: 700, cursor: "pointer", background: simulatedUserLocation === "far_away" ? "#7c3aed" : "white", color: simulatedUserLocation === "far_away" ? "white" : "#475569", border: "1px solid #cbd5e1", transition: "all 0.15s ease" }}
-                      >
-                        Far Away (Video)
-                      </button>
-                    </div>
-                  </div>
+              </AnimatePresence>
+            </div>
+          ))}
+        </motion.div>
+      </div>
 
-                  {/* Location alert banner when not same city */}
-                  {searchQuery.trim() && simulatedUserLocation !== "same_city" && (
-                    <div 
-                      style={{
-                        padding: "8px 12px",
-                        background: simulatedUserLocation === "nearby" ? "#fffbeb" : "#faf5ff",
-                        border: simulatedUserLocation === "nearby" ? "1px solid #fef3c7" : "1px solid #f3e8ff",
-                        borderRadius: "10px",
-                        color: simulatedUserLocation === "nearby" ? "#b45309" : "#6b21a8",
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        marginBottom: "10px",
-                        display: "flex",
-                        alignItems: "center",
-                        gap: "6px",
-                        flexShrink: 0
-                      }}
-                    >
-                      {simulatedUserLocation === "nearby" ? (
-                        <span>📍 No Narayana Health facilities found in your city. Showing matches from the nearest available facility (within 100km).</span>
-                      ) : (
-                        <span>💻 No facilities available in your area. Showing doctors available for online video consultation.</span>
-                      )}
+      <div className={styles.centerWrap}>
+        <div className={styles.heroStack}>
+          <div className={`${styles.titleUnit} ${isOpen ? styles.titleHidden : ""}`}>
+            <SplitText text="Trusted Care, Every Day" tag="h1" className={styles.headline} delay={0.08} />
+            <motion.p 
+              className={styles.subHeadline}
+              initial={{ opacity: 0, y: 16 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.25, duration: 0.5, ease: "easeOut" }}
+            >
+              Compassion Backed by Expertise
+            </motion.p>
+            
+          </div>
+
+<motion.form
+                    ref={searchRef}
+                    onSubmit={handleSearch}
+                    className={`${styles.searchBarForm} ${isOpen ? styles.searchBarFormActive : ""}`}
+                    initial={{ opacity: 0, y: 16 }}
+                    animate={{ 
+                      opacity: 1, 
+                      y: isOpen ? -490 : 0 
+                    }}
+                    transition={isOpen 
+                      ? { duration: 0.4, ease: [0.16, 1, 0.3, 1] } 
+                      : hasOpened 
+                        ? { duration: 0.2, ease: "easeOut" } 
+                        : { delay: 0.4, duration: 0.6 }
+                    }
+                  >
+                    {!isPulseActive && (
+                      <div className={`${styles.searchContainer} ${isOpen ? styles.searchContainerActive : ""}`}>
+                      <div
+                        className={`${styles.searchIconWrapper} ${styles.searchIconPulse}`}
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          if (isConversational) {
+                            if (!isPulseAnalyzed) {
+                              setIsPulseAnalyzed(true);
+                            } else {
+                              setIsPulseActive(true);
+                              setIsOpen(false);
+                            }
+                          } else {
+                            setIsPulseActive(true);
+                          }
+                        }}
+                        title="Open Pulse AI"
+                        style={{ cursor: "pointer" }}
+                      >
+                        <Search className={styles.searchIcon} size={18} />
+                      </div>
+                      <input
+                        id="hero-search-input"
+                        type="text"
+                        placeholder="Search doctors, specialities, or treatments..."
+                        value={searchQuery}
+                        autoComplete="off"
+                        autoCorrect="off"
+                        spellCheck={false}
+                        onChange={(e) => {
+                          setSearchQuery(e.target.value);
+                          setIsOpen(true);
+                          setHasOpened(true);
+                        }}
+                        onFocus={() => {
+                          setIsOpen(true);
+                          setHasOpened(true);
+                        }}
+                        className={styles.searchInput}
+                      />
+
                     </div>
-                  )}
-          {!searchQuery.trim() ? (
+                    )}
+
+                    {/* Progressive Search Dropdown */}
+                    <AnimatePresence mode="wait">
+                      {isOpen ? (
+                        <motion.div
+                          key="dropdown"
+                          className={styles.dropdown}
+                          initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                          animate={{ opacity: 1, y: 0, scale: 1 }}
+                          exit={{ opacity: 0, y: 10, scale: 0.98 }}
+                          transition={{ duration: 0.2, ease: "easeOut" }}
+                          data-lenis-prevent
+                        >
+
+
+                          {!searchQuery.trim() ? (
                     <div className={styles.popularSearchesContainer}>
                       {/* Popular Tags */}
                       <div className={styles.popularSearches}>
@@ -1141,17 +1076,22 @@ export default function HeroSearchFirst() {
                       </div>
 
                       <div className={styles.entryCardsContainer}>
+                        {/* Card 1: Find the right doctor */}
                         <div 
                           className={`${styles.entryCard} ${styles.blueThemeCard}`}
                           onClick={() => {
-                            setSearchQuery("Find doctor");
+                            setSearchQuery("");
                             setIsPulseActive(true);
                           }}
                           style={{ cursor: "pointer" }}
                         >
                           <div className={styles.entryCardHeader}>
                             <div className={styles.entryCardBannerWrap}>
-                              <img src="/pulse_find_doctor_banner.png" alt="Find the right doctor" className={styles.entryCardBannerImg} />
+                              <img 
+                                src="/images/pulse-ai/pulse_find_doctor_banner.png" 
+                                alt="Find the right doctor" 
+                                className={styles.entryCardBannerImg} 
+                              />
                             </div>
                             <div className={styles.entryCardMeta}>
                               <h3 className={styles.entryCardTitle}>Find the right doctor</h3>
@@ -1163,14 +1103,21 @@ export default function HeroSearchFirst() {
                           </div>
                         </div>
 
+                        {/* Card 2: Know your health */}
                         <div 
                           className={`${styles.entryCard} ${styles.tealThemeCard}`}
-                          onClick={() => handleKnowYourHealthClick("Know your health")}
+                          onClick={() => {
+                            handleKnowYourHealthClick("Know your health");
+                          }}
                           style={{ cursor: "pointer" }}
                         >
                           <div className={styles.entryCardHeader}>
                             <div className={styles.entryCardBannerWrap}>
-                              <img src="/pulse_health_insights_banner.png" alt="Know your health" className={styles.entryCardBannerImg} />
+                              <img 
+                                src="/images/pulse-ai/pulse_health_insights_banner.png" 
+                                alt="Know your health" 
+                                className={styles.entryCardBannerImg} 
+                              />
                             </div>
                             <div className={styles.entryCardMeta}>
                               <h3 className={styles.entryCardTitle}>Know your health</h3>
@@ -1183,333 +1130,1309 @@ export default function HeroSearchFirst() {
                         </div>
                       </div>
                     </div>
-          ) : (
-            <>
-              {/* Tabs Selector at the top */}
-              <div className={styles.dropdownTabs}>
-                <div className={styles.dropdownTabButtons}>
-                  <button
-                    type="button"
-                    onClick={() => setActiveDropdownTab("doctors_specialities")}
-                    className={`${styles.dropdownTab} ${activeDropdownTab === "doctors_specialities" ? styles.activeTab : ""}`}
-                  >
-                    Appointments ({filteredDoctors.length + filteredSpecs.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveDropdownTab("treatments_tests")}
-                    className={`${styles.dropdownTab} ${activeDropdownTab === "treatments_tests" ? styles.activeTab : ""}`}
-                  >
-                    Treatments & Tests ({filteredTreatments.length})
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setActiveDropdownTab("articles")}
-                    className={`${styles.dropdownTab} ${activeDropdownTab === "articles" ? styles.activeTab : ""}`}
-                  >
-                    Articles ({filteredArticles.length})
-                  </button>
-                </div>
+                  ) : (
+                    <>
+                      {isConversational ? (
+                        <div className={styles.pulsePreviewWrapper} data-lenis-prevent>
+                          {/* 1. Top Section: General search results (Standard Matches) - Only shown before analysis */}
+                          {!isPulseAnalyzed && (
+                            <div className={styles.pulseGeneralMatches}>
+                              <div className={styles.pulsePreviewTitle}>Standard Matches</div>
+                              <div className={styles.dropdownTabContent} style={{ maxHeight: "200px" }}>
+                                <div className={styles.dropdownSection}>
+                                  {/* Speciality matched if any */}
+                                  {filteredSpecs.length > 0 && (
+                                    <div style={{ marginBottom: "12px" }}>
+                                      <div className={styles.sectionHeader} style={{ fontSize: "11px", marginBottom: "6px" }}>Specialities</div>
+                                      <div className={styles.specGrid} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                                        {filteredSpecs.map((spec) => (
+                                          <div
+                                            key={spec.name}
+                                            onClick={() => handleSelectSuggestion(spec.name)}
+                                            className={styles.specCard}
+                                            style={{ padding: "6px 10px" }}
+                                          >
+                                            <img
+                                              src={spec.image || "/Specialities icons/General Medicine.svg"}
+                                              alt={spec.name}
+                                              className={styles.specImage}
+                                              style={{ width: "24px", height: "24px" }}
+                                            />
+                                            <div className={styles.specName} style={{ fontSize: "12.5px" }}>
+                                              <HighlightMatch text={spec.name} query={searchQuery} />
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
 
-                {activeDropdownTab === "doctors_specialities" && (
-                  <div className={styles.dropdownLocationFilter}>
-                    <MapPin size={14} className={styles.locationPinIcon} />
-                    <select
-                      value={selectedLocation}
-                      onChange={(e) => setSelectedLocation(e.target.value)}
-                      className={styles.locationDropdownSelect}
-                    >
-                      <option value="All Locations">All Locations</option>
-                      {Array.from(new Set(doctorsData.map((d) => d.location))).map((loc) => (
-                        <option key={loc} value={loc}>
-                          {loc}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                )}
-              </div>
+                                   {(() => {
+                                     const hospitalDoctors = filteredDoctors.filter(doc => {
+                                       if (simulatedUserLocation === "far_away") return false;
+                                       return doc.consultationModes === "hospital" || doc.consultationModes === "both" || !doc.consultationModes;
+                                     });
 
-              <div className={styles.dropdownTabContent} data-lenis-prevent>
-                {activeDropdownTab === "doctors_specialities" && (
-                  <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* Doctors Section */}
-                    {filteredDoctors.length > 0 && (
-                      <div>
-                        <div className={styles.sectionHeader}>Doctors</div>
-                        <div className={styles.doctorGrid}>
-                          {filteredDoctors.map((doc) => (
-                            <div
-                              key={doc.name}
-                              onClick={() => handleSelectSuggestion(doc.name)}
-                              className={styles.doctorCard}
-                            >
-                              <img
-                                src={doc.photo || "/doctor_avatar_male.png"}
-                                alt={doc.name}
-                                className={styles.doctorPhoto}
-                              />
-                              <div className={styles.doctorInfo}>
-                                <div className={styles.doctorName}>
-                                  <HighlightMatch text={doc.name} query={searchQuery} />
-                                </div>
-                                <div className={styles.doctorSpec}>{doc.speciality}</div>
-                                <div className={styles.doctorLoc}>
-                                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
-                                  <span>
-                                    {doc.hospital}
-                                    {doc.additionalHospitals && (
-                                      <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
-                                    )}
-                                  </span>
+                                     const videoDoctors = filteredDoctors.filter(doc => {
+                                       if (simulatedUserLocation === "far_away") {
+                                         return doc.consultationModes === "video" || doc.consultationModes === "both" || !doc.consultationModes;
+                                       }
+                                       return doc.consultationModes === "video";
+                                     });
+
+                                     if (filteredDoctors.length === 0) {
+                                       return filteredSpecs.length === 0 ? (
+                                         <div className={styles.noResults} style={{ padding: "8px 0" }}>No direct general results found</div>
+                                       ) : null;
+                                     }
+
+                                     return (
+                                       <div style={{ display: "flex", flexDirection: "column", gap: "14px", marginTop: "8px" }}>
+                                         {hospitalDoctors.length > 0 && (
+                                           <div>
+                                             <div className={styles.sectionHeader} style={{ fontSize: "11px", marginBottom: "6px", color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                                               <Building2 size={12} /> Hospital Visit (In-Person)
+                                             </div>
+                                             <div className={styles.doctorGrid} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "8px" }}>
+                                               {hospitalDoctors.map((doc) => (
+                                                <div
+                                                  key={doc.name}
+                                                  onClick={() => handleSelectSuggestion(doc.name)}
+                                                  className={styles.doctorCard}
+                                                >
+                                                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", width: "100%" }}>
+                                                    <img
+                                                      src={doc.photo || "/images/misc/doctor_avatar_male.png"}
+                                                      alt={doc.name}
+                                                      className={styles.doctorPhoto}
+                                                    />
+                                                    <div className={styles.doctorInfo} style={{ width: "100%" }}>
+                                                      <div className={styles.doctorName}>
+                                                        <HighlightMatch text={doc.name} query={searchQuery} />
+                                                      </div>
+                                                      <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                                      <div className={styles.doctorLoc}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                        <span>
+                                                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                            {doc.hospital}
+                                                            {doc.additionalHospitals && (
+                                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                                            )}
+                                                          </span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap", width: "100%", borderTop: "1px solid var(--color-border)", paddingTop: "10px", marginTop: "2px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                      <img src="/Appointment/Hospital_visit.svg" alt="Hospital Visit" width={10} height={10} />
+                                                      {doc.availability?.hospital || "Today 05:30 PM"}
+                                                    </div>
+                                                    {(doc.consultationModes === "both" || !doc.consultationModes) && (
+                                                      <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                        <img src="/Appointment/Video_consultation.svg" alt="Video Consultation" width={10} height={10} />
+                                                        {doc.availability?.video || "Today 05:30 PM"}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                               ))}
+                                             </div>
+                                           </div>
+                                         )}
+
+                                         {videoDoctors.length > 0 && (
+                                           <div>
+                                             <div className={styles.sectionHeader} style={{ fontSize: "11px", marginBottom: "6px", color: "#7c3aed", display: "flex", alignItems: "center", gap: "4px" }}>
+                                               <Video size={12} /> Video Consultation (Online)
+                                             </div>
+                                             <div className={styles.doctorGrid} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "8px" }}>
+                                               {videoDoctors.map((doc) => (
+                                                <div
+                                                  key={doc.name}
+                                                  onClick={() => handleSelectSuggestion(doc.name)}
+                                                  className={styles.doctorCard}
+                                                >
+                                                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", width: "100%" }}>
+                                                    <img
+                                                      src={doc.photo || "/images/misc/doctor_avatar_male.png"}
+                                                      alt={doc.name}
+                                                      className={styles.doctorPhoto}
+                                                    />
+                                                    <div className={styles.doctorInfo} style={{ width: "100%" }}>
+                                                      <div className={styles.doctorName}>
+                                                        <HighlightMatch text={doc.name} query={searchQuery} />
+                                                      </div>
+                                                      <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                                      <div className={styles.doctorLoc}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                        <span>
+                                                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                            {doc.hospital}
+                                                            {doc.additionalHospitals && (
+                                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                                            )}
+                                                          </span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap", width: "100%", borderTop: "1px solid var(--color-border)", paddingTop: "10px", marginTop: "2px" }}>
+                                                    {simulatedUserLocation === "far_away" && doc.consultationModes === "hospital" ? (
+                                                      <span title="No Online Consultation" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "18px", height: "18px", borderRadius: "50%", background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
+                                                        <span style={{ fontSize: "9px" }}>❌</span>
+                                                      </span>
+                                                    ) : (
+                                                      <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                        <img src="/Appointment/Video_consultation.svg" alt="Video Consultation" width={10} height={10} />
+                                                        {doc.availability?.video || "Today 05:30 PM"}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                               ))}
+                                             </div>
+                                           </div>
+                                         )}
+                                       </div>
+                                     );
+                                   })()}
                                 </div>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Specialities Section */}
-                    {filteredSpecs.length > 0 && (
-                      <div>
-                        <div className={styles.sectionHeader}>Specialities</div>
-                        <div className={styles.specGrid}>
-                          {filteredSpecs.map((spec) => (
-                            <div
-                              key={spec.name}
-                              onClick={() => handleSelectSuggestion(spec.name)}
-                              className={styles.specCard}
-                            >
-                              <img
-                                src={spec.image || "/Specialities icons/General Medicine.svg"}
-                                alt={spec.name}
-                                className={styles.specImage}
-                              />
-                              <div className={styles.specInfo} style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
-                                <div className={styles.specName}>
-                                  <HighlightMatch text={spec.name} query={searchQuery} />
-                                </div>
-                                {spec.matchingKeyword && (
-                                  <div style={{ fontSize: "10.5px", color: "#64748B", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                                    Relates to: <HighlightMatch text={spec.matchingKeyword} query={searchQuery} />
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {filteredDoctors.length === 0 && filteredSpecs.length === 0 && (
-                      <div className={styles.noResults}>No matching doctors or specialities found</div>
-                    )}
-                  </div>
-                )}
-
-                {activeDropdownTab === "treatments_tests" && (
-                  <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-                    {/* Health Checkup Packages Section */}
-                    {filteredHealthCheckups.length > 0 && (
-                      <div>
-                        <div className={styles.sectionHeader}>Health Checkup Packages</div>
-                        <div className={styles.treatmentGrid}>
-                          {filteredHealthCheckups.map((t) => (
-                            <div
-                              key={t.name}
-                              onClick={() => handleSelectSuggestion(t.name)}
-                              className={styles.treatmentCard}
-                            >
-                              {t.image && (
-                                <img
-                                  src={t.image}
-                                  alt={t.name}
-                                  className={styles.treatmentImage}
-                                />
-                              )}
-                              <div className={styles.treatmentInfo}>
-                                <div className={styles.treatmentHeader}>
-                                  <div className={styles.treatmentName}>
-                                    <HighlightMatch text={t.name} query={searchQuery} />
-                                  </div>
-                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                    {t.testCount}
-                                  </div>
-                                </div>
-                                <div className={styles.treatmentDesc}>{t.description}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Lab Tests Section */}
-                    {filteredLabTests.length > 0 && (
-                      <div>
-                        <div className={styles.sectionHeader}>Lab Tests</div>
-                        <div className={styles.treatmentGrid}>
-                          {filteredLabTests.map((t) => (
-                            <div
-                              key={t.name}
-                              onClick={() => handleSelectSuggestion(t.name)}
-                              className={styles.treatmentCard}
-                            >
-                              {t.name.includes("CBC") ? (
-                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#EF4444" }}>
-                                  <Droplets size={20} />
-                                </div>
-                              ) : t.name.includes("Thyroid") ? (
-                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(168, 85, 247, 0.1)", color: "#A855F7" }}>
-                                  <FlaskConical size={20} />
-                                </div>
-                              ) : (
-                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10B981" }}>
-                                  <Activity size={20} />
-                                </div>
-                              )}
-                              <div className={styles.treatmentInfo}>
-                                <div className={styles.treatmentHeader}>
-                                  <div className={styles.treatmentName}>
-                                    <HighlightMatch text={t.name} query={searchQuery} />
-                                  </div>
-                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                    {t.testCount}
-                                  </div>
-                                </div>
-                                <div className={styles.treatmentDesc}>{t.description}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Treatments Section */}
-                    {filteredOnlyTreatments.length > 0 && (
-                      <div>
-                        <div className={styles.sectionHeader}>Treatments</div>
-                        <div className={styles.treatmentGrid}>
-                          {filteredOnlyTreatments.map((t) => (
-                            <div
-                              key={t.name}
-                              onClick={() => handleSelectSuggestion(t.name)}
-                              className={styles.treatmentCard}
-                            >
-                              {t.image && (
-                                <img
-                                  src={t.image}
-                                  alt={t.name}
-                                  className={styles.treatmentImage}
-                                />
-                              )}
-                              <div className={styles.treatmentInfo}>
-                                <div className={styles.treatmentHeader}>
-                                  <div className={styles.treatmentName}>
-                                    <HighlightMatch text={t.name} query={searchQuery} />
-                                  </div>
-                                  <div style={{ fontSize: '10.5px', color: 'var(--color-primary, #034EA2)', fontWeight: 500 }}>
-                                    Related to: <HighlightMatch text={t.speciality ?? ""} query={searchQuery} />
-                                  </div>
-                                </div>
-                                <div className={styles.treatmentDesc}>{t.description}</div>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      </div>
-                    )}
-
-                    {filteredTreatments.length === 0 && (
-                      <div className={styles.noResults}>No matching treatments, packages or tests found</div>
-                    )}
-                  </div>
-                )}
-
-                {activeDropdownTab === "articles" && (
-                  <div className={styles.dropdownSection}>
-                    {filteredArticles.length > 0 ? (
-                      filteredArticles.map((a) => (
-                        <div
-                          key={a.name}
-                          onClick={() => handleSelectSuggestion(a.name)}
-                          className={styles.treatmentCard}
-                        >
-                          {a.image ? (
-                            <img
-                              src={a.image}
-                              alt={a.name}
-                              className={styles.articleImage}
-                            />
-                          ) : (
-                            <div className={styles.itemIconWrap}>
-                              <FileText size={14} />
                             </div>
                           )}
-                          <div className={styles.treatmentInfo}>
-                            <div className={styles.treatmentHeader}>
-                              <div className={styles.treatmentName}>
-                                <HighlightMatch text={a.name} query={searchQuery} />
-                              </div>
-                              {a.matchingKeyword && (
-                                <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
-                                  Relates to: <HighlightMatch text={a.matchingKeyword} query={searchQuery} />
+
+                          {/* 2. Bottom Section: Pulse AI Preview / Widget (Dynamic based on analysis status) */}
+                          {(() => {
+                            if (!isPulseAnalyzed) {
+                              if (!hasSubmittedQuery) {
+                                return null;
+                              } else {
+                                return (
+                                  <div 
+                                    className={styles.pulseAIWidgetBox}
+                                    style={{ padding: "18px", background: "linear-gradient(135deg, #f5f3ff 0%, #fae8ff 100%)", border: "1px solid #ddd6fe", borderRadius: "14px", display: "flex", flexDirection: "column", gap: "10px", alignItems: "center", textAlign: "center", marginTop: "12px" }}
+                                  >
+                                    <div style={{ fontSize: "14.5px", fontWeight: 700, color: "#6b21a8", display: "flex", alignItems: "center", justifyContent: "center", gap: "8px" }}>
+                                      <Lottie animationData={starAnimation} style={{ width: "28px", height: "28px" }} loop={true} />
+                                      <span>Personalize Results with Pulse AI</span>
+                                      <Lottie animationData={pulseAnimation} style={{ width: "42px", height: "24px" }} loop={true} />
+                                    </div>
+                                    <div style={{ fontSize: "12px", color: "#475569", maxWidth: "480px", lineHeight: "1.4" }}>
+                                      Want a more customized, personalized diagnostic summary? Let our Pulse AI analyze your symptoms to find matching doctors and care pathways.
+                                    </div>
+                                    <button
+                                      type="button"
+                                      className={styles.askPulseAiSubmitBtn}
+                                      onClick={() => setIsPulseAnalyzed(true)}
+                                      style={{ background: "linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)", color: "white", border: "none", borderRadius: "9999px", padding: "8px 24px", fontSize: "12.5px", fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(124, 58, 237, 0.25)", transition: "all 0.2s" }}
+                                    >
+                                      Ask Pulse AI
+                                    </button>
+                                  </div>
+                                );
+                              }
+                            }
+
+                            const response = getRealtimePulseResponse(searchQuery);
+
+                            // IF showGenericMatchesInPulse is true, show MINIMIZED Pulse AI banner + full Standard Matches!
+                            if (showGenericMatchesInPulse) {
+                              return (
+                                <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                  {/* Minimized Pulse AI Banner */}
+                                  <div 
+                                    className={styles.pulseAIPreviewBox}
+                                    style={{ padding: "10px 14px", background: "linear-gradient(135deg, #f5f3ff 0%, #fae8ff 100%)", border: "1px solid #ddd6fe", borderRadius: "12px", display: "flex", justifyContent: "space-between", alignItems: "center" }}
+                                  >
+                                    <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+                                      <Lottie animationData={starAnimation} style={{ width: "20px", height: "20px" }} loop={true} />
+                                      <span style={{ fontSize: "12.5px", fontWeight: 750, color: "#6b21a8" }}>
+                                        Pulse AI Curated Match: {response.suggestedSpec} Specialist Recommended ({response.suggestedDoc.name})
+                                      </span>
+                                    </div>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        setShowGenericMatchesInPulse(false);
+                                      }}
+                                      style={{ background: "white", border: "1px solid #7c3aed", borderRadius: "9999px", padding: "4px 12px", fontSize: "11px", fontWeight: 700, color: "#7c3aed", cursor: "pointer", boxShadow: "0 2px 6px rgba(124, 58, 237, 0.15)" }}
+                                    >
+                                      View Full Curated Match
+                                    </button>
+                                  </div>
+
+                                  {/* Standard Matches Section */}
+                                  <div className={styles.pulseGeneralMatches}>
+                                    <div className={styles.pulsePreviewTitle}>Standard Matches</div>
+                                    <div className={styles.dropdownTabContent} style={{ maxHeight: "200px" }}>
+                                      <div className={styles.dropdownSection}>
+                                        {/* Speciality matched if any */}
+                                        {filteredSpecs.length > 0 && (
+                                          <div style={{ marginBottom: "12px" }}>
+                                            <div className={styles.sectionHeader} style={{ fontSize: "11px", marginBottom: "6px" }}>Specialities</div>
+                                            <div className={styles.specGrid} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(200px, 1fr))" }}>
+                                              {filteredSpecs.map((spec) => (
+                                                <div
+                                                  key={spec.name}
+                                                  onClick={() => handleSelectSuggestion(spec.name)}
+                                                  className={styles.specCard}
+                                                  style={{ padding: "6px 10px" }}
+                                                >
+                                                  <img
+                                                    src={spec.image || "/Specialities icons/General Medicine.svg"}
+                                                    alt={spec.name}
+                                                    className={styles.specImage}
+                                                    style={{ width: "24px", height: "24px" }}
+                                                  />
+                                                  <div className={spec.name} style={{ fontSize: "12.5px" }}>
+                                                    <HighlightMatch text={spec.name} query={searchQuery} />
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {/* Doctors matched if any */}
+                                        {filteredDoctors.length > 0 ? (
+                                          <div>
+                                            <div className={styles.sectionHeader} style={{ fontSize: "11px", marginBottom: "6px" }}>Doctors</div>
+                                            <div className={styles.doctorGrid} style={{ gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", gap: "8px" }}>
+                                              {filteredDoctors.map((doc) => (
+                                                <div
+                                                  key={doc.name}
+                                                  onClick={() => handleSelectSuggestion(doc.name)}
+                                                  className={styles.doctorCard}
+                                                >
+                                                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", width: "100%" }}>
+                                                    <img
+                                                      src={doc.photo || "/images/misc/doctor_avatar_male.png"}
+                                                      alt={doc.name}
+                                                      className={styles.doctorPhoto}
+                                                    />
+                                                    <div className={styles.doctorInfo} style={{ width: "100%" }}>
+                                                      <div className={styles.doctorName}>
+                                                        <HighlightMatch text={doc.name} query={searchQuery} />
+                                                      </div>
+                                                      <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                                      <div className={styles.doctorLoc}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                        <span>
+                                                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                            {doc.hospital}
+                                                            {doc.additionalHospitals && (
+                                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                                            )}
+                                                          </span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap", width: "100%", borderTop: "1px solid var(--color-border)", paddingTop: "10px", marginTop: "2px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                      <img src="/Appointment/Hospital_visit.svg" alt="Hospital Visit" width={10} height={10} />
+                                                      {doc.availability?.hospital || "Today 05:30 PM"}
+                                                    </div>
+                                                    {(doc.consultationModes === "both" || !doc.consultationModes) && (
+                                                      <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                        <img src="/Appointment/Video_consultation.svg" alt="Video Consultation" width={10} height={10} />
+                                                        {doc.availability?.video || "Today 05:30 PM"}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        ) : (
+                                          filteredSpecs.length === 0 && (
+                                            <div className={styles.noResults} style={{ padding: "8px 0" }}>No direct general results found</div>
+                                          )
+                                        )}
+                                      </div>
+                                    </div>
+                                  </div>
                                 </div>
-                              )}
-                            </div>
-                            {a.description && (
-                              <div className={styles.treatmentDesc}>
-                                {a.description}
+                              );
+                            }
+
+                            // Full Pulse AI recommendations view
+                            return (
+                              <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
+                                <div 
+                                  className={`${styles.pulseAIPreviewBox} ${styles.pulseAIPreviewBoxAnalyzed}`}
+                                >
+                                  <div className={styles.pulsePreviewHeaderRow}>
+                                    <div className={styles.pulsePreviewBadge}>
+                                      <Lottie animationData={starAnimation} className={styles.pulsePreviewLottie} loop={true} />
+                                      {isUserLoggedIn ? (
+                                        <span className={styles.pulseAnalyzedBadgeTitle}>🔥 PULSE AI CURATED MATCH</span>
+                                      ) : (
+                                        <span className={styles.pulseAnalyzedBadgeTitle} style={{ color: "#0891b2" }}>✨ PULSE AI SPECIALIST RECOMMENDATIONS</span>
+                                      )}
+                                    </div>
+                                    {isUserLoggedIn ? (
+                                      <div className={styles.pulsePreviewTag} style={{ color: "#7c3aed", background: "#f5f3ff", border: "1px solid #ddd6fe" }}>Curated Live</div>
+                                    ) : (
+                                      <div className={styles.pulsePreviewTag} style={{ color: "#0891b2", background: "#ecfeff", border: "1px solid #a5f3fc" }}>Specialists matched</div>
+                                    )}
+                                  </div>
+
+                                  {simulatedUserLocation === "far_away" && (
+                                    <div 
+                                      style={{
+                                        padding: "10px 14px",
+                                        background: "#fff1f2",
+                                        border: "1px solid #fecdd3",
+                                        borderRadius: "8px",
+                                        color: "#be123c",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        marginTop: "8px",
+                                        marginBottom: "8px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px"
+                                      }}
+                                    >
+                                      ⚠️ No physical Narayana Health facilities within 100km of your area. Online Video Consultation mode is active.
+                                    </div>
+                                  )}
+
+                                  {simulatedUserLocation === "nearby" && (
+                                    <div 
+                                      style={{
+                                        padding: "10px 14px",
+                                        background: "#fff7ed",
+                                        border: "1px solid #ffedd5",
+                                        borderRadius: "8px",
+                                        color: "#c2410c",
+                                        fontSize: "12px",
+                                        fontWeight: 600,
+                                        marginTop: "8px",
+                                        marginBottom: "8px",
+                                        display: "flex",
+                                        alignItems: "center",
+                                        gap: "8px"
+                                      }}
+                                    >
+                                      📍 No direct hospitals in your city. Found matching specialists nearby (within 100km). Hospital Visit is available.
+                                    </div>
+                                  )}
+
+                                  {isUserLoggedIn ? (
+                                    <>
+                                      <div className={styles.pulsePreviewEmpathy}>
+                                        &ldquo;{response.empathy}&rdquo;
+                                      </div>
+
+                                      <div className={styles.pulsePreviewRecommendedDoc}>
+                                        <img 
+                                          src={response.suggestedDoc.photo} 
+                                          alt={response.suggestedDoc.name} 
+                                          className={styles.pulsePreviewDocPhoto} 
+                                        />
+                                        <div className={styles.pulsePreviewDocDetails}>
+                                          <div className={styles.pulsePreviewBestMatchTag}>
+                                            ✨ Best Match / Recommended Specialist
+                                          </div>
+                                          <div style={{ display: "flex", alignItems: "center", gap: "8px", flexWrap: "wrap", marginBottom: "4px" }}>
+                                            <div className={styles.pulsePreviewDocName}>
+                                              {response.suggestedDoc.name}
+                                              <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                                                {(simulatedUserLocation === "same_city" || simulatedUserLocation === "nearby") && 
+                                                 (response.suggestedDoc.consultationModes === "hospital" || response.suggestedDoc.consultationModes === "both" || !response.suggestedDoc.consultationModes) && (
+                                                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: 700, color: "#16a34a", background: "#f0fdf4", border: "1px solid #bbf7d0", padding: "1px 6px", borderRadius: "4px" }}>
+                                                    <Building2 size={9} /> Hospital Visit {simulatedUserLocation === "nearby" ? "(65km)" : ""}
+                                                  </span>
+                                                )}
+                                                {(response.suggestedDoc.consultationModes === "video" || response.suggestedDoc.consultationModes === "both" || !response.suggestedDoc.consultationModes) && (
+                                                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: 700, color: "#7c3aed", background: "#f5f3ff", border: "1px solid #ddd6fe", padding: "1px 6px", borderRadius: "4px" }}>
+                                                    <Video size={9} /> Video Consult
+                                                  </span>
+                                                )}
+                                                {simulatedUserLocation === "far_away" && response.suggestedDoc.consultationModes === "hospital" && (
+                                                  <span style={{ display: "inline-flex", alignItems: "center", gap: "3px", fontSize: "9px", fontWeight: 700, color: "#94a3b8", background: "#f1f5f9", border: "1px solid #e2e8f0", padding: "1px 6px", borderRadius: "4px" }}>
+                                                    ❌ No Online
+                                                  </span>
+                                                )}
+                                              </div>
+                                            </div>
+                                          </div>
+                                          <div className={styles.pulsePreviewDocSub}>
+                                            {response.suggestedSpec} • {response.suggestedDoc.hospital}
+                                          </div>
+                                          <div className={styles.pulsePreviewDocSlot}>
+                                            Next Slot: <strong>{response.slot}</strong>
+                                          </div>
+                                        </div>
+                                        <div className={styles.pulsePreviewActions}>
+                                          <button 
+                                            className={styles.pulsePreviewBookBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handlePulseLaunchWithAction("book_now", response.suggestedDoc);
+                                            }}
+                                          >
+                                            Book Now
+                                          </button>
+                                          <button 
+                                            className={styles.pulsePreviewModifyBtn}
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              handlePulseLaunchWithAction("book_now", response.suggestedDoc);
+                                            }}
+                                          >
+                                            Modify &amp; Book
+                                          </button>
+                                        </div>
+                                      </div>
+                                    </>
+                                  ) : (
+                                    <>
+                                      <div className={styles.pulsePreviewEmpathy} style={{ color: "#475569", fontWeight: 500 }}>
+                                        We found 3 highly qualified <strong>{response.suggestedSpec}</strong> specialists matching your symptoms. Select a doctor to review slots:
+                                      </div>
+
+                                      <div style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
+                                        {response.recommendedDocs.map((doc: any) => (
+                                          <div 
+                                            key={doc.id}
+                                            className={styles.pulsePreviewRecommendedDoc} 
+                                            style={{ border: "1px solid #e2e8f0", padding: "10px 14px", borderRadius: "10px", background: "#f8fafc", margin: 0 }}
+                                          >
+                                            <img 
+                                              src={doc.photo} 
+                                              alt={doc.name} 
+                                              className={styles.pulsePreviewDocPhoto} 
+                                              style={{ width: "42px", height: "42px" }}
+                                            />
+                                            <div className={styles.pulsePreviewDocDetails}>
+                                              <div className={styles.pulsePreviewDocName} style={{ fontSize: "14px", fontWeight: 700 }}>
+                                                {doc.name}
+                                              </div>
+                                              <div className={styles.pulsePreviewDocSub} style={{ fontSize: "12px", color: "#64748b" }}>
+                                                {doc.qualification} • {doc.hospital}
+                                              </div>
+                                              <div className={styles.pulsePreviewDocSlot} style={{ fontSize: "12.5px" }}>
+                                                Next Slot: <strong style={{ color: "#0891b2" }}>{doc.slot}</strong>
+                                              </div>
+                                            </div>
+                                            <div className={styles.pulsePreviewActions}>
+                                              <button 
+                                                className={styles.pulsePreviewBookBtn}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePulseLaunchWithAction("book_now", doc);
+                                                }}
+                                                style={{ padding: "6px 14px", fontSize: "12px" }}
+                                              >
+                                                Book Now
+                                              </button>
+                                              <button 
+                                                className={styles.pulsePreviewModifyBtn}
+                                                onClick={(e) => {
+                                                  e.stopPropagation();
+                                                  handlePulseLaunchWithAction("book_now", doc);
+                                                }}
+                                                style={{ padding: "6px 14px", fontSize: "12px" }}
+                                              >
+                                                View Slots
+                                              </button>
+                                            </div>
+                                          </div>
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+
+                                  {/* Secondary alternate search options section */}
+                                  <div className={styles.pulsePreviewSecondarySection}>
+                                    <div className={styles.pulseSecondaryTitle}>
+                                      <span>✨ If you are looking for something else</span>
+                                    </div>
+                                    <div className={styles.pulseSecondaryActionsRow}>
+                                      <div className={styles.pulseSecondaryChips}>
+                                        <button 
+                                          className={styles.pulseSecondaryChip}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSearchQuery("I have been having ");
+                                            setIsPulseActive(true);
+                                            setIsOpen(false);
+                                          }}
+                                        >
+                                          I have a symptom
+                                        </button>
+                                        <button 
+                                          className={styles.pulseSecondaryChip}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSearchQuery("I am looking for a ");
+                                            setIsPulseActive(true);
+                                            setIsOpen(false);
+                                          }}
+                                        >
+                                          I know the speciality
+                                        </button>
+                                        <button 
+                                          className={styles.pulseSecondaryChip}
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSearchQuery("I want to consult Dr. ");
+                                            setIsPulseActive(true);
+                                            setIsOpen(false);
+                                          }}
+                                        >
+                                          I know the doctor
+                                        </button>
+                                      </div>
+                                      <button 
+                                        className={styles.pulseViewAllDocsBtn}
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          setIsPulseActive(true);
+                                        }}
+                                      >
+                                        View all recommended doctors →
+                                      </button>
+                                    </div>
+                                  </div>
+                                </div>
+
+                                {/* Collapsible option to view generic Standard Matches */}
+                                <div style={{ display: "flex", justifyContent: "center", marginTop: "4px" }}>
+                                  <button
+                                    type="button"
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      setShowGenericMatchesInPulse(true);
+                                    }}
+                                    style={{
+                                      background: "#ffffff",
+                                      border: "1px solid #cbd5e1",
+                                      color: "#64748b",
+                                      padding: "6px 14px",
+                                      borderRadius: "9999px",
+                                      fontSize: "12px",
+                                      fontWeight: 600,
+                                      cursor: "pointer",
+                                      display: "flex",
+                                      alignItems: "center",
+                                      gap: "4px",
+                                      transition: "all 0.15s ease"
+                                    }}
+                                  >
+                                    Show Standard Matches ▾
+                                  </button>
+                                </div>
+                              </div>
+                            );
+                          })()}
+                        </div>
+                      ) : (
+                        <>
+                          {/* Tabs Selector at the top */}
+                          <div style={{ display: "flex", gap: "2px", overflowX: "auto", scrollbarWidth: "none", marginBottom: "16px", background: "var(--color-bg-alt)", borderRadius: "16px 16px 0 0" }}>
+                            {[
+                              { id: "doctors", label: "Doctors", count: tabCounts.doctors },
+                              { id: "specialties", label: "Specialty", count: tabCounts.specialties },
+                              { id: "treatments_tests", label: "Treatments & Procedures", count: tabCounts.treatments },
+                              { id: "articles", label: "Articles & Blogs", count: tabCounts.articles }
+                            ].map((tab) => {
+                              const isActive = activeDropdownTab === tab.id;
+                              return (
+                                <button
+                                  key={tab.id}
+                                  type="button"
+                                  onClick={() => setActiveDropdownTab(tab.id as any)}
+                                  style={{
+                                    position: "relative",
+                                    padding: "12px 18px",
+                                    background: isActive 
+                                      ? "linear-gradient(var(--color-bg-card), var(--color-bg-card)) padding-box, linear-gradient(to bottom, var(--color-emergency, #EF4444) 0%, #F1F5F9 70%) border-box" 
+                                      : "#F1F5F9",
+                                    border: "1px solid transparent",
+                                    borderRadius: "16px 16px 0 0",
+                                    fontSize: "14px",
+                                    fontWeight: 600,
+                                    color: isActive ? "#000000" : "#64748B",
+                                    cursor: "pointer",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "8px",
+                                    marginBottom: "-1px",
+                                    transition: "0.2s",
+                                    whiteSpace: "nowrap"
+                                  }}
+                                >
+                                  {tab.label}
+                                  <span style={{
+                                    fontSize: "11px", 
+                                    background: isActive ? "rgba(3, 78, 162, 0.08)" : "#E2E8F0", 
+                                    color: isActive ? "#000000" : "#64748B",
+                                    padding: "2px 6px",
+                                    borderRadius: "10px",
+                                    fontWeight: 500
+                                  }}>
+                                    {tab.count < 0 ? "…" : tab.count}
+                                  </span>
+                                  {isActive && (
+                                    <div style={{
+                                      position: "absolute",
+                                      bottom: 0,
+                                      left: "calc(50% - 18px)",
+                                      width: "36px",
+                                      height: "2px",
+                                      background: "var(--color-emergency, #EF4444)",
+                                      borderRadius: "4px",
+                                      transformOrigin: "center bottom"
+                                    }} />
+                                  )}
+                                </button>
+                              );
+                            })}
+                          </div>
+
+                          <div className={styles.dropdownTabContent} style={{ maxHeight: activeDropdownTab === "treatments_tests" ? "min(50vh, 420px)" : undefined }} data-lenis-prevent>
+                            {activeDropdownTab === "doctors" && (
+                              <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "-8px" }}>
+                                  <span style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", fontWeight: 500 }}>Showing matches from the nearest available facility.</span>
+                                  <div className={styles.dropdownLocationFilter}>
+                                    <MapPin size={14} className={styles.locationPinIcon} />
+                                  <select
+                                    value={selectedLocation}
+                                    onChange={(e) => setSelectedLocation(e.target.value)}
+                                    className={styles.locationDropdownSelect}
+                                  >
+                                    <option value="All Locations">All Locations</option>
+                                    {NH_CITIES.map((c) => (
+                                      <option key={c.value} value={c.value}>{c.label}</option>
+                                    ))}
+                                  </select>
+                                  </div>
+                                </div>
+                                {/* Doctors Section */}
+                                {displayDoctors.length > 0 && (
+                                  (() => {
+                                    const hospitalDoctors = displayDoctors.filter(doc => {
+                                      if (simulatedUserLocation === "far_away") return false;
+                                      return doc.consultationModes === "hospital" || doc.consultationModes === "both" || !doc.consultationModes;
+                                    });
+
+                                    const videoDoctors = displayDoctors.filter(doc => {
+                                      if (simulatedUserLocation === "far_away") {
+                                        return doc.consultationModes === "video" || doc.consultationModes === "both" || !doc.consultationModes;
+                                      }
+                                      return doc.consultationModes === "video";
+                                    });
+
+                                    return (
+                                      <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                        {hospitalDoctors.length > 0 && (
+                                          <div>
+                                            <div className={styles.sectionHeader} style={{ color: "#16a34a", display: "flex", alignItems: "center", gap: "4px" }}>
+                                              <Building2 size={13} /> Hospital Visit (In-Person)
+                                            </div>
+                                            <div className={styles.doctorGrid}>
+                                              {hospitalDoctors.slice(0, 6).map((doc) => (
+                                                <div
+                                                  key={doc.name}
+                                                  onClick={() => handleSelectSuggestion(doc.name)}
+                                                  className={styles.doctorCard}
+                                                >
+                                                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", width: "100%" }}>
+                                                    <img
+                                                      src={doc.photo || "/images/misc/doctor_avatar_male.png"}
+                                                      alt={doc.name}
+                                                      className={styles.doctorPhoto}
+                                                    />
+                                                    <div className={styles.doctorInfo} style={{ width: "100%" }}>
+                                                      <div className={styles.doctorName}>
+                                                        <HighlightMatch text={doc.name} query={searchQuery} />
+                                                      </div>
+                                                      <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                                      <div className={styles.doctorLoc}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                        <span>
+                                                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                            {doc.hospital}
+                                                            {doc.additionalHospitals && (
+                                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                                            )}
+                                                          </span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap", width: "100%", borderTop: "1px solid var(--color-border)", paddingTop: "10px", marginTop: "2px" }}>
+                                                    <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                      <img src="/Appointment/Hospital_visit.svg" alt="Hospital Visit" width={10} height={10} />
+                                                      {doc.availability?.hospital || "Today 05:30 PM"}
+                                                    </div>
+                                                    {(doc.consultationModes === "both" || !doc.consultationModes) && (
+                                                      <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                        <img src="/Appointment/Video_consultation.svg" alt="Video Consultation" width={10} height={10} />
+                                                        {doc.availability?.video || "Today 05:30 PM"}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+
+                                        {videoDoctors.length > 0 && (
+                                          <div>
+                                            <div className={styles.sectionHeader} style={{ color: "#7c3aed", display: "flex", alignItems: "center", gap: "4px" }}>
+                                              <Video size={13} /> Video Consultation (Online)
+                                            </div>
+                                            <div className={styles.doctorGrid}>
+                                              {videoDoctors.slice(0, 6).map((doc) => (
+                                                <div
+                                                  key={doc.name}
+                                                  onClick={() => handleSelectSuggestion(doc.name)}
+                                                  className={styles.doctorCard}
+                                                >
+                                                  <div style={{ display: "flex", gap: "16px", alignItems: "flex-start", width: "100%" }}>
+                                                    <img
+                                                      src={doc.photo || "/images/misc/doctor_avatar_male.png"}
+                                                      alt={doc.name}
+                                                      className={styles.doctorPhoto}
+                                                    />
+                                                    <div className={styles.doctorInfo} style={{ width: "100%" }}>
+                                                      <div className={styles.doctorName}>
+                                                        <HighlightMatch text={doc.name} query={searchQuery} />
+                                                      </div>
+                                                      <div className={styles.doctorSpec}>{doc.speciality}</div>
+                                                      <div className={styles.doctorLoc}>
+                                                        <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={styles.locIcon}><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"></path><circle cx="12" cy="10" r="3"></circle></svg>
+                                                        <span>
+                                                          <span style={{ display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>
+                                                            {doc.hospital}
+                                                            {doc.additionalHospitals && (
+                                                              <span className={styles.plusMoreBadge}> +{doc.additionalHospitals}</span>
+                                                            )}
+                                                          </span>
+                                                        </span>
+                                                      </div>
+                                                    </div>
+                                                  </div>
+                                                  
+                                                  <div style={{ display: "flex", gap: "4px", alignItems: "center", flexWrap: "wrap", width: "100%", borderTop: "1px solid var(--color-border)", paddingTop: "10px", marginTop: "2px" }}>
+                                                    {simulatedUserLocation === "far_away" && doc.consultationModes === "hospital" ? (
+                                                      <span title="No Online Consultation" style={{ display: "inline-flex", alignItems: "center", justifyContent: "center", width: "18px", height: "18px", borderRadius: "50%", background: "#f1f5f9", border: "1px solid #cbd5e1" }}>
+                                                        <span style={{ fontSize: "9px" }}>❌</span>
+                                                      </span>
+                                                    ) : (
+                                                      <div style={{ display: "flex", alignItems: "center", gap: "4px", background: "#ffffff", color: "var(--color-text)", padding: "2px 6px", borderRadius: "20px", fontSize: "10px", fontWeight: 600, whiteSpace: "nowrap", border: "1px solid var(--color-border)" }}>
+                                                        <img src="/Appointment/Video_consultation.svg" alt="Video Consultation" width={10} height={10} />
+                                                        {doc.availability?.video || "Today 05:30 PM"}
+                                                      </div>
+                                                    )}
+                                                  </div>
+                                                </div>
+                                              ))}
+                                            </div>
+                                          </div>
+                                        )}
+                                      </div>
+                                    );
+                                  })()
+                                )}
+
+                                {displayDoctors.length === 0 && !isApiLoading && (
+                                  <div className={styles.noResults}>No matching doctors found</div>
+                                )}
+
+                                {isApiLoading && (
+                                  <div className={styles.noResults} style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Searching…</div>
+                                )}
+
+                                {tabCounts.doctors > 6 && (
+                                  <button
+                                    style={{ display: "block", padding: "10px 24px", margin: "8px auto 0", background: "transparent", color: "var(--color-primary)", border: "1px solid var(--color-border)", borderRadius: "100px", fontWeight: 600, fontSize: "var(--font-size-sm)", cursor: "pointer", transition: "var(--transition-fast)" }}
+                                    onClick={() => {
+                                      setIsOpen(false);
+                                      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                                    }}
+                                  >
+                                    View all {tabCounts.doctors} Doctors
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {activeDropdownTab === "specialties" && (
+                              <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", fontWeight: 500, marginBottom: "-8px" }}>
+                                  Showing top matching specialties.
+                                </div>
+                                {/* Specialities Section */}
+                                {displaySpecs.length > 0 && (
+                                  <div>
+                                    <div className={styles.sectionHeader}>Specialities</div>
+                                    <div className={styles.specGrid}>
+                                      {displaySpecs.slice(0, 6).map((spec) => (
+                                        <div
+                                          key={spec.name}
+                                          onClick={() => handleSelectSuggestion(spec.name)}
+                                          className={styles.specCard}
+                                        >
+                                          <img
+                                            src={spec.image || "/Specialities icons/General Medicine.svg"}
+                                            alt={spec.name}
+                                            className={styles.specImage}
+                                          />
+                                          <div className={styles.specInfo} style={{ display: 'flex', flexDirection: 'column', gap: '2px', overflow: 'hidden' }}>
+                                            <div className={styles.specName}>
+                                              <HighlightMatch text={spec.name} query={searchQuery} />
+                                            </div>
+                                            {spec.matchingKeyword && (
+                                              <div style={{ fontSize: "10.5px", color: "#64748B", fontWeight: 500, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                                                Relates to: <HighlightMatch text={spec.matchingKeyword} query={searchQuery} />
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {displaySpecs.length === 0 && !isApiLoading && displaySubSpecs.length === 0 && (
+                                  <div className={styles.noResults}>No matching specialities found</div>
+                                )}
+
+                                {/* Sub-Specialities section — only shown when API data is active */}
+                                {displaySubSpecs.length > 0 && (
+                                  <div>
+                                    <div className={styles.sectionHeader}>Sub-Specialities</div>
+                                    <div className={styles.specGrid}>
+                                      {displaySubSpecs.map((sub) => (
+                                        <div
+                                          key={sub.name}
+                                          onClick={() => handleSelectSuggestion(sub.name)}
+                                          className={styles.specCard}
+                                        >
+                                          <img
+                                            src={sub.image || "/Specialities icons/General Medicine.svg"}
+                                            alt={sub.name}
+                                            className={styles.specImage}
+                                          />
+                                          <div className={styles.specInfo} style={{ display: "flex", flexDirection: "column", gap: "2px", overflow: "hidden" }}>
+                                            <div className={styles.specName}>
+                                              <HighlightMatch text={sub.name} query={searchQuery} />
+                                            </div>
+                                            {sub.parentSpeciality && (
+                                              <div style={{ fontSize: "10.5px", color: "#64748B", fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                                                {sub.parentSpeciality.split(",")[0]}
+                                              </div>
+                                            )}
+                                          </div>
+                                        </div>
+                                      ))}
+                                    </div>
+                                  </div>
+                                )}
+
+                                {isApiLoading && displaySpecs.length === 0 && displaySubSpecs.length === 0 && (
+                                  <div className={styles.noResults} style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Searching…</div>
+                                )}
+
+                                {tabCounts.specialties > 6 && (
+                                  <button
+                                    style={{ display: "block", padding: "10px 24px", margin: "8px auto 0", background: "transparent", color: "var(--color-primary)", border: "1px solid var(--color-border)", borderRadius: "100px", fontWeight: 600, fontSize: "var(--font-size-sm)", cursor: "pointer", transition: "var(--transition-fast)" }}
+                                    onClick={() => {
+                                      setIsOpen(false);
+                                      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                                    }}
+                                  >
+                                    View all {tabCounts.specialties} Specialties
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {activeDropdownTab === "treatments_tests" && (
+                              <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", fontWeight: 500, marginBottom: "-8px" }}>
+                                  Showing top matching procedures and treatments.
+                                </div>
+                                {useApiData ? (
+                                  <>
+                                    {displayTreatmentItems.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Treatments</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {displayTreatmentItems.map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.image && (
+                                                <img
+                                                  src={t.image}
+                                                  alt={t.name}
+                                                  className={styles.treatmentImage}
+                                                />
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  {t.speciality && (
+                                                    <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                      {t.speciality}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {displayProcedureItems.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Procedures</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {displayProcedureItems.map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.image && (
+                                                <img
+                                                  src={t.image}
+                                                  alt={t.name}
+                                                  className={styles.treatmentImage}
+                                                />
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  {t.speciality && (
+                                                    <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                      {t.speciality}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {displayTreatmentItems.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Treatments</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {displayTreatmentItems.map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.image && (
+                                                <img
+                                                  src={t.image}
+                                                  alt={t.name}
+                                                  className={styles.treatmentImage}
+                                                />
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  {t.speciality && (
+                                                    <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                      {t.speciality}
+                                                    </div>
+                                                  )}
+                                                </div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+                                    {displayProcedureItems.length === 0 && displayTreatmentItems.length === 0 && !isApiLoading && (
+                                      <div className={styles.noResults}>No matching treatments or tests found</div>
+                                    )}
+                                    {isApiLoading && displayProcedureItems.length === 0 && displayTreatmentItems.length === 0 && (
+                                      <div className={styles.noResults} style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Searching…</div>
+                                    )}
+                                  </>
+                                ) : (
+                                  <>
+                                    {/* Health Checkup Packages Section */}
+                                    {filteredHealthCheckups.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Health Checkup Packages</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {filteredHealthCheckups.slice(0, 6).map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.image && (
+                                                <img
+                                                  src={t.image}
+                                                  alt={t.name}
+                                                  className={styles.treatmentImage}
+                                                />
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                    {(t as any).testCount}
+                                                  </div>
+                                                </div>
+                                                <div className={styles.treatmentDesc}>{t.description}</div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Lab Tests Section */}
+                                    {filteredLabTests.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Lab Tests</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {filteredLabTests.slice(0, 6).map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.name.includes("CBC") ? (
+                                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(239, 68, 68, 0.1)", color: "#EF4444" }}>
+                                                  <Droplets size={20} />
+                                                </div>
+                                              ) : t.name.includes("Thyroid") ? (
+                                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(168, 85, 247, 0.1)", color: "#A855F7" }}>
+                                                  <FlaskConical size={20} />
+                                                </div>
+                                              ) : (
+                                                <div className={styles.labIconWrap} style={{ backgroundColor: "rgba(16, 185, 129, 0.1)", color: "#10B981" }}>
+                                                  <Activity size={20} />
+                                                </div>
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                    {(t as any).testCount}
+                                                  </div>
+                                                </div>
+                                                <div className={styles.treatmentDesc}>{t.description}</div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {/* Treatments Section */}
+                                    {filteredOnlyTreatments.length > 0 && (
+                                      <div>
+                                        <div className={styles.sectionHeader}>Treatments</div>
+                                        <div className={styles.treatmentGrid}>
+                                          {filteredOnlyTreatments.slice(0, 6).map((t) => (
+                                            <div
+                                              key={t.name}
+                                              onClick={() => handleSelectSuggestion(t.name)}
+                                              className={styles.treatmentCard}
+                                            >
+                                              {t.image && (
+                                                <img
+                                                  src={t.image}
+                                                  alt={t.name}
+                                                  className={styles.treatmentImage}
+                                                />
+                                              )}
+                                              <div className={styles.treatmentInfo}>
+                                                <div className={styles.treatmentHeader}>
+                                                  <div className={styles.treatmentName}>
+                                                    <HighlightMatch text={t.name} query={searchQuery} />
+                                                  </div>
+                                                  <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                    Related to: <HighlightMatch text={(t as any).speciality ?? ""} query={searchQuery} />
+                                                  </div>
+                                                </div>
+                                                <div className={styles.treatmentDesc}>{t.description}</div>
+                                              </div>
+                                            </div>
+                                          ))}
+                                        </div>
+                                      </div>
+                                    )}
+
+                                    {filteredTreatments.length === 0 && (
+                                      <div className={styles.noResults}>No matching treatments or tests found</div>
+                                    )}
+                                  </>
+                                )}
+
+                                {tabCounts.treatments > 8 && (
+                                  <button
+                                    style={{ display: "block", padding: "10px 24px", margin: "8px auto 0", background: "transparent", color: "var(--color-primary)", border: "1px solid var(--color-border)", borderRadius: "100px", fontWeight: 600, fontSize: "var(--font-size-sm)", cursor: "pointer", transition: "var(--transition-fast)" }}
+                                    onClick={() => {
+                                      setIsOpen(false);
+                                      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                                    }}
+                                  >
+                                    View all {tabCounts.treatments} Procedures &amp; Treatments
+                                  </button>
+                                )}
+                              </div>
+                            )}
+
+                            {activeDropdownTab === "articles" && (
+                              <div className={styles.dropdownSection} style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
+                                <div style={{ fontSize: "var(--font-size-sm)", color: "var(--color-text-secondary)", fontWeight: 500, marginBottom: "-8px" }}>
+                                  Showing top matching articles and blogs.
+                                </div>
+                                <div className={styles.articleList}>
+                                  {displayArticles.length > 0 ? (
+                                    displayArticles.slice(0, 6).map((a) => (
+                                      <div
+                                        key={a.name}
+                                        onClick={() => handleSelectSuggestion(a.name)}
+                                        className={styles.treatmentCard}
+                                      >
+                                        {a.image ? (
+                                          <img
+                                            src={a.image}
+                                            alt={a.name}
+                                            className={styles.articleImage}
+                                          />
+                                        ) : (
+                                          <div className={styles.itemIconWrap}>
+                                            <FileText size={14} />
+                                          </div>
+                                        )}
+                                        <div className={styles.treatmentInfo}>
+                                          <div className={styles.treatmentHeader}>
+                                            <div className={styles.treatmentName}>
+                                              <HighlightMatch text={a.name} query={searchQuery} />
+                                            </div>
+                                            {a.matchingKeyword && (
+                                              <div style={{ fontSize: "10.5px", color: "var(--color-primary, #034EA2)", fontWeight: 500 }}>
+                                                Relates to: <HighlightMatch text={a.matchingKeyword} query={searchQuery} />
+                                              </div>
+                                            )}
+                                          </div>
+                                          {a.description && (
+                                            <div className={styles.treatmentDesc}>
+                                              {a.description}
+                                            </div>
+                                          )}
+                                        </div>
+                                        {lastSearch && lastSearch.toLowerCase() === a.name.toLowerCase() && (
+                                          <span className={styles.itemTag}>Last Searched</span>
+                                        )}
+                                      </div>
+                                    ))
+                                  ) : isApiLoading ? (
+                                    <div className={styles.noResults} style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>Searching…</div>
+                                  ) : (
+                                    <div className={styles.noResults}>No matching articles found</div>
+                                  )}
+                                </div>
+
+                                {tabCounts.articles > 6 && (
+                                  <button
+                                    style={{ display: "block", padding: "10px 24px", margin: "8px auto 0", background: "transparent", color: "var(--color-primary)", border: "1px solid var(--color-border)", borderRadius: "100px", fontWeight: 600, fontSize: "var(--font-size-sm)", cursor: "pointer", transition: "var(--transition-fast)" }}
+                                    onClick={() => {
+                                      setIsOpen(false);
+                                      router.push(`/search?q=${encodeURIComponent(searchQuery)}`);
+                                    }}
+                                  >
+                                    View all {tabCounts.articles} Articles &amp; Blogs
+                                  </button>
+                                )}
                               </div>
                             )}
                           </div>
-                          {lastSearch && lastSearch.toLowerCase() === a.name.toLowerCase() && (
-                            <span className={styles.itemTag}>Last Searched</span>
-                          )}
-                        </div>
-                      ))
-                    ) : (
-                      <div className={styles.noResults}>No matching articles found</div>
-                    )}
-                  </div>
-                )}
-              </div>
-            </>
-          )}
-        </motion.div>
-              ) : null}
-            </AnimatePresence>
-          </motion.form>
+                        </>
+                      )}
+                    </>
+                  )}
+                </motion.div>
+                      ) : null}
+                    </AnimatePresence>
+                  </motion.form>
 
-          {/* 2. Title Unit (positioned below search bar) */}
-          <div className={`${styles.titleUnit} ${isOpen ? styles.titleHidden : ""}`}>
-            <motion.h1
-              className={styles.headline}
-              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.4, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Trusted Care, Every Day
-            </motion.h1>
-            <motion.p 
-              className={styles.subHeadline}
-              initial={{ opacity: 0, y: 22, filter: "blur(16px)" }}
-              animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-              transition={{ delay: 0.6, duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-            >
-              Compassion Backed by Expertise
-            </motion.p>
-          </div>
+
 
         </div>
       </div>
 
-        {/* Aesthetic Bottom Corner Blur Frame Overlays */}
-
-        <div className={styles.bottomLeftBlurFrame} aria-hidden="true" />
-        <div className={styles.bottomRightBlurFrame} aria-hidden="true" />
-      </motion.div>
-    </section>
+      <div className={styles.pulseShellAnchor}>
+        <div className={styles.pulseShell}>
+          <div className={styles.pulseInner}>
+            <div className={styles.pulseCenterUnit}>
+              <div
+                className={`${styles.logoGlow} ${prefersReducedMotion ? styles.logoGlowStatic : ""}`}
+                aria-hidden
+              />
+              <div className={styles.pulseLogoUnit}>
+                <img src="/images/pulse-ai/pulse-ai.png" alt="Pulse AI" className={styles.pulseLogoImg} />
+              </div>
+              <div className={styles.pulseTextUnit}>
+                <div className={styles.pulseTitle}>Ask Pulse AI</div>
+                <p className={styles.pulseDescription}>Describe your symptoms, or ask a question..</p>
+                <p className={styles.pulseVersion}>v1.0</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        </div>
+      {isPulseActive && typeof document !== "undefined" && createPortal(
+        <div style={{ position: "fixed", inset: 0, zIndex: 99999, pointerEvents: "auto" }}>
+          <div style={{ position: "absolute", inset: 0, background: "rgba(11, 15, 25, 0.5)", backdropFilter: "blur(8px)", WebkitBackdropFilter: "blur(8px)" }} />
+          <PixelRipple trigger={showPixelRipple} />
+          <div style={{ position: "absolute", inset: 0, display: "flex", flexDirection: "column" }}>
+            <PulseAIWorkspace 
+              initialQuery={pulseInitialAction ? "" : searchQuery}
+              initialAction={pulseInitialAction}
+              initialActionData={pulseInitialActionData}
+              onClose={() => {
+                setIsPulseActive(false);
+                setPulseInitialAction(null);
+                setPulseInitialActionData(null);
+              }}
+            />
+          </div>
+        </div>,
+        document.body
+      )}
+      </motion.section>
+    </div>
   );
 }

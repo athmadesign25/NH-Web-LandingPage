@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useRef, useState, useEffect } from "react";
-import { motion, useScroll, useTransform, AnimatePresence } from "framer-motion";
+import { motion, useScroll, useTransform, useMotionValueEvent, AnimatePresence } from "framer-motion";
 import SplitText from "@/components/ui/SplitText";
 import styles from "./HealthPackages.module.css";
 
@@ -22,10 +22,10 @@ const packageCardsData = [
   },
   {
     id: "package-3",
-    title: "Healthy Heart Package",
+    title: "Special Screening Packages",
     overview:
-      "Heart focused screening to assess key risk markers and heart health",
-    bgImage: "/Healthy-Heart-Package.png",
+      "Specialized preventive screening tailored for specific health needs",
+    bgImage: "/Special-Screening-Packages.png",
   },
 ];
 
@@ -50,63 +50,86 @@ const pointerItems = [
   "Thyroid-Stimulating Hormone (TSH)",
 ];
 
-function CardPointerTicker() {
+function CardPointerTicker({ paused = false }: { paused?: boolean }) {
   const [index, setIndex] = useState(0);
 
   useEffect(() => {
+    if (paused) return;
     const timer = setInterval(() => {
       setIndex((prev) => (prev + 1) % pointerItems.length);
     }, 2800);
     return () => clearInterval(timer);
-  }, []);
+  }, [paused]);
 
   const currentItem = pointerItems[index];
 
   return (
     <div className={styles.pointerContainer}>
       <AnimatePresence mode="wait">
-        <motion.div
-          key={currentItem}
-          initial={{ opacity: 0, filter: "blur(10px)", x: -12 }}
-          animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
-          exit={{ opacity: 0, filter: "blur(10px)", x: 12 }}
-          transition={{ duration: 0.45, ease: "easeOut" }}
-          className={styles.pointerItem}
-        >
-          <div className={styles.checkCircle}>
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="#FFFFFF"
-              strokeWidth="3"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <motion.path
-                d="M4 12l5 5L20 6"
-                initial={{ pathLength: 0, opacity: 0 }}
-                animate={{ pathLength: 1, opacity: 1 }}
-                transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
-              />
-            </svg>
-          </div>
-
-          <motion.span
-            key={`text-${currentItem}`}
-            className={styles.pointerText}
-            initial={{ backgroundPosition: "0% 0%" }}
-            animate={{ backgroundPosition: "100% 0%" }}
-            transition={{
-              duration: 1.2,
-              delay: 0.4,
-              ease: "easeInOut",
-            }}
+        {!paused ? (
+          <motion.div
+            key={currentItem}
+            initial={{ opacity: 0, filter: "blur(10px)", x: -12 }}
+            animate={{ opacity: 1, filter: "blur(0px)", x: 0 }}
+            exit={{ opacity: 0, filter: "blur(10px)", x: 12 }}
+            transition={{ duration: 0.45, ease: "easeOut" }}
+            className={styles.pointerItem}
           >
-            {currentItem}
-          </motion.span>
-        </motion.div>
+            <div className={styles.checkCircle}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <motion.path
+                  d="M4 12l5 5L20 6"
+                  initial={{ pathLength: 0, opacity: 0 }}
+                  animate={{ pathLength: 1, opacity: 1 }}
+                  transition={{ duration: 0.4, delay: 0.2, ease: "easeOut" }}
+                />
+              </svg>
+            </div>
+
+            <motion.span
+              key={`text-${currentItem}`}
+              className={styles.pointerText}
+              initial={{ backgroundPosition: "0% 0%" }}
+              animate={{ backgroundPosition: "100% 0%" }}
+              transition={{
+                duration: 1.2,
+                delay: 0.4,
+                ease: "easeInOut",
+              }}
+            >
+              {currentItem}
+            </motion.span>
+          </motion.div>
+        ) : (
+          <div className={styles.pointerItem}>
+            <div className={styles.checkCircle}>
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="#FFFFFF"
+                strokeWidth="3"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M4 12l5 5L20 6" />
+              </svg>
+            </div>
+            <span className={styles.pointerText} style={{ backgroundPosition: "100% 0%" }}>
+              {currentItem}
+            </span>
+          </div>
+        )}
       </AnimatePresence>
     </div>
   );
@@ -114,6 +137,7 @@ function CardPointerTicker() {
 
 export default function HealthPackages() {
   const trackRef = useRef<HTMLDivElement>(null);
+  const [isCard3Shrinking, setIsCard3Shrinking] = useState(false);
 
   // scrollYProgress over the 300vh sticky scroll runway
   const { scrollYProgress } = useScroll({
@@ -121,24 +145,32 @@ export default function HealthPackages() {
     offset: ["start start", "end end"],
   });
 
+  useMotionValueEvent(scrollYProgress, "change", (latest) => {
+    setIsCard3Shrinking(latest > 0.82);
+  });
+
   // ── Card 1 ──
-  const card1Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [1.0, 1.0, 0.82]);
-  const card1BlurPx = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [0, 0, 12]);
+  const card1Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.40], [1.0, 1.0, 0.80]);
+  const card1BlurPx = useTransform(scrollYProgress, [0.0, 0.10, 0.40], [0, 0, 12]);
   const card1Blur = useTransform(card1BlurPx, (v) => `blur(${v}px)`);
-  const card1DimOpacity = useTransform(scrollYProgress, [0.0, 0.10, 0.42], [0, 0, 0.5]);
+  const card1DimOpacity = useTransform(scrollYProgress, [0.0, 0.10, 0.40], [0, 0, 0.5]);
 
   // ── Card 2 ──
-  const card2Y = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 1.0], ["110%", "110%", "0%", "0%"]);
-  const card2Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 0.55, 0.87, 1.0], [0.82, 0.82, 1.0, 1.0, 0.82, 0.82]);
-  const card2Radius = useTransform(scrollYProgress, [0.0, 0.10, 0.42, 1.0], ["20px", "20px", "0px", "0px"]);
-  const card2BlurPx = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0, 0, 12, 12]);
+  const card2Y = useTransform(scrollYProgress, [0.0, 0.10, 0.40, 1.0], ["110%", "110%", "0%", "0%"]);
+  const card2Scale = useTransform(scrollYProgress, [0.0, 0.10, 0.40, 0.50, 0.75, 1.0], [0.80, 0.80, 1.0, 1.0, 0.80, 0.80]);
+  const card2Radius = useTransform(scrollYProgress, [0.0, 0.10, 0.40, 1.0], ["20px", "20px", "0px", "0px"]);
+  const card2BlurPx = useTransform(scrollYProgress, [0.0, 0.50, 0.75, 1.0], [0, 0, 12, 12]);
   const card2Blur = useTransform(card2BlurPx, (v) => `blur(${v}px)`);
-  const card2DimOpacity = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0, 0, 0.5, 0.5]);
+  const card2DimOpacity = useTransform(scrollYProgress, [0.0, 0.50, 0.75, 1.0], [0, 0, 0.5, 0.5]);
 
   // ── Card 3 ──
-  const card3Y = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], ["110%", "110%", "0%", "0%"]);
-  const card3Scale = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], [0.82, 0.82, 1.0, 1.0]);
-  const card3Radius = useTransform(scrollYProgress, [0.0, 0.55, 0.87, 1.0], ["20px", "20px", "0px", "0px"]);
+  // Slides up from 110%→0% between 0.50–0.75. Stays full size at 1.0 until 0.82, then shrinks 20% (1.0→0.80) as user scrolls past!
+  const card3Y = useTransform(scrollYProgress, [0.0, 0.50, 0.75, 1.0], ["110%", "110%", "0%", "0%"]);
+  const card3Scale = useTransform(scrollYProgress, [0.0, 0.50, 0.75, 0.82, 1.0], [0.80, 0.80, 1.0, 1.0, 0.80]);
+  const card3Radius = useTransform(scrollYProgress, [0.0, 0.50, 0.75, 0.82, 1.0], ["20px", "20px", "0px", "0px", "16px"]);
+  const card3BlurPx = useTransform(scrollYProgress, [0.0, 0.82, 1.0], [0, 0, 8]);
+  const card3Blur = useTransform(card3BlurPx, (v) => `blur(${v}px)`);
+  const card3DimOpacity = useTransform(scrollYProgress, [0.0, 0.82, 1.0], [0, 0, 0.35]);
 
   return (
     <div className={styles.sectionWrap} id="health-packages">
@@ -224,18 +256,23 @@ export default function HealthPackages() {
               </a>
             </motion.div>
 
-            {/* CARD 3 (Top) — enters rounded, becomes sharp at full width */}
+            {/* CARD 3 (Top) — enters rounded, becomes sharp at full width, then shrinks 20% as user scrolls past */}
             <motion.div
               className={styles.cardContainer}
               style={{
                 zIndex: 3,
                 y: card3Y,
                 scale: card3Scale,
+                filter: card3Blur,
                 borderRadius: card3Radius,
                 transformOrigin: "center top",
                 backgroundImage: `url(${packageCardsData[2].bgImage})`,
               }}
             >
+              <motion.div
+                className={styles.cardDimOverlay}
+                style={{ opacity: card3DimOpacity }}
+              />
               <div className={styles.cardTextUnit}>
                 <h3 className={styles.cardMainTitle}>
                   {packageCardsData[2].title}
@@ -244,7 +281,7 @@ export default function HealthPackages() {
                   {packageCardsData[2].overview}
                 </p>
               </div>
-              <CardPointerTicker />
+              <CardPointerTicker paused={isCard3Shrinking} />
               <a href="#" className={styles.viewPackageBtn}>
                 View Package
               </a>

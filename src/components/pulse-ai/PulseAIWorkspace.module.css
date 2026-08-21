@@ -46,7 +46,9 @@
   position: absolute;
   inset: 0;
   z-index: 1;
-  background: linear-gradient(135deg, rgba(15, 23, 42, 0.95) 0%, rgba(30, 41, 59, 0.95) 25%, rgba(2, 6, 23, 0.95) 50%, rgba(15, 23, 42, 0.95) 75%, rgba(15, 23, 42, 0.95) 100%);
+  background: linear-gradient(135deg, rgba(15, 23, 42, 0.6) 0%, rgba(30, 41, 59, 0.6) 25%, rgba(2, 6, 23, 0.65) 50%, rgba(15, 23, 42, 0.6) 75%, rgba(15, 23, 42, 0.6) 100%);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   background-size: 400% 400%;
   animation: gradientShift 15s ease infinite;
   backdrop-filter: blur(24px);

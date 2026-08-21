@@ -14,6 +14,7 @@ import {
 } from "lucide-react";
 import styles from "./PulseAIWorkspace.module.css";
 import lottie from "lottie-web";
+import PixelRipple from "../home/PixelRipple";
 
 function LottieAnimation({ animationPath, width = 60, height = 60 }: { animationPath: string; width?: number; height?: number }) {
   const containerRef = useRef<HTMLDivElement>(null);
@@ -418,7 +419,7 @@ function aiResponse(q: string, isLoggedIn: boolean, userName = "Omkar"): Partial
           title: "Book for Dr Pradeep kumar",
           badge: "Last visited",
           prompt: "Book for Dr Pradeep R Kumar",
-          photo: "/doctor_avatar_male.png"
+          photo: "/images/misc/doctor_avatar_male.png"
         },
         subChips: [
           { label: "I have a symptom", prompt: "I have a symptom" },
@@ -2879,7 +2880,7 @@ function MsgBubble({ msg, onAction, onPrefill, activeChipId, userName = "Omkar",
             >
               <div className={styles.findDoctorCardLeft}>
                 <img 
-                  src={msg.findDoctorOptions.lastVisitedDoctor.photo || "/doctor_avatar_male.png"} 
+                  src={msg.findDoctorOptions.lastVisitedDoctor.photo || "/images/misc/doctor_avatar_male.png"} 
                   alt="Doctor" 
                   className={styles.findDoctorAvatarImg} 
                 />
@@ -3148,7 +3149,7 @@ function MsgBubble({ msg, onAction, onPrefill, activeChipId, userName = "Omkar",
             <div className={styles.bookingConfirmBody}>
               <div className={styles.bookingDocInfo}>
                 <img
-                  src={msg.slotDoctor?.photo || "/doctor_avatar_male.png"}
+                  src={msg.slotDoctor?.photo || "/images/misc/doctor_avatar_male.png"}
                   alt={msg.slotDoctor?.name || "Doctor"}
                   className={styles.bookingDocPhoto}
                 />
@@ -3407,7 +3408,7 @@ function WelcomeScreen({ onPrompt, onPrefill, activeChipId, isLoggedIn, userName
           <div className={styles.entryCardHeader}>
             <div className={styles.entryCardBannerWrap}>
               <img 
-                src="/pulse_find_doctor_banner.png" 
+                src="/images/pulse-ai/pulse_find_doctor_banner.png" 
                 alt="Find the right doctor" 
                 className={styles.entryCardBannerImg} 
               />
@@ -3454,7 +3455,7 @@ function WelcomeScreen({ onPrompt, onPrefill, activeChipId, isLoggedIn, userName
           <div className={styles.entryCardHeader}>
             <div className={styles.entryCardBannerWrap}>
               <img 
-                src="/pulse_health_insights_banner.png" 
+                src="/images/pulse-ai/pulse_health_insights_banner.png" 
                 alt="Know your health" 
                 className={styles.entryCardBannerImg} 
               />
@@ -3585,7 +3586,7 @@ function Sidebar({ history, activeId, onSelect, onNew, onClose }: {
 
 
 const ASSOCIATED_PROFILES = [
-  { id: "p1", name: "Omkar V", relation: "Self", avatar: "/patient_omkar.png" },
+  { id: "p1", name: "Omkar V", relation: "Self", avatar: "/images/misc/patient_omkar.png" },
   { id: "p2", name: "Ramesh V", relation: "Father", avatar: "/assets/doctor_1.png" },
   { id: "p3", name: "Saraswathi V", relation: "Mother", avatar: "/assets/doctor_2.png" },
   { id: "p4", name: "Ananya V", relation: "Daughter", avatar: "/assets/doctor_2.png" }
@@ -3755,92 +3756,6 @@ function Workspace({
     handleScroll();
     return () => el.removeEventListener("scroll", handleScroll);
   }, [msgs.length, isThinking]);
-
-  // After login, resume pending action
-  useEffect(() => {
-    if (isLoggedIn && pendingAction) {
-      const action = pendingAction;
-      setPendingAction(null);
-      handleAction(action.type, action.data);
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoggedIn]);
-
-  const initialQueryProcessed = useRef(false);
-
-  // Execute external query from Hero search CTA
-  useEffect(() => {
-    if (initialQuery && !initialQueryProcessed.current) {
-      initialQueryProcessed.current = true;
-      const trimmed = initialQuery.trim();
-      // "I have been having" chip → skip sending a half-sentence; show symptom selector directly
-      if (trimmed === "I have been having" || trimmed === "I have been having ") {
-        const aiMsg: Message = {
-          id: `ai-sym-${Date.now()}`,
-          role: "ai",
-          text: "To help us recommend the right specialist, please describe what you are feeling or select any of the common symptoms below:",
-          ts: new Date(),
-          rtype: "symptom_selector"
-        };
-        setMsgs([aiMsg]);
-      } else {
-        sendMessage(trimmed);
-      }
-      clearInitialQuery?.();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialQuery]);
-
-  const initialActionProcessed = useRef(false);
-
-  // Execute external slot booking direct action from Hero search
-  useEffect(() => {
-    if (initialAction && initialActionData && !initialActionProcessed.current) {
-      initialActionProcessed.current = true;
-
-      if (initialAction === "require_login_module") {
-        const { moduleName, query } = initialActionData as { moduleName: string; query: string };
-        
-        // Setup welcome message explaining what the module can do, but requiring login
-        const introMsg: Message = {
-          id: `intro-${Date.now()}`,
-          role: "ai",
-          text: `Welcome to **${moduleName}**! Here you can get insights from your medical history, review your lab reports, and analyze your organ health. To access these personalized features, please verify your mobile number:`,
-          ts: new Date()
-        };
-        setMsgs([introMsg]);
-        
-        // Save the eventual query to run after login
-        setPendingAction({ type: "execute_query", data: query });
-        
-        // Inject the inline phone input immediately
-        injectAI({
-          text: "Enter your mobile number to sign in or register:",
-          rtype: "inline_phone_input"
-        }, 300);
-        
-        clearInitialAction?.();
-        return;
-      }
-
-      const doc = initialActionData as any;
-      
-      // Setup natural booking conversation history
-      const userMsg: Message = { 
-        id: `u-${Date.now()}`, 
-        role: "user", 
-        text: `Book appointment with ${doc.name}`, 
-        ts: new Date() 
-      };
-      setMsgs([userMsg]);
-      
-      // Directly open slot picker
-      handleAction(initialAction, initialActionData);
-      
-      clearInitialAction?.();
-    }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [initialAction, initialActionData]);
 
   const injectAI = useCallback((partial: Partial<Message>, delay = 1600) => {
     const thinkId = `think-${Date.now()}`;
@@ -4161,6 +4076,95 @@ function Workspace({
     }
   }, [isLoggedIn, injectAI, sendMessage, activeProfile]);
 
+
+  // After login, resume pending action
+  useEffect(() => {
+    if (isLoggedIn && pendingAction) {
+      const action = pendingAction;
+      setPendingAction(null);
+      handleAction(action.type, action.data);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoggedIn]);
+
+  
+
+  const initialQueryProcessed = useRef(false);
+
+  // Execute external query from Hero search CTA
+  useEffect(() => {
+    if (initialQuery && !initialQueryProcessed.current) {
+      initialQueryProcessed.current = true;
+      const trimmed = initialQuery.trim();
+      // "I have been having" chip → skip sending a half-sentence; show symptom selector directly
+      if (trimmed === "I have been having" || trimmed === "I have been having ") {
+        const aiMsg: Message = {
+          id: `ai-sym-${Date.now()}`,
+          role: "ai",
+          text: "To help us recommend the right specialist, please describe what you are feeling or select any of the common symptoms below:",
+          ts: new Date(),
+          rtype: "symptom_selector"
+        };
+        setMsgs([aiMsg]);
+      } else {
+        sendMessage(trimmed);
+      }
+      clearInitialQuery?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialQuery]);
+
+  const initialActionProcessed = useRef(false);
+
+  // Execute external slot booking direct action from Hero search
+  useEffect(() => {
+    if (initialAction && initialActionData && !initialActionProcessed.current) {
+      initialActionProcessed.current = true;
+
+      if (initialAction === "require_login_module") {
+        const { moduleName, query } = initialActionData as { moduleName: string; query: string };
+        
+        // Setup welcome message explaining what the module can do, but requiring login
+        const introMsg: Message = {
+          id: `intro-${Date.now()}`,
+          role: "ai",
+          text: `Welcome to **${moduleName}**! Here you can get insights from your medical history, review your lab reports, and analyze your organ health. To access these personalized features, please verify your mobile number:`,
+          ts: new Date()
+        };
+        setMsgs([introMsg]);
+        
+        // Save the eventual query to run after login
+        setPendingAction({ type: "execute_query", data: query });
+        
+        // Inject the inline phone input immediately
+        injectAI({
+          text: "Enter your mobile number to sign in or register:",
+          rtype: "inline_phone_input"
+        }, 300);
+        
+        clearInitialAction?.();
+        return;
+      }
+
+      const doc = initialActionData as any;
+      
+      // Setup natural booking conversation history
+      const userMsg: Message = { 
+        id: `u-${Date.now()}`, 
+        role: "user", 
+        text: `Book appointment with ${doc.name}`, 
+        ts: new Date() 
+      };
+      setMsgs([userMsg]);
+      
+      // Directly open slot picker
+      handleAction(initialAction, initialActionData);
+      
+      clearInitialAction?.();
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAction, initialActionData]);
+
   const handleLogin = () => {
     setIsLoggedIn(true);
     setShowLogin(false);
@@ -4389,7 +4393,7 @@ function Workspace({
                   Pulse AI is a support assistant to guide your health journey. For any diagnosis, treatment, or medical decisions, please always seek final clinical advice from a licensed physician.
                 </span>
               </div>
-              <button onClick={() => setShowDisclaimer(false)} style={{ background: "none", border: "none", cursor: "pointer", color: "#b45309", display: "flex", alignItems: "center", justifyContent: "center", padding: "2px", marginLeft: "12px", flexShrink: 0 }} aria-label="Close disclaimer">
+              <button onClick={(e) => { e.stopPropagation(); setShowDisclaimer(false); }} style={{ background: "none", border: "none", cursor: "pointer", color: "#b45309", display: "flex", alignItems: "center", justifyContent: "center", padding: "2px", marginLeft: "12px", flexShrink: 0 }} aria-label="Close disclaimer">
                 <X size={14} />
               </button>
             </div>
@@ -4744,8 +4748,9 @@ function PulseTrigger({ onClick }: { onClick: () => void }) {
         flexShrink: 0,
         transition: "background 0.2s"
       }}>
-        <img src="/assets/Pulse AI icon.png" alt="Pulse AI" style={{ width: "26px", height: "26px", objectFit: "contain" }} />
+        <img src="/Logo/Pulse bubble.svg" alt="Pulse Bubble" style={{ width: "26px", height: "26px" }} />
       </div>
+
       {/* Text message (only when expanded) */}
       <AnimatePresence>
         {isExpanded && (
@@ -5129,18 +5134,18 @@ export default function PulseAIWorkspace({
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = "hidden";
-      if (typeof window !== "undefined" && typeof (window as any).lenis?.stop === "function") {
+      if (typeof window !== "undefined" && (window as any).lenis) {
         (window as any).lenis.stop();
       }
     } else {
       document.body.style.overflow = "";
-      if (typeof window !== "undefined" && typeof (window as any).lenis?.start === "function") {
+      if (typeof window !== "undefined" && (window as any).lenis) {
         (window as any).lenis.start();
       }
     }
     return () => {
       document.body.style.overflow = "";
-      if (typeof window !== "undefined" && typeof (window as any).lenis?.start === "function") {
+      if (typeof window !== "undefined" && (window as any).lenis) {
         (window as any).lenis.start();
       }
     };
@@ -5157,6 +5162,15 @@ export default function PulseAIWorkspace({
     return () => window.removeEventListener("open-pulse-ai", handleExternalOpen);
   }, []);
 
+  useEffect(() => {
+    if (isOpen && isMaximized) {
+      document.body.classList.add("pulse-maximized");
+    } else {
+      document.body.classList.remove("pulse-maximized");
+    }
+    return () => document.body.classList.remove("pulse-maximized");
+  }, [isOpen, isMaximized]);
+
   const handleClose = () => {
     setIsOpen(false);
     if (onClose) onClose();
@@ -5164,22 +5178,27 @@ export default function PulseAIWorkspace({
 
   return (
     <>
-      {/* PulseTrigger has been removed because it is now triggered by the Hero search bar */}
       <AnimatePresence>
         {isOpen && (
           <motion.div className={`${styles.workspaceOverlay} ${isMaximized ? styles.workspaceOverlayMaximized : ""}`} key="pulse-workspace"
             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-            transition={{ duration: 0.4, ease: [0.22, 1, 0.36, 1] }}>
-            <div className={styles.overlayBg} onClick={handleClose} />
+            transition={{ duration: 0.15, ease: [0.22, 1, 0.36, 1] }}>
+            <div className={styles.overlayBg}>
+              <PixelRipple trigger={isOpen} />
+            </div>
             <motion.div className={`${styles.workspaceContainer} ${isMaximized ? styles.workspaceContainerMaximized : ""}`}
-              initial={{ opacity: 0 }}
+              initial={{ opacity: 0, y: 30, scale: 0.98 }}
               animate={{ 
                 opacity: 1,
-                transition: { duration: 0.4, ease: "easeOut" } 
+                y: 0,
+                scale: 1,
+                transition: { duration: 0.18, ease: [0.16, 1, 0.3, 1] } 
               }}
               exit={{ 
                 opacity: 0,
-                transition: { duration: 0.3, ease: "easeIn" } 
+                y: 10,
+                scale: 0.98,
+                transition: { duration: 0.12, ease: [0.22, 1, 0.36, 1] } 
               }}
             >
               <Workspace

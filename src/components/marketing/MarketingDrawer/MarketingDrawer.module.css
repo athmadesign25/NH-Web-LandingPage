@@ -151,7 +151,10 @@
   bottom: 0;
 }
 
-/* Wide drawer: copy down the left, which is the axis that has room. */
+/* Wide drawer: copy down the left, which is the axis that has room.
+   Deeper left padding than the tall drawer gets — a wide panel puts the
+   copy against a long edge, and the 32px that reads as generous on a
+   narrow card reads as cramped here. */
 .contentWide {
   left: 0;
   top: 0;
@@ -213,6 +216,14 @@
   align-items: flex-start;
   gap: var(--space-16);
   padding: var(--space-32);
+}
+
+/* Declared after .content on purpose. .content sets `padding` as a
+   shorthand, and at equal specificity the later declaration wins — so the
+   same override written beside .contentWide above was silently reset to
+   32px. */
+.contentWide {
+  padding-left: var(--space-64);
 }
 
 .headline {
@@ -377,6 +388,9 @@
     width: auto;
     right: 0;
     justify-content: flex-end;
+    /* The deeper gutter is for a long edge on a desktop panel; on a phone
+       it just eats the line length. */
+    padding-left: var(--space-20);
   }
 
   .content { padding: var(--space-20); gap: var(--space-12); }

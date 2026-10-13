@@ -35,11 +35,25 @@ type Props = {
   onClose: () => void;
 };
 
+/**
+ * Entry travel, deliberately SHORT. At -100% the panel crossed its own
+ * width before arriving and the scale change was invisible underneath it,
+ * so the whole thing read as a plain slide. A quarter of the distance lets
+ * the growth carry the movement instead.
+ */
 const TRAVEL: Record<BannerConfig["side"], { x?: string; y?: string }> = {
-  left: { x: "-100%" },
-  right: { x: "100%" },
-  top: { y: "-100%" },
-  bottom: { y: "100%" },
+  left: { x: "-26%" },
+  right: { x: "26%" },
+  top: { y: "-26%" },
+  bottom: { y: "26%" },
+};
+
+/** Grow OUT of the edge it arrives from, rather than from its own middle. */
+const ORIGIN: Record<BannerConfig["side"], string> = {
+  left: "left center",
+  right: "right center",
+  top: "center top",
+  bottom: "center bottom",
 };
 
 /** The glow leads, the drawer follows. */
@@ -149,10 +163,12 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label="Promotional message"
-            initial={{ ...travel, opacity: 0, scale: 0.92, filter: "blur(14px)" }}
+            style={{ transformOrigin: ORIGIN[config.side] }}
+            // Scale carries the entrance; travel only nudges it off the edge.
+            initial={{ ...travel, opacity: 0, scale: 0.72, filter: "blur(16px)" }}
             animate={{ x: 0, y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ ...travel, opacity: 0, scale: 0.92, filter: "blur(14px)" }}
-            transition={{ duration: 0.72, delay: GLOW_LEAD, ease: ease.spring }}
+            exit={{ ...travel, opacity: 0, scale: 0.72, filter: "blur(16px)" }}
+            transition={{ duration: 0.88, delay: GLOW_LEAD, ease: ease.spring }}
           >
             <div className={styles.traceBorder} aria-hidden />
 

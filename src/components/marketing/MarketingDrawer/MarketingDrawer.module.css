@@ -44,11 +44,16 @@
 .glowAll {
   position: absolute;
   inset: -2%;
+  /* Radii are deliberately small on the axis that points inward — 16% of
+     the width from the sides, 16% of the height from top and bottom. The
+     first version used 42% and 40%, which meant opposite edges met in the
+     middle and the whole thing read as a wash over the page rather than
+     rim light. The falloff is steep for the same reason. */
   background:
-    radial-gradient(42% 60% at 0% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.38) 42%, transparent 72%),
-    radial-gradient(42% 60% at 100% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.38) 42%, transparent 72%),
-    radial-gradient(62% 40% at 50% 0%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.34) 44%, transparent 74%),
-    radial-gradient(62% 40% at 50% 100%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.34) 44%, transparent 74%);
+    radial-gradient(16% 58% at 0% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.4) 34%, transparent 66%),
+    radial-gradient(16% 58% at 100% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.4) 34%, transparent 66%),
+    radial-gradient(54% 16% at 50% 0%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.36) 36%, transparent 68%),
+    radial-gradient(54% 16% at 50% 100%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.36) 36%, transparent 68%);
 }
 
 /* The arrival edge, brighter and tighter. */
@@ -61,46 +66,48 @@
 .glow_right {
   top: -5%;
   bottom: -5%;
-  width: 46vw;
+  /* Was 46vw — nearly half the screen. The bloom should sit ON the edge the
+     drawer arrives from, not travel most of the way across to meet it. */
+  width: 26vw;
 }
 .glow_left {
   left: 0;
-  background: radial-gradient(54% 52% at 0% 50%,
+  background: radial-gradient(46% 54% at 0% 50%,
     rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 24%,
-    rgba(var(--red-emergency-rgb), 0.5) 52%,
-    transparent 78%);
+    rgba(var(--blue-brand-rgb), 0.8) 22%,
+    rgba(var(--red-emergency-rgb), 0.5) 46%,
+    transparent 72%);
 }
 .glow_right {
   right: 0;
-  background: radial-gradient(54% 52% at 100% 50%,
+  background: radial-gradient(46% 54% at 100% 50%,
     rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 24%,
-    rgba(var(--red-emergency-rgb), 0.5) 52%,
-    transparent 78%);
+    rgba(var(--blue-brand-rgb), 0.8) 22%,
+    rgba(var(--red-emergency-rgb), 0.5) 46%,
+    transparent 72%);
 }
 
 .glow_top,
 .glow_bottom {
   left: -5%;
   right: -5%;
-  height: 52vh;
+  height: 30vh;
 }
 .glow_top {
   top: 0;
-  background: radial-gradient(52% 54% at 50% 0%,
+  background: radial-gradient(56% 48% at 50% 0%,
     rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 24%,
-    rgba(var(--red-emergency-rgb), 0.5) 52%,
-    transparent 78%);
+    rgba(var(--blue-brand-rgb), 0.8) 22%,
+    rgba(var(--red-emergency-rgb), 0.5) 46%,
+    transparent 72%);
 }
 .glow_bottom {
   bottom: 0;
-  background: radial-gradient(52% 54% at 50% 100%,
+  background: radial-gradient(56% 48% at 50% 100%,
     rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 24%,
-    rgba(var(--red-emergency-rgb), 0.5) 52%,
-    transparent 78%);
+    rgba(var(--blue-brand-rgb), 0.8) 22%,
+    rgba(var(--red-emergency-rgb), 0.5) 46%,
+    transparent 72%);
 }
 
 /* ─── Panel ─────────────────────────────────────────────────────────────── */

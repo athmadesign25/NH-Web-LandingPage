@@ -105,7 +105,11 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
         <span className={styles.hint}>drag header</span>
       </header>
 
-      <div className={styles.body}>
+      {/* data-lenis-prevent: Lenis swallows wheel events globally, so an
+          overflow container has to opt out explicitly or it will not scroll.
+          This is the convention the rest of the codebase uses.
+          data-drawer-scrollable is ours, for the drawer's own blocker. */}
+      <div className={styles.body} data-drawer-scrollable data-lenis-prevent>
         <section className={styles.row}>
           <label className={styles.label}>Position</label>
           <div className={styles.seg}>

@@ -81,20 +81,94 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
 
-    // Scroll is frozen while open. Lenis owns the scroll, so stopping it is
-    // what actually locks the page — overflow: hidden on body does nothing.
-    const lenis = (window as unknown as { lenis?: { stop: () => void; start: () => void } }).lenis;
+    // ── Scroll lock ──────────────────────────────────────────────────
+    // Lenis owns the wheel. It cancels the native event and drives the
+    // scroll itself, so the usual overflow locks have nothing to clamp —
+    // measured: isStopped true with overflow hidden on both <html> and
+    // <body>, and the page still moved 3,199px.
+    //
+    // Fixing <body> did hold it, but fought Lenis on the way out: the page
+    // jumped to the top on close because Lenis restarted from a position it
+    // had never been told about.
+    //
+    // So the wheel is cancelled in the CAPTURE phase, before Lenis's own
+    // listener sees it, and Lenis is stopped so nothing is left driving the
+    // position. Nothing is mutated on <body>, so there is nothing to
+    // restore and no jump.
+    const lenis = (window as unknown as {
+      lenis?: { stop: () => void; start: () => void };
+    }).lenis;
     lenis?.stop();
-    const prevOverflow = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
+
+    // Lenis drives the scroll position itself, so cancelling the wheel does
+    // not hold it — measured, the page still moved 1800 -> 4192 with the
+    // capture-phase blocker in place. Taking <body> out of the scroll flow
+    // is what actually freezes it; the offset keeps the page looking
+    // exactly where it was.
+    const body = document.body;
+    const lockedY = window.scrollY;
+    const prevStyle = {
+      position: body.style.position,
+      top: body.style.top,
+      left: body.style.left,
+      right: body.style.right,
+      width: body.style.width,
+    };
+    body.style.position = "fixed";
+    body.style.top = `-${lockedY}px`;
+    body.style.left = "0";
+    body.style.right = "0";
+    body.style.width = "100%";
+
+    const blockScroll = (e: Event) => {
+      const path = e.composedPath?.() ?? [];
+      for (const node of path) {
+        if (node instanceof HTMLElement && node.hasAttribute("data-drawer-scrollable")) return;
+      }
+      e.preventDefault();
+    };
+    document.addEventListener("wheel", blockScroll, { passive: false, capture: true });
+    document.addEventListener("touchmove", blockScroll, { passive: false, capture: true });
+    // Keys scroll too, and they never go near the wheel handler.
+    const blockKeys = (e: KeyboardEvent) => {
+      const keys = ["PageDown", "PageUp", "Home", "End", "ArrowDown", "ArrowUp", " "];
+      const t = e.target as HTMLElement | null;
+      if (t && (t.tagName === "INPUT" || t.tagName === "TEXTAREA")) return;
+      if (keys.includes(e.key)) e.preventDefault();
+    };
+    window.addEventListener("keydown", blockKeys, { passive: false });
 
     const t = window.setTimeout(() => setSweep(true), (GLOW_LEAD + 0.55) * 1000);
 
     return () => {
       document.removeEventListener("keydown", onKey);
       window.clearTimeout(t);
-      lenis?.start();
-      document.body.style.overflow = prevOverflow;
+      document.removeEventListener("wheel", blockScroll, { capture: true });
+      document.removeEventListener("touchmove", blockScroll, { capture: true });
+      window.removeEventListener("keydown", blockKeys);
+
+      // Order matters on the way out. Un-fixing <body> drops the page to
+      // scroll 0, so the position is handed back natively FIRST, and Lenis
+      // is only restarted on the next frame — restarting it any earlier
+      // made it resync to 0 and the page jumped to the top.
+      Object.assign(body.style, prevStyle);
+      window.scrollTo(0, lockedY);
+      requestAnimationFrame(() => {
+        const l = (window as unknown as {
+          lenis?: {
+            start: () => void;
+            resize: () => void;
+            scrollTo: (n: number, o?: object) => void;
+          };
+        }).lenis;
+        // resize() BEFORE scrollTo. While <body> was fixed the document
+        // collapsed to viewport height, and Lenis caches its scroll ceiling
+        // — it only refreshes that on a debounced resize. Without this it
+        // clamps the restore to a stale limit and the page lands at 0.
+        l?.resize();
+        l?.start();
+        l?.scrollTo(lockedY, { immediate: true, force: true });
+      });
       pausedRef.current.forEach((v) => v.play().catch(() => {}));
       pausedRef.current = [];
     };
@@ -184,7 +258,11 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
 
             <div className={styles.innerOverlay} style={{ background: scrimFade }} aria-hidden />
 
-            <div className={`${styles.content} ${wide ? styles.contentWide : styles.contentTall}`}>
+            <div
+              className={`${styles.content} ${wide ? styles.contentWide : styles.contentTall}`}
+              data-drawer-scrollable
+              data-lenis-prevent
+            >
               <div className={styles.headline}>
                 {config.headline.parts.map((part, i) => (
                   <span key={part.id} className={styles.headlineLine}>

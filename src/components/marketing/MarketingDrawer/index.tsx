@@ -8,7 +8,7 @@
  * toggle and the panel disappear — the drawer itself is unchanged.
  */
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { createPortal } from "react-dom";
 import { AnimatePresence } from "framer-motion";
 import MarketingDrawer from "./MarketingDrawer";
@@ -20,6 +20,10 @@ export default function MarketingDrawerLab() {
   const [open, setOpen] = useState(false);
   const [config, setConfig] = useState<BannerConfig>(DEFAULT_CONFIG);
   const [mounted, setMounted] = useState(false);
+  // Stable identity. As an inline arrow this changed on every render, so the
+  // drawer's effect tore down and re-ran on each control-panel keystroke —
+  // briefly releasing the scroll lock and restarting paused videos.
+  const close = useCallback(() => setOpen(false), []);
 
   useEffect(() => setMounted(true), []);
   if (!mounted) return null;
@@ -35,7 +39,7 @@ export default function MarketingDrawerLab() {
         </button>
       )}
 
-      <MarketingDrawer open={open} config={config} onClose={() => setOpen(false)} />
+      <MarketingDrawer open={open} config={config} onClose={close} />
 
       <AnimatePresence>
         {open && <DrawerControlPanel config={config} onChange={setConfig} />}

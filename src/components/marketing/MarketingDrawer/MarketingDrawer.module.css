@@ -24,48 +24,84 @@
 }
 
 /* ─── Edge glow ───────────────────────────────────────────────────────────
-   Announces the entrance: a soft blue/red bloom breathing at the edge the
-   drawer is about to arrive from, which fades once it has. Heavily blurred
-   and non-interactive — it is atmosphere, not an element. */
-.glow {
+   Announces the entrance. Two layers: a frame that lights ALL four edges,
+   so the page itself feels lit from outside, and a stronger bloom on the
+   edge the drawer is about to arrive from. Blue and red, breathing.
+
+   Not blurred by `filter` any more — a 60px blur behind an already
+   16px-blurred scrim is what made this read as a faint haze. The gradients
+   are soft by construction instead, so the colour survives. */
+.glowFrame {
   position: fixed;
+  inset: 0;
   z-index: 2147482050;
   pointer-events: none;
-  filter: blur(60px);
-  will-change: opacity, transform;
+  will-change: opacity;
+}
+
+/* All four edges. An inset radial leaves the middle clear, so it reads as
+   rim light rather than a wash over the page. */
+.glowAll {
+  position: absolute;
+  inset: -2%;
+  background:
+    radial-gradient(42% 60% at 0% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.38) 42%, transparent 72%),
+    radial-gradient(42% 60% at 100% 50%, rgba(var(--blue-brand-rgb), 0.85) 0%, rgba(var(--blue-500-rgb), 0.38) 42%, transparent 72%),
+    radial-gradient(62% 40% at 50% 0%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.34) 44%, transparent 74%),
+    radial-gradient(62% 40% at 50% 100%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.34) 44%, transparent 74%);
+}
+
+/* The arrival edge, brighter and tighter. */
+.glowLead {
+  position: absolute;
+  will-change: opacity;
 }
 
 .glow_left,
 .glow_right {
-  top: 0;
-  bottom: 0;
-  width: 42vw;
-  background: radial-gradient(
-    60% 50% at var(--glow-x, 0%) 50%,
-    rgba(var(--blue-brand-rgb), 0.85) 0%,
-    rgba(var(--blue-500-rgb), 0.5) 28%,
-    rgba(var(--red-emergency-rgb), 0.42) 52%,
-    transparent 76%
-  );
+  top: -5%;
+  bottom: -5%;
+  width: 46vw;
 }
-.glow_left { left: 0; --glow-x: 0%; }
-.glow_right { right: 0; --glow-x: 100%; }
+.glow_left {
+  left: 0;
+  background: radial-gradient(54% 52% at 0% 50%,
+    rgba(var(--cyan-bright-rgb), 0.95) 0%,
+    rgba(var(--blue-brand-rgb), 0.8) 24%,
+    rgba(var(--red-emergency-rgb), 0.5) 52%,
+    transparent 78%);
+}
+.glow_right {
+  right: 0;
+  background: radial-gradient(54% 52% at 100% 50%,
+    rgba(var(--cyan-bright-rgb), 0.95) 0%,
+    rgba(var(--blue-brand-rgb), 0.8) 24%,
+    rgba(var(--red-emergency-rgb), 0.5) 52%,
+    transparent 78%);
+}
 
 .glow_top,
 .glow_bottom {
-  left: 0;
-  right: 0;
-  height: 48vh;
-  background: radial-gradient(
-    50% 60% at 50% var(--glow-y, 0%),
-    rgba(var(--blue-brand-rgb), 0.85) 0%,
-    rgba(var(--blue-500-rgb), 0.5) 28%,
-    rgba(var(--red-emergency-rgb), 0.42) 52%,
-    transparent 76%
-  );
+  left: -5%;
+  right: -5%;
+  height: 52vh;
 }
-.glow_top { top: 0; --glow-y: 0%; }
-.glow_bottom { bottom: 0; --glow-y: 100%; }
+.glow_top {
+  top: 0;
+  background: radial-gradient(52% 54% at 50% 0%,
+    rgba(var(--cyan-bright-rgb), 0.95) 0%,
+    rgba(var(--blue-brand-rgb), 0.8) 24%,
+    rgba(var(--red-emergency-rgb), 0.5) 52%,
+    transparent 78%);
+}
+.glow_bottom {
+  bottom: 0;
+  background: radial-gradient(52% 54% at 50% 100%,
+    rgba(var(--cyan-bright-rgb), 0.95) 0%,
+    rgba(var(--blue-brand-rgb), 0.8) 24%,
+    rgba(var(--red-emergency-rgb), 0.5) 52%,
+    transparent 78%);
+}
 
 /* ─── Panel ─────────────────────────────────────────────────────────────── */
 
@@ -98,36 +134,22 @@
 .top { top: var(--drawer-inset); }
 .bottom { bottom: var(--drawer-inset); }
 
-/* Tall card: image fills, copy sits over a gradient at the base. */
-.vertical .media {
-  position: absolute;
-  inset: 0;
-}
-.vertical .content {
-  position: absolute;
-  z-index: 2;
+/* Image is full-bleed in BOTH orientations now. The split was solving a
+   stretched image; two correctly-shaped assets solve it better, and keep
+   the scrim fading into the picture instead of meeting it at an edge. */
+/* Tall drawer: copy along the bottom. */
+.contentTall {
   left: 0;
   right: 0;
   bottom: 0;
 }
 
-/* Wide card: a horizontal split instead. Stretching a portrait image across
-   a letterbox is what made it go soft, so the image keeps its own column
-   and the copy gets a scrim panel beside it. */
-.horizontal {
-  display: flex;
-  align-items: stretch;
-}
-.horizontal .media {
-  position: relative;
-  flex: 0 0 46%;
-  min-width: 0;
-}
-.horizontal .content {
-  position: relative;
-  z-index: 2;
-  flex: 1;
-  min-width: 0;
+/* Wide drawer: copy down the left, which is the axis that has room. */
+.contentWide {
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: min(54%, 640px);
   justify-content: center;
 }
 
@@ -160,11 +182,14 @@
   box-sizing: border-box;
 }
 
-.image {
+.imageTall,
+.imageWide {
   object-fit: cover;
-  object-position: 50% 32%;
   z-index: 0;
 }
+/* Subject sits upper-middle in the tall asset, centre in the wide one. */
+.imageTall { object-position: 50% 28%; }
+.imageWide { object-position: 60% 50%; }
 
 .innerOverlay {
   position: absolute;
@@ -174,6 +199,8 @@
 }
 
 .content {
+  position: absolute;
+  z-index: 2;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -182,13 +209,16 @@
 }
 
 .headline {
+  /* Fixed. Size was a control; it is not any more — a headline that can be
+     any of five sizes is five different banners. */
+  font-size: var(--font-size-40);
   font-weight: 700;
   line-height: var(--leading-tight);
   letter-spacing: -0.02em;
 }
 
+/* Every part is its own line. The break-after toggle is gone. */
 .headlineLine { display: block; }
-.headlineInline { display: inline-block; margin-right: 0.28em; }
 
 .description {
   max-width: 46ch;
@@ -333,9 +363,14 @@
   .top,
   .bottom { height: min(70vh, 620px); }
 
-  /* Not enough width to sit side by side on a phone — the split stacks. */
-  .horizontal { flex-direction: column; }
-  .horizontal .media { flex: 0 0 44%; }
+  /* No width for a side-by-side scrim on a phone — the wide drawer's copy
+     drops to the bottom like the tall one. */
+  .contentWide {
+    top: auto;
+    width: auto;
+    right: 0;
+    justify-content: flex-end;
+  }
 
   .content { padding: var(--space-20); gap: var(--space-12); }
 

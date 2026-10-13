@@ -126,17 +126,6 @@
   color: var(--color-text-inverse);
 }
 
-/* ── swatches ── */
-.swatches { display: flex; gap: var(--space-6); }
-
-.swatch,
-.swatchOn {
-  width: 26px;
-  height: 26px;
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: transform var(--duration-fast) var(--ease-out);
-}
 .swatch { border: 1px solid rgba(var(--white-rgb), 0.2); }
 .swatchOn {
   border: 2px solid var(--white);
@@ -211,19 +200,33 @@
   color: var(--color-text-inverse);
 }
 
-/* ── toggles ── */
-.toggleOn,
-.toggleOff {
-  padding: var(--space-2) var(--space-10);
+/* ── switches ── */
+.switchOn,
+.switchOff {
+  position: relative;
+  width: 36px;
+  height: 20px;
+  padding: 0;
   border: none;
   border-radius: var(--radius-full);
-  font-family: inherit;
-  font-size: var(--font-size-2xs);
-  font-weight: 700;
   cursor: pointer;
+  transition: background var(--duration-base) var(--ease-out);
 }
-.toggleOn { background: var(--green-500); color: var(--navy-ink); }
-.toggleOff { background: rgba(var(--white-rgb), 0.12); color: rgba(var(--white-rgb), 0.55); }
+.switchOn { background: var(--green-500); }
+.switchOff { background: rgba(var(--white-rgb), 0.18); }
+
+.knob {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 16px;
+  height: 16px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  box-shadow: var(--elevation-1);
+  transition: transform var(--duration-base) var(--ease-out);
+}
+.switchOn .knob { transform: translateX(16px); }
 
 .add {
   display: inline-flex;

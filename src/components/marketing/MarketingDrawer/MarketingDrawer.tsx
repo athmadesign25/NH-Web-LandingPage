@@ -8,11 +8,10 @@
  * flush to them, which is what makes it read as a card arriving rather than
  * a panel sliding out of the chrome.
  *
- * Layout flips with the side. Left/right is a tall card — image filling it,
- * copy over a gradient at the base. Top/bottom is a WIDE card, where that
- * same treatment would stretch a portrait image across a letterbox and go
- * soft, so it becomes a horizontal split instead: image on one side, copy
- * on a scrim beside it.
+ * The image is full-bleed in both orientations, with the copy sitting on a
+ * scrim that fades INTO it rather than meeting it at an edge. Which axis
+ * that scrim runs along changes with the shape: a tall drawer fades from
+ * the bottom, a wide one from the left.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -24,9 +23,9 @@ import { ease } from "@/lib/motion";
 import styles from "./MarketingDrawer.module.css";
 import {
   type BannerConfig,
-  OVERLAY_COLORS,
+  OVERLAY_RGB,
   TEXT_COLORS,
-  HEADLINE_SIZES,
+  DESCRIPTION_COLOR,
   resolve,
 } from "./types";
 
@@ -48,8 +47,6 @@ const GLOW_LEAD = 0.5;
 
 export default function MarketingDrawer({ open, config, onClose }: Props) {
   const pausedRef = useRef<HTMLVideoElement[]>([]);
-  // Drives the headline sweep. Held until the drawer has arrived, so the
-  // wipe reads as a separate beat rather than racing the entrance.
   const [sweep, setSweep] = useState(false);
 
   useEffect(() => {
@@ -70,23 +67,47 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
 
-    // Scroll is deliberately NOT locked: the drawer has to be judged against
-    // every section behind it, and freezing the page makes that impossible.
+    // Scroll is frozen while open. Lenis owns the scroll, so stopping it is
+    // what actually locks the page — overflow: hidden on body does nothing.
+    const lenis = (window as unknown as { lenis?: { stop: () => void; start: () => void } }).lenis;
+    lenis?.stop();
+    const prevOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+
     const t = window.setTimeout(() => setSweep(true), (GLOW_LEAD + 0.55) * 1000);
 
     return () => {
       document.removeEventListener("keydown", onKey);
       window.clearTimeout(t);
+      lenis?.start();
+      document.body.style.overflow = prevOverflow;
       pausedRef.current.forEach((v) => v.play().catch(() => {}));
       pausedRef.current = [];
     };
   }, [open, onClose]);
 
-  const overlayRgb = resolve(OVERLAY_COLORS[config.overlay.tone], config.overlay.colorId);
-  const headlineSize = resolve(HEADLINE_SIZES, config.headline.sizeId);
+  const wide = config.side === "top" || config.side === "bottom";
+  const rgb = OVERLAY_RGB[config.overlay.tone];
   const textRamp = TEXT_COLORS[config.overlay.tone];
   const travel = TRAVEL[config.side];
-  const horizontal = config.side === "top" || config.side === "bottom";
+  const art = wide ? config.image.wide : config.image.tall;
+
+  // The scrim runs along the long axis and fades out well before the far
+  // edge, so it reads as the image dissolving into colour rather than a
+  // panel butted against it.
+  const scrimFade = wide
+    ? `linear-gradient(to right,
+        rgba(${rgb}, 0.97) 0%,
+        rgba(${rgb}, 0.93) 26%,
+        rgba(${rgb}, 0.72) 44%,
+        rgba(${rgb}, 0.34) 62%,
+        rgba(${rgb}, 0) 82%)`
+    : `linear-gradient(to top,
+        rgba(${rgb}, 0.97) 0%,
+        rgba(${rgb}, 0.9) 26%,
+        rgba(${rgb}, 0.6) 48%,
+        rgba(${rgb}, 0.22) 68%,
+        rgba(${rgb}, 0) 86%)`;
 
   const descDelay = GLOW_LEAD + 0.55 + config.headline.parts.length * 0.16 + 0.5;
   const ctaDelay = descDelay + (config.description.enabled ? 0.18 : 0);
@@ -104,30 +125,27 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
             transition={{ duration: 0.35, ease: ease.out }}
           />
 
-          {/* Edge glow. Pulses at the edge the drawer is about to arrive
-              from, then fades once it has — so the entrance is announced
-              rather than just happening. Blue and red, breathing, the way
-              the iPhone power-button hold does. */}
+          {/* Edge glow. Breathes around the whole viewport so the page
+              itself feels lit from outside, then concentrates on the edge
+              the drawer is about to arrive from. Fades once it has. */}
           <motion.div
-            className={`${styles.glow} ${styles[`glow_${config.side}`]}`}
+            className={styles.glowFrame}
             aria-hidden
-            initial={{ opacity: 0, scale: 0.85 }}
-            animate={{
-              opacity: [0, 0.9, 0.75, 0.55, 0],
-              scale: [0.85, 1.06, 0.98, 1.04, 1.1],
-            }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: [0, 1, 0.8, 0.95, 0] }}
             exit={{ opacity: 0, transition: { duration: 0.3 } }}
             transition={{
-              duration: GLOW_LEAD + 1.5,
-              times: [0, 0.22, 0.42, 0.62, 1],
+              duration: GLOW_LEAD + 1.7,
+              times: [0, 0.2, 0.45, 0.62, 1],
               ease: "easeInOut",
             }}
-          />
+          >
+            <span className={styles.glowAll} />
+            <span className={`${styles.glowLead} ${styles[`glow_${config.side}`]}`} />
+          </motion.div>
 
           <motion.div
-            className={`${styles.panel} ${styles[config.side]} ${
-              horizontal ? styles.horizontal : styles.vertical
-            }`}
+            className={`${styles.panel} ${styles[config.side]}`}
             role="dialog"
             aria-modal="true"
             aria-label="Promotional message"
@@ -138,53 +156,22 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
           >
             <div className={styles.traceBorder} aria-hidden />
 
-            <div className={styles.media}>
-              <Image
-                src={config.image.src}
-                alt={config.image.alt}
-                fill
-                sizes={horizontal ? "(max-width: 768px) 100vw, 50vw" : "(max-width: 768px) 92vw, 40vw"}
-                className={styles.image}
-                priority
-              />
-              {/* Vertical only: the image fades into the copy beneath it.
-                  In the horizontal split the copy has its own panel. */}
-              {!horizontal && (
-                <div
-                  className={styles.innerOverlay}
-                  style={{
-                    background: `linear-gradient(to top,
-                      rgba(${overlayRgb}, 0.96) 0%,
-                      rgba(${overlayRgb}, 0.88) 32%,
-                      rgba(${overlayRgb}, 0.45) 62%,
-                      rgba(${overlayRgb}, 0) 100%)`,
-                  }}
-                  aria-hidden
-                />
-              )}
-            </div>
+            <Image
+              key={art.src}
+              src={art.src}
+              alt={art.alt}
+              fill
+              sizes={wide ? "(max-width: 768px) 100vw, 96vw" : "(max-width: 768px) 96vw, 44vw"}
+              className={wide ? styles.imageWide : styles.imageTall}
+              priority
+            />
 
-            <div
-              className={styles.content}
-              style={
-                horizontal
-                  ? {
-                      background: `linear-gradient(to right,
-                        rgba(${overlayRgb}, 0.92) 0%,
-                        rgba(${overlayRgb}, 1) 18%,
-                        rgba(${overlayRgb}, 1) 100%)`,
-                    }
-                  : undefined
-              }
-            >
-              <div className={styles.headline} style={{ fontSize: headlineSize }}>
+            <div className={styles.innerOverlay} style={{ background: scrimFade }} aria-hidden />
+
+            <div className={`${styles.content} ${wide ? styles.contentWide : styles.contentTall}`}>
+              <div className={styles.headline}>
                 {config.headline.parts.map((part, i) => (
-                  <span
-                    key={part.id}
-                    className={part.breakAfter ? styles.headlineLine : styles.headlineInline}
-                  >
-                    {/* The same colour wipe the section titles use, so the
-                        drawer's headline reads as part of the same family. */}
+                  <span key={part.id} className={styles.headlineLine}>
                     <TextSweepEffect
                       words={[part.text]}
                       finalColor={resolve(textRamp, part.colorId)}
@@ -199,7 +186,7 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
               {config.description.enabled && (
                 <motion.p
                   className={styles.description}
-                  style={{ color: resolve(textRamp, config.description.colorId) }}
+                  style={{ color: DESCRIPTION_COLOR[config.overlay.tone] }}
                   initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ delay: descDelay, duration: 0.6, ease: ease.out }}

@@ -29,7 +29,8 @@
 
   /* Neutral ramp. These ten are an exact match for a standard slate scale,
      so they were already a coherent system — just an unnamed one. */
-  --slate-50: #f8fafc;
+  --slate-50-rgb: 248, 250, 252;
+  --slate-50: rgb(var(--slate-50-rgb));
   --slate-100: #f1f5f9;
   --slate-200-rgb: 226, 232, 240;
   --slate-200: rgb(var(--slate-200-rgb));

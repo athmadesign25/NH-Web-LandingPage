@@ -1,0 +1,65 @@
+/* Collapsed banner. Spec'd at 274px wide with 12px/13px padding and a
+   10px gap; everything maps onto existing tokens rather than new ones. */
+
+.toast {
+  position: fixed;
+  left: var(--space-24);
+  bottom: var(--space-24);
+  z-index: 2147481800;
+  display: flex;
+  width: 274px;
+  padding: var(--space-12) var(--space-14);
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-10);
+  border: none;
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--elevation-3);
+  font-family: var(--font-family);
+  text-align: left;
+  cursor: pointer;
+  transition: box-shadow var(--duration-base) var(--ease-out),
+    transform var(--duration-base) var(--ease-out);
+}
+
+.toast:hover {
+  box-shadow: var(--elevation-4);
+  transform: translateY(-2px);
+}
+
+/* 48px plate holding the 32px mark, per the spec. */
+.iconWrap {
+  display: flex;
+  width: 48px;
+  height: 48px;
+  padding: var(--space-8);
+  justify-content: center;
+  align-items: center;
+  flex-shrink: 0;
+  border-radius: var(--radius-md);
+  background: var(--red-50);
+}
+
+.copy {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+/* 16px/700 from the spec. Line height is `normal` there, which is what
+   --leading-tight approximates at this size. */
+.line {
+  font-size: var(--font-size-base);
+  font-weight: 700;
+  line-height: var(--leading-tight);
+}
+
+@media (max-width: 768px) {
+  .toast {
+    left: var(--space-12);
+    right: var(--space-12);
+    bottom: var(--space-12);
+    width: auto;
+  }
+}

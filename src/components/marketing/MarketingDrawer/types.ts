@@ -18,6 +18,16 @@ export type OverlayTone = "dark" | "light";
 
 export type ButtonVariant = "primary" | "secondary" | "link";
 
+/**
+ * What the banner leaves behind when it is closed.
+ *   none  — it is gone
+ *   toast — a small persistent alert, bottom left
+ *   fab   — a fourth tile in the floating action bar
+ * Neither collapsed form carries a scrim or locks scroll; they just sit
+ * there until dismissed.
+ */
+export type CollapseMode = "none" | "toast" | "fab";
+
 export type ColorOption = {
   id: string;
   label: string;
@@ -52,6 +62,7 @@ export type BannerConfig = {
   headline: { parts: HeadlinePart[] };
   description: { enabled: boolean; text: string };
   cta: { enabled: boolean; label: string; variant: ButtonVariant; href: string };
+  collapse: CollapseMode;
 };
 
 /* ─── The closed sets ──────────────────────────────────────────────────── */
@@ -125,4 +136,5 @@ export const DEFAULT_CONFIG: BannerConfig = {
     text: "Multi-speciality care, 24x7 emergency and diagnostics — opening shortly.",
   },
   cta: { enabled: true, label: "Book Appointment", variant: "primary", href: "/appointment" },
+  collapse: "toast",
 };

@@ -488,3 +488,18 @@
     display: none !important;
   }
 }
+
+/* ─── Collapsed marketing banner tile ─────────────────────────────────────
+   The fourth tile. Red plate rather than the blue candy fill the other
+   three carry, because this one is an alert rather than a utility — the
+   glyph is what distinguishes the others; here the surface does too. */
+.bannerIconWrap {
+  border-color: rgba(var(--red-emergency-rgb), 0.45);
+  background: radial-gradient(
+    95% 60% at 50% 78%,
+    var(--red-50) 0%,
+    var(--white) 100%
+  );
+  box-shadow: 0 3px 18px -6px rgba(var(--red-emergency-rgb), 0.5),
+    inset 0 1px 6px -3px var(--white);
+}

@@ -1,9 +1,12 @@
 "use client";
 
 import React, { useEffect, useRef, useState } from "react";
-import { motion, useTransform, useMotionValueEvent } from "framer-motion";
+import { motion, useTransform, useMotionValueEvent, AnimatePresence } from "framer-motion";
 import Link from "next/link";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
+import { useSyncExternalStore } from "react";
+import BannerBellIcon from "@/components/marketing/MarketingDrawer/BannerBellIcon";
+import { bannerCollapse } from "@/components/marketing/MarketingDrawer/bannerCollapse";
 import { Search } from "lucide-react";
 import calendarCheckAnimation from "../../../public/assets/calendar-check.json";
 import nhAppIconAnimation from "../../../public/assets/nh-app-icon.json";
@@ -54,6 +57,11 @@ function useHoverLoop(ref: React.RefObject<LottieRefCurrentProps | null>) {
 }
 
 export default function FloatingQuickActions() {
+  const bannerTile = useSyncExternalStore(
+    bannerCollapse.subscribe,
+    bannerCollapse.get,
+    bannerCollapse.getServerSnapshot,
+  ) === "fab";
   const [isQuickActionsVisible, setIsQuickActionsVisible] = useState(false);
   const [darkLinks, setDarkLinks] = useState<boolean[]>([false, false, false]);
 
@@ -297,6 +305,35 @@ export default function FloatingQuickActions() {
           </span>
           <span className={styles.actionLabel}>Download<br />NH App</span>
         </Link>
+
+        {/* Action 4: the marketing banner, collapsed into the bar.
+            Rendered here rather than as a lookalike floating beside the
+            FAB so the bar genuinely makes room for it — the same height
+            animation the search tile uses when it docks. */}
+        <AnimatePresence>
+          {bannerTile && (
+            <motion.button
+              type="button"
+              className={`${styles.link} ${darkLinks[2] ? styles.linkOnDark : ""}`}
+              onClick={() =>
+                (window as unknown as { __reopenBanner?: () => void }).__reopenBanner?.()
+              }
+              aria-label="New hospital coming soon"
+              initial={{ height: 0, opacity: 0, scale: 0.6 }}
+              animate={{ height: "auto", opacity: 1, scale: 1 }}
+              exit={{ height: 0, opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+              style={{ overflow: "hidden" }}
+            >
+              {/* Red plate rather than the blue candy fill the other three
+                  carry — this one is an alert, not a utility. */}
+              <span className={`${styles.iconWrap} ${styles.bannerIconWrap}`}>
+                <BannerBellIcon size={26} />
+              </span>
+              <span className={styles.actionLabel}>New<br />Hospital!</span>
+            </motion.button>
+          )}
+        </AnimatePresence>
 
         {/* Action 3: Pulse AI Search (Interactive search utility - Minimized Search) */}
         <motion.button

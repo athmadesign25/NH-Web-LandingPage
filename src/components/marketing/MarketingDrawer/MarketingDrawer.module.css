@@ -263,17 +263,17 @@
     border-color var(--duration-base) var(--ease-out);
 }
 
-/* Primary is the promotional red from the reference artwork. Note this is
-   the one place red appears outside an emergency affordance — worth a
-   decision, since the palette otherwise reserves red for emergency. */
+/* Brand blue, not red. Red is reserved for emergency affordances, and a
+   promotional button wearing it weakens the one place that signal needs
+   to mean something. */
 .primary {
-  --shadow-rgb: var(--red-emergency-rgb);
-  background: var(--red-500);
+  --shadow-rgb: var(--blue-brand-rgb);
+  background: var(--blue-brand);
   color: var(--color-text-inverse);
   box-shadow: var(--elevation-2);
 }
 .primary:hover {
-  background: var(--red-600);
+  background: var(--blue-700);
   box-shadow: var(--elevation-3);
 }
 

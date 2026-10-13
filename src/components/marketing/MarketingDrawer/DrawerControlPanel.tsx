@@ -20,6 +20,7 @@ import {
   type DrawerSide,
   type OverlayTone,
   type ButtonVariant,
+  type CollapseMode,
   TEXT_COLORS,
   resolve,
 } from "./types";
@@ -31,6 +32,7 @@ type Props = {
 
 const SIDES: DrawerSide[] = ["left", "right", "top", "bottom"];
 const VARIANTS: ButtonVariant[] = ["primary", "secondary", "link"];
+const COLLAPSE: CollapseMode[] = ["none", "toast", "fab"];
 
 const CORNER: Record<DrawerSide, string> = {
   left: styles.atBottomRight,
@@ -217,6 +219,22 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
               onChange={(e) => set({ description: { ...config.description, text: e.target.value } })}
             />
           )}
+        </section>
+
+        {/* What survives the close. */}
+        <section className={styles.row}>
+          <label className={styles.label}>On close</label>
+          <div className={styles.seg}>
+            {COLLAPSE.map((c) => (
+              <button
+                key={c}
+                onClick={() => set({ collapse: c })}
+                className={c === config.collapse ? styles.segOn : styles.segOff}
+              >
+                {c}
+              </button>
+            ))}
+          </div>
         </section>
 
         <section className={styles.row}>

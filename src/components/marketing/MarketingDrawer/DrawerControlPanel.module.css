@@ -16,9 +16,7 @@
   box-shadow: var(--elevation-5);
   color: var(--color-text-inverse);
   font-family: var(--font-family);
-  cursor: grab;
 }
-.panel:active { cursor: grabbing; }
 
 /* Parked away from whichever edge the drawer occupies. */
 .atBottomRight { right: var(--space-20); bottom: var(--space-20); }
@@ -68,8 +66,9 @@
   display: flex;
   flex-direction: column;
   gap: var(--space-14);
-  /* The panel is draggable; without this the inner scroll fights the drag. */
-  cursor: auto;
+  /* Scrolls independently. The drag handle is the header, so this never
+     fights the drag. */
+  overscroll-behavior: contain;
 }
 
 .row {

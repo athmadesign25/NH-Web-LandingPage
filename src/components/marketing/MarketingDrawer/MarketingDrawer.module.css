@@ -23,6 +23,52 @@
   -webkit-backdrop-filter: blur(var(--blur-md));
 }
 
+/* ─── Edge glow ───────────────────────────────────────────────────────────
+   Announces the entrance: a soft blue/red bloom breathing at the edge the
+   drawer is about to arrive from, which fades once it has. Heavily blurred
+   and non-interactive — it is atmosphere, not an element. */
+.glow {
+  position: fixed;
+  z-index: 2147482050;
+  pointer-events: none;
+  filter: blur(60px);
+  will-change: opacity, transform;
+}
+
+.glow_left,
+.glow_right {
+  top: 0;
+  bottom: 0;
+  width: 42vw;
+  background: radial-gradient(
+    60% 50% at var(--glow-x, 0%) 50%,
+    rgba(var(--blue-brand-rgb), 0.85) 0%,
+    rgba(var(--blue-500-rgb), 0.5) 28%,
+    rgba(var(--red-emergency-rgb), 0.42) 52%,
+    transparent 76%
+  );
+}
+.glow_left { left: 0; --glow-x: 0%; }
+.glow_right { right: 0; --glow-x: 100%; }
+
+.glow_top,
+.glow_bottom {
+  left: 0;
+  right: 0;
+  height: 48vh;
+  background: radial-gradient(
+    50% 60% at 50% var(--glow-y, 0%),
+    rgba(var(--blue-brand-rgb), 0.85) 0%,
+    rgba(var(--blue-500-rgb), 0.5) 28%,
+    rgba(var(--red-emergency-rgb), 0.42) 52%,
+    transparent 76%
+  );
+}
+.glow_top { top: 0; --glow-y: 0%; }
+.glow_bottom { bottom: 0; --glow-y: 100%; }
+
+/* ─── Panel ─────────────────────────────────────────────────────────────── */
+
 .panel {
   position: fixed;
   z-index: 2147482100;
@@ -30,12 +76,10 @@
   border-radius: var(--radius-md);
   background: var(--navy-900);
   box-shadow: var(--elevation-5);
-  /* The gap from the page edge — this is the thing that separates it from
-     a conventional drawer. */
+  /* The gap from the page edge — what separates this from a normal drawer. */
   --drawer-inset: var(--space-24);
 }
 
-/* Side placement. Each pins three edges and sizes the fourth. */
 .left,
 .right {
   top: var(--drawer-inset);
@@ -54,8 +98,39 @@
 .top { top: var(--drawer-inset); }
 .bottom { bottom: var(--drawer-inset); }
 
-/* The rotating conic trace from the search experience, so the two read as
-   one family. Masked to the padding ring so only the stroke shows. */
+/* Tall card: image fills, copy sits over a gradient at the base. */
+.vertical .media {
+  position: absolute;
+  inset: 0;
+}
+.vertical .content {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+}
+
+/* Wide card: a horizontal split instead. Stretching a portrait image across
+   a letterbox is what made it go soft, so the image keeps its own column
+   and the copy gets a scrim panel beside it. */
+.horizontal {
+  display: flex;
+  align-items: stretch;
+}
+.horizontal .media {
+  position: relative;
+  flex: 0 0 46%;
+  min-width: 0;
+}
+.horizontal .content {
+  position: relative;
+  z-index: 2;
+  flex: 1;
+  min-width: 0;
+  justify-content: center;
+}
+
 .traceBorder {
   position: absolute;
   inset: 0;
@@ -87,9 +162,6 @@
 
 .image {
   object-fit: cover;
-  /* Pulled slightly above centre rather than flush to the top: the subject
-     sits in the upper-middle of the artwork, and anchoring to the very top
-     cropped the signage off the left edge in a tall drawer. */
   object-position: 50% 32%;
   z-index: 0;
 }
@@ -102,11 +174,6 @@
 }
 
 .content {
-  position: absolute;
-  z-index: 2;
-  left: 0;
-  right: 0;
-  bottom: 0;
   display: flex;
   flex-direction: column;
   align-items: flex-start;
@@ -118,17 +185,10 @@
   font-weight: 700;
   line-height: var(--leading-tight);
   letter-spacing: -0.02em;
-  /* Size arrives inline from the token the config names. */
 }
 
-.headlineLine {
-  display: block;
-}
-
-.headlineInline {
-  display: inline-block;
-  margin-right: 0.28em;
-}
+.headlineLine { display: block; }
+.headlineInline { display: inline-block; margin-right: 0.28em; }
 
 .description {
   max-width: 46ch;
@@ -155,9 +215,9 @@
     border-color var(--duration-base) var(--ease-out);
 }
 
-/* Primary is the emergency red in the reference artwork — note this is the
-   one place it appears outside an emergency affordance, because it is the
-   brand's promotional red in marketing collateral. Worth a decision. */
+/* Primary is the promotional red from the reference artwork. Note this is
+   the one place red appears outside an emergency affordance — worth a
+   decision, since the palette otherwise reserves red for emergency. */
 .primary {
   --shadow-rgb: var(--red-emergency-rgb);
   background: var(--red-500);
@@ -189,7 +249,6 @@
   border-color: var(--blue-brand);
 }
 
-/* Link: no surface, underline grows on hover rather than appearing. */
 .link {
   position: relative;
   min-height: 0;
@@ -212,9 +271,7 @@
   transform-origin: left;
   transition: transform var(--duration-emphasis) var(--ease-out);
 }
-.link:hover::after {
-  transform: scaleX(1);
-}
+.link:hover::after { transform: scaleX(1); }
 
 /* ─── Close ───────────────────────────────────────────────────────────── */
 
@@ -248,7 +305,6 @@
   color: var(--navy-ink);
 }
 
-/* Sits in the open space beside the drawer, which moves with it. */
 .close_left {
   top: 50%;
   left: calc(var(--space-24) + min(560px, 44vw) + var(--space-32));
@@ -271,41 +327,33 @@
 }
 
 @media (max-width: 768px) {
-  .panel {
-    --drawer-inset: var(--space-12);
-  }
+  .panel { --drawer-inset: var(--space-12); }
   .left,
-  .right {
-    width: calc(100vw - (2 * var(--space-12)));
-  }
+  .right { width: calc(100vw - (2 * var(--space-12))); }
   .top,
-  .bottom {
-    height: min(70vh, 620px);
-  }
-  .content {
-    padding: var(--space-20);
-    gap: var(--space-12);
-  }
-  /* No room beside the drawer on a phone, so close moves inside it. */
+  .bottom { height: min(70vh, 620px); }
+
+  /* Not enough width to sit side by side on a phone — the split stacks. */
+  .horizontal { flex-direction: column; }
+  .horizontal .media { flex: 0 0 44%; }
+
+  .content { padding: var(--space-20); gap: var(--space-12); }
+
   .close,
   .close_left,
   .close_right,
   .close_top,
   .close_bottom {
-    top: auto;
+    top: calc(var(--space-12) + var(--space-16));
     bottom: auto;
     left: auto;
     right: var(--space-20);
-    top: calc(var(--space-12) + var(--space-16));
     transform: none;
   }
-  .close span:last-child {
-    display: none;
-  }
+  .closeLabel { display: none; }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .traceBorder {
-    animation: none;
-  }
+  .traceBorder { animation: none; }
+  .glow { display: none; }
 }

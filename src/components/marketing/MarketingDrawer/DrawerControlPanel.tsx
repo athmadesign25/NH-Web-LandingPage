@@ -11,7 +11,7 @@
  * DEV ONLY. It renders nothing in a production build.
  */
 
-import { motion } from "framer-motion";
+import { motion, useDragControls } from "framer-motion";
 import { Plus, Trash2, ArrowUp, ArrowDown, CornerDownLeft } from "lucide-react";
 import styles from "./DrawerControlPanel.module.css";
 import {
@@ -46,6 +46,7 @@ const CORNER: Record<DrawerSide, string> = {
 };
 
 export default function DrawerControlPanel({ config, onChange }: Props) {
+  const controls = useDragControls();
   if (process.env.NODE_ENV === "production") return null;
 
   const set = (patch: Partial<BannerConfig>) => onChange({ ...config, ...patch });
@@ -82,15 +83,25 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
     <motion.aside
       className={`${styles.panel} ${CORNER[config.side]}`}
       drag
+      // Drag is started from the header ONLY. With drag on the whole panel,
+      // framer captures the pointer and the scrollable body never receives
+      // it — which is why the controls could not be scrolled at the top and
+      // bottom positions, where the panel is capped to a short strip.
+      dragListener={false}
+      dragControls={controls}
       dragMomentum={false}
       dragElastic={0}
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, y: 12 }}
     >
-      <header className={styles.head}>
+      <header
+        className={styles.head}
+        onPointerDown={(e) => controls.start(e)}
+        style={{ cursor: "grab", touchAction: "none" }}
+      >
         <span className={styles.title}>Drawer controls</span>
-        <span className={styles.hint}>drag to move</span>
+        <span className={styles.hint}>drag header</span>
       </header>
 
       <div className={styles.body}>

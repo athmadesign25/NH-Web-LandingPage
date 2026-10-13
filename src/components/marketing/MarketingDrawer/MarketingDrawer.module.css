@@ -1,0 +1,311 @@
+/* Marketing drawer. Inset from the page edges rather than flush to them,
+   so it reads as a card arriving rather than a panel sliding out of the
+   browser chrome. */
+
+@property --drawer-angle {
+  syntax: "<angle>";
+  inherits: false;
+  initial-value: 0deg;
+}
+
+@keyframes drawerTrace {
+  to {
+    --drawer-angle: 360deg;
+  }
+}
+
+.scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 2147482000;
+  background: var(--scrim);
+  backdrop-filter: blur(var(--blur-md));
+  -webkit-backdrop-filter: blur(var(--blur-md));
+}
+
+.panel {
+  position: fixed;
+  z-index: 2147482100;
+  overflow: hidden;
+  border-radius: var(--radius-md);
+  background: var(--navy-900);
+  box-shadow: var(--elevation-5);
+  /* The gap from the page edge — this is the thing that separates it from
+     a conventional drawer. */
+  --drawer-inset: var(--space-24);
+}
+
+/* Side placement. Each pins three edges and sizes the fourth. */
+.left,
+.right {
+  top: var(--drawer-inset);
+  bottom: var(--drawer-inset);
+  width: min(560px, 44vw);
+}
+.left { left: var(--drawer-inset); }
+.right { right: var(--drawer-inset); }
+
+.top,
+.bottom {
+  left: var(--drawer-inset);
+  right: var(--drawer-inset);
+  height: min(560px, 62vh);
+}
+.top { top: var(--drawer-inset); }
+.bottom { bottom: var(--drawer-inset); }
+
+/* The rotating conic trace from the search experience, so the two read as
+   one family. Masked to the padding ring so only the stroke shows. */
+.traceBorder {
+  position: absolute;
+  inset: 0;
+  z-index: 3;
+  border-radius: inherit;
+  padding: 1.5px;
+  background: conic-gradient(
+    from var(--drawer-angle, 0deg),
+    rgba(var(--red-emergency-rgb), 0.95) 0deg,
+    rgba(255, 46, 147, 0.9) 55deg,
+    rgba(var(--violet-600-rgb), 0.9) 115deg,
+    rgba(var(--blue-brand-rgb), 0.95) 175deg,
+    rgba(var(--cyan-bright-rgb), 0.95) 235deg,
+    /* --blue-500-rgb, not --blue-600: the latter is stored as a hex, and
+       rgba(var(--blue-600), …) is invalid CSS — which silently killed the
+       whole gradient, so the border rendered as nothing at all. */
+    rgba(var(--blue-500-rgb), 0.95) 295deg,
+    rgba(var(--red-emergency-rgb), 0.95) 360deg
+  );
+  -webkit-mask: linear-gradient(var(--white) 0 0) content-box, linear-gradient(var(--white) 0 0);
+  -webkit-mask-composite: xor;
+  mask: linear-gradient(var(--white) 0 0) content-box, linear-gradient(var(--white) 0 0);
+  mask-composite: exclude;
+  animation: drawerTrace 7.5s linear infinite;
+  pointer-events: none;
+  opacity: 0.55;
+  box-sizing: border-box;
+}
+
+.image {
+  object-fit: cover;
+  /* Pulled slightly above centre rather than flush to the top: the subject
+     sits in the upper-middle of the artwork, and anchoring to the very top
+     cropped the signage off the left edge in a tall drawer. */
+  object-position: 50% 32%;
+  z-index: 0;
+}
+
+.innerOverlay {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.content {
+  position: absolute;
+  z-index: 2;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-16);
+  padding: var(--space-32);
+}
+
+.headline {
+  font-weight: 700;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.02em;
+  /* Size arrives inline from the token the config names. */
+}
+
+.headlineLine {
+  display: block;
+}
+
+.headlineInline {
+  display: inline-block;
+  margin-right: 0.28em;
+}
+
+.description {
+  max-width: 46ch;
+  font-size: var(--font-size-base);
+  line-height: var(--leading-body);
+}
+
+/* ─── CTA ─────────────────────────────────────────────────────────────── */
+
+.cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--space-32);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  border: 1px solid transparent;
+  transition: background var(--duration-base) var(--ease-out),
+    color var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+/* Primary is the emergency red in the reference artwork — note this is the
+   one place it appears outside an emergency affordance, because it is the
+   brand's promotional red in marketing collateral. Worth a decision. */
+.primary {
+  --shadow-rgb: var(--red-emergency-rgb);
+  background: var(--red-500);
+  color: var(--color-text-inverse);
+  box-shadow: var(--elevation-2);
+}
+.primary:hover {
+  background: var(--red-600);
+  box-shadow: var(--elevation-3);
+}
+
+.secondary.onDark {
+  background: rgba(var(--white-rgb), 0.12);
+  color: var(--color-text-inverse);
+  border-color: rgba(var(--white-rgb), 0.4);
+}
+.secondary.onDark:hover {
+  background: rgba(var(--white-rgb), 0.2);
+  border-color: rgba(var(--white-rgb), 0.7);
+}
+
+.secondary.onLight {
+  background: transparent;
+  color: var(--blue-brand);
+  border-color: rgba(var(--blue-brand-rgb), 0.5);
+}
+.secondary.onLight:hover {
+  background: rgba(var(--blue-brand-rgb), 0.08);
+  border-color: var(--blue-brand);
+}
+
+/* Link: no surface, underline grows on hover rather than appearing. */
+.link {
+  position: relative;
+  min-height: 0;
+  padding: var(--space-4) 0;
+  background: transparent;
+  box-shadow: none;
+}
+.link.onDark { color: var(--color-text-inverse); }
+.link.onLight { color: var(--blue-brand); }
+
+.link::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1.5px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform var(--duration-emphasis) var(--ease-out);
+}
+.link:hover::after {
+  transform: scaleX(1);
+}
+
+/* ─── Close ───────────────────────────────────────────────────────────── */
+
+.close {
+  position: fixed;
+  z-index: 2147482200;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-10);
+  padding: var(--space-8) var(--space-16) var(--space-8) var(--space-8);
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-inverse);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  cursor: pointer;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+.close:hover { opacity: 0.75; }
+
+.closeIcon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-full);
+  background: var(--white);
+  color: var(--navy-ink);
+}
+
+/* Sits in the open space beside the drawer, which moves with it. */
+.close_left {
+  top: 50%;
+  left: calc(var(--space-24) + min(560px, 44vw) + var(--space-32));
+  transform: translateY(-50%);
+}
+.close_right {
+  top: 50%;
+  right: calc(var(--space-24) + min(560px, 44vw) + var(--space-32));
+  transform: translateY(-50%);
+}
+.close_top {
+  left: 50%;
+  top: calc(var(--space-24) + min(560px, 62vh) + var(--space-24));
+  transform: translateX(-50%);
+}
+.close_bottom {
+  left: 50%;
+  bottom: calc(var(--space-24) + min(560px, 62vh) + var(--space-24));
+  transform: translateX(-50%);
+}
+
+@media (max-width: 768px) {
+  .panel {
+    --drawer-inset: var(--space-12);
+  }
+  .left,
+  .right {
+    width: calc(100vw - (2 * var(--space-12)));
+  }
+  .top,
+  .bottom {
+    height: min(70vh, 620px);
+  }
+  .content {
+    padding: var(--space-20);
+    gap: var(--space-12);
+  }
+  /* No room beside the drawer on a phone, so close moves inside it. */
+  .close,
+  .close_left,
+  .close_right,
+  .close_top,
+  .close_bottom {
+    top: auto;
+    bottom: auto;
+    left: auto;
+    right: var(--space-20);
+    top: calc(var(--space-12) + var(--space-16));
+    transform: none;
+  }
+  .close span:last-child {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .traceBorder {
+    animation: none;
+  }
+}

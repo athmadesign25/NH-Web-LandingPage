@@ -185,6 +185,10 @@
   --font-size-2xl: 24px;
   --font-size-3xl: 30px;
   --font-size-4xl: 36px;
+  /* 40px. Added for the marketing drawer headline, which the design calls
+     for at 40 — it fell between 4xl (36) and display (42), and rounding
+     either way on a headline is visible. */
+  --font-size-40: 40px;
   /* Section-title display size. Sits between 4xl and 5xl because the
      section titles across PatientStories and HealthPackages had settled on
      42px independently, and the page h1 at 40px was within 2px of them. */
@@ -255,6 +259,19 @@
   --sp-8: var(--space-64);
   --sp-10: var(--space-80);
   --sp-16: var(--space-128);
+
+  /* ── SCRIM & BLUR ─────────────────────────────────────────────────────
+     For anything that dims the page behind a modal, drawer or overlay.
+     There was no token for this: every overlay picked its own black and
+     its own blur radius, which is why they never quite matched.
+
+     The blur steps exist so "blurred background" is a choice between three
+     named intensities rather than a number someone types. 16px is the one
+     the marketing drawer uses. */
+  --scrim: hsl(0deg 8% 0% / 0.44);
+  --blur-sm: 8px;
+  --blur-md: 16px;
+  --blur-lg: 24px;
 
   /* ── SECTION RHYTHM ───────────────────────────────────────────────────
      The vertical breathing room above and below a major page section —

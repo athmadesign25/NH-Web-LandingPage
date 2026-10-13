@@ -12,6 +12,9 @@ import PatientStories from "@/components/sections/patient-stories/PatientStories
 import AppDownloadBanner from "@/components/sections/app-download/AppDownloadBanner";
 import MobileAppDownloadBanner from "@/components/sections/app-download/MobileAppDownloadBanner";
 import FloatingQuickActions from "@/components/layout/FloatingQuickActions";
+// Prototype only — the drawer plus its trigger and control panel. When this
+// is CMS-driven, only <MarketingDrawer config={...} /> remains.
+import MarketingDrawerLab from "@/components/marketing/MarketingDrawer";
 
 function GlobalNeatBackground() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -224,6 +227,8 @@ export default function HomePage() {
 
       <WhyNHToFooterBackground />
       </div>
+
+      <MarketingDrawerLab />
     </LayoutGroup>
   );
 }

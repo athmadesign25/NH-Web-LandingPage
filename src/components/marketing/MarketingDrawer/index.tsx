@@ -32,20 +32,63 @@ export default function MarketingDrawerLab() {
   // briefly releasing the scroll lock and restarting paused videos.
   // What the banner left behind, if anything.
   const [collapsed, setCollapsed] = useState<"toast" | "fab" | null>(null);
+  // Where the panel should shrink to. Measured at close time, so the morph
+  // lands on the real collapsed element rather than an assumed position.
+  const [morphTo, setMorphTo] = useState<{ x: number; y: number; width: number } | null>(null);
 
   const close = useCallback(() => {
-    setOpen(false);
-    setCollapsed((prev) => {
-      const next = configRef.current.collapse;
-      if (next === "fab") bannerCollapse.show("fab");
-      return next === "none" ? null : next;
-    });
+    const mode = configRef.current.collapse;
+
+    if (mode === "none") {
+      setMorphTo(null);
+      setOpen(false);
+      return;
+    }
+
+    // Measure the destination BEFORE the drawer leaves.
+    //
+    // toast: it is not mounted yet, so its resting box is derived from the
+    // same values its stylesheet uses — 274px wide, 24px in from the
+    // bottom-left.
+    //
+    // fab: the bar is already on screen, so its real box is read directly.
+    // The tile has not been added yet, so the panel is aimed at the bottom
+    // of the bar, which is where the bar will grow.
+    let target: { x: number; y: number; width: number };
+    if (mode === "fab") {
+      const bar =
+        document.querySelector('[class*="FloatingQuickActions_container"]') ??
+        document.querySelector('[class*="FloatingQuickActions_link"]')?.parentElement;
+      const r = bar?.getBoundingClientRect();
+      target = r
+        ? { x: r.left, y: r.bottom - 40, width: r.width }
+        : { x: window.innerWidth - 110, y: window.innerHeight / 2, width: 86 };
+    } else {
+      const w = Math.min(274, window.innerWidth - 24);
+      target = { x: 24, y: window.innerHeight - 24 - 36, width: w };
+    }
+
+    // morphTo must land in a render where the drawer is still OPEN.
+    // AnimatePresence snapshots an exiting child's props from the last
+    // render in which it was present — so setting both in one update meant
+    // it exited with the previous props and played the normal retreat.
+    setMorphTo(target);
+    requestAnimationFrame(() => setOpen(false));
+
+    // The collapsed form appears only once the panel has finished arriving,
+    // so the two never overlap — it has to read as one object changing
+    // shape, not a handover.
+    window.setTimeout(() => {
+      if (mode === "fab") bannerCollapse.show("fab");
+      setCollapsed(mode);
+    }, 540);
   }, []);
 
   // Re-opening clears whatever it collapsed into.
   const reopen = useCallback(() => {
     bannerCollapse.clear();
     setCollapsed(null);
+    setMorphTo(null);
     setOpen(true);
   }, []);
 
@@ -68,7 +111,7 @@ export default function MarketingDrawerLab() {
         </button>
       )}
 
-      <MarketingDrawer open={open} config={config} onClose={close} />
+      <MarketingDrawer open={open} config={config} onClose={close} morphTo={morphTo} />
 
       <AnimatePresence>
         {collapsed === "toast" && (

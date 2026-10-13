@@ -33,6 +33,14 @@ type Props = {
   open: boolean;
   config: BannerConfig;
   onClose: () => void;
+  /**
+   * Where the panel should shrink to on close, in viewport coordinates.
+   * null means a plain exit — the drawer retreats the way it arrived.
+   * Set, the SAME element travels and shrinks into the collapsed form, so
+   * the two read as one object changing shape rather than one leaving and
+   * another appearing.
+   */
+  morphTo?: { x: number; y: number; width: number } | null;
 };
 
 /**
@@ -59,8 +67,9 @@ const ORIGIN: Record<BannerConfig["side"], string> = {
 /** The glow leads, the drawer follows. */
 const GLOW_LEAD = 0.5;
 
-export default function MarketingDrawer({ open, config, onClose }: Props) {
+export default function MarketingDrawer({ open, config, onClose, morphTo }: Props) {
   const pausedRef = useRef<HTMLVideoElement[]>([]);
+  const panelRef = useRef<HTMLDivElement>(null);
   const [sweep, setSweep] = useState(false);
 
   useEffect(() => {
@@ -197,6 +206,24 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
         rgba(${rgb}, 0.22) 68%,
         rgba(${rgb}, 0) 86%)`;
 
+  /**
+   * Exit. Normally the drawer retreats the way it came. When it is
+   * collapsing, it instead travels to the target and shrinks to its
+   * width — measured at close time from the real element, so the panel
+   * lands on it rather than near it.
+   */
+  const panelBox = panelRef.current?.getBoundingClientRect();
+  const morphExit =
+    morphTo && panelBox
+      ? {
+          x: morphTo.x + morphTo.width / 2 - (panelBox.left + panelBox.width / 2),
+          y: morphTo.y - (panelBox.top + panelBox.height / 2),
+          scale: Math.max(morphTo.width / panelBox.width, 0.04),
+          opacity: 0,
+          filter: "blur(4px)",
+        }
+      : null;
+
   const descDelay = GLOW_LEAD + 0.55 + config.headline.parts.length * 0.16 + 0.5;
   const ctaDelay = descDelay + (config.description.enabled ? 0.18 : 0);
 
@@ -209,7 +236,7 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
             onClick={onClose}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
+            exit={{ opacity: 0, transition: { duration: morphTo ? 0.45 : 0.35 } }}
             transition={{ duration: 0.35, ease: ease.out }}
           />
 
@@ -237,12 +264,30 @@ export default function MarketingDrawer({ open, config, onClose }: Props) {
             role="dialog"
             aria-modal="true"
             aria-label="Promotional message"
-            style={{ transformOrigin: ORIGIN[config.side] }}
+            ref={panelRef}
+            // Scaling toward a point outside the panel has to pivot on its
+            // own centre, or the travel and the shrink fight each other.
+            style={{ transformOrigin: morphExit ? "center center" : ORIGIN[config.side] }}
             // Scale carries the entrance; travel only nudges it off the edge.
             initial={{ ...travel, opacity: 0, scale: 0.72, filter: "blur(16px)" }}
             animate={{ x: 0, y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
-            exit={{ ...travel, opacity: 0, scale: 0.72, filter: "blur(16px)" }}
-            transition={{ duration: 0.88, delay: GLOW_LEAD, ease: ease.spring }}
+            exit={
+              morphExit ?? {
+                ...travel,
+                opacity: 0,
+                scale: 0.72,
+                filter: "blur(16px)",
+                // Its own transition: the one below carries delay: GLOW_LEAD
+                // for the entrance, and framer applies that prop to the exit
+                // too — so closing sat still for half a second first.
+                transition: { duration: 0.5, ease: ease.out },
+              }
+            }
+            transition={
+              morphExit
+                ? { duration: 0.62, ease: [0.4, 0, 0.2, 1] }
+                : { duration: 0.88, delay: GLOW_LEAD, ease: ease.spring }
+            }
           >
             <div className={styles.traceBorder} aria-hidden />
 

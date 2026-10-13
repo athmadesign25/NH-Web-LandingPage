@@ -109,26 +109,18 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
     }).lenis;
     lenis?.stop();
 
-    // Lenis drives the scroll position itself, so cancelling the wheel does
-    // not hold it — measured, the page still moved 1800 -> 4192 with the
-    // capture-phase blocker in place. Taking <body> out of the scroll flow
-    // is what actually freezes it; the offset keeps the page looking
-    // exactly where it was.
-    const body = document.body;
-    const lockedY = window.scrollY;
-    const prevStyle = {
-      position: body.style.position,
-      top: body.style.top,
-      left: body.style.left,
-      right: body.style.right,
-      width: body.style.width,
-    };
-    body.style.position = "fixed";
-    body.style.top = `-${lockedY}px`;
-    body.style.left = "0";
-    body.style.right = "0";
-    body.style.width = "100%";
-
+    // Fixing <body> did freeze it, but at a cost that showed up later:
+    // it forces scrollY to 0, which made the search composer UNDOCK, and
+    // restoring the scroll on close made it dock again — so a second
+    // object flew to the FAB every time the drawer closed.
+    //
+    // So the position is left exactly where it is. data-lenis-prevent on
+    // the scrim makes Lenis step aside rather than drive the scroll
+    // itself, and once it has, an ordinary preventDefault is enough to
+    // stop the native scroll underneath. Neither alone worked: Lenis
+    // cancels the event and scrolls programmatically, so preventDefault
+    // had nothing to cancel, and prevent on its own just hands the scroll
+    // back to the browser.
     const blockScroll = (e: Event) => {
       const path = e.composedPath?.() ?? [];
       for (const node of path) {
@@ -138,7 +130,7 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
     };
     document.addEventListener("wheel", blockScroll, { passive: false, capture: true });
     document.addEventListener("touchmove", blockScroll, { passive: false, capture: true });
-    // Keys scroll too, and they never go near the wheel handler.
+
     const blockKeys = (e: KeyboardEvent) => {
       const keys = ["PageDown", "PageUp", "Home", "End", "ArrowDown", "ArrowUp", " "];
       const t = e.target as HTMLElement | null;
@@ -156,28 +148,7 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
       document.removeEventListener("touchmove", blockScroll, { capture: true });
       window.removeEventListener("keydown", blockKeys);
 
-      // Order matters on the way out. Un-fixing <body> drops the page to
-      // scroll 0, so the position is handed back natively FIRST, and Lenis
-      // is only restarted on the next frame — restarting it any earlier
-      // made it resync to 0 and the page jumped to the top.
-      Object.assign(body.style, prevStyle);
-      window.scrollTo(0, lockedY);
-      requestAnimationFrame(() => {
-        const l = (window as unknown as {
-          lenis?: {
-            start: () => void;
-            resize: () => void;
-            scrollTo: (n: number, o?: object) => void;
-          };
-        }).lenis;
-        // resize() BEFORE scrollTo. While <body> was fixed the document
-        // collapsed to viewport height, and Lenis caches its scroll ceiling
-        // — it only refreshes that on a debounced resize. Without this it
-        // clamps the restore to a stale limit and the page lands at 0.
-        l?.resize();
-        l?.start();
-        l?.scrollTo(lockedY, { immediate: true, force: true });
-      });
+      lenis?.start();
       pausedRef.current.forEach((v) => v.play().catch(() => {}));
       pausedRef.current = [];
     };
@@ -234,6 +205,9 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
           <motion.div
             className={styles.scrim}
             onClick={onClose}
+            // Lenis ignores wheel here, which is what lets the
+            // preventDefault above actually stop the page.
+            data-lenis-prevent
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0, transition: { duration: morphTo ? 0.45 : 0.35 } }}

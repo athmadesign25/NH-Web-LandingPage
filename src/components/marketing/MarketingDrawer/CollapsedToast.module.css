@@ -1,4 +1,4 @@
-/* Collapsed banner. Spec'd at 274px wide with 12px/13px padding and a
+/* Collapsed banner. Spec'd at 274px wide with 12px/14px padding and a
    10px gap; everything maps onto existing tokens rather than new ones. */
 
 .toast {
@@ -9,13 +9,23 @@
   display: flex;
   width: 274px;
   padding: var(--space-12) var(--space-14);
-  justify-content: center;
   align-items: center;
   gap: var(--space-10);
-  border: none;
   border-radius: var(--radius-md);
-  background: var(--color-surface);
-  box-shadow: var(--elevation-3);
+  /* Glass, not a flat card. A translucent surface over a real blur, with a
+     light top border and a darker bottom one so the edge catches — the
+     opaque version read as a notification sitting ON the page rather than
+     a piece of the same interface. */
+  background: linear-gradient(
+    to bottom,
+    rgba(var(--white-rgb), 0.86),
+    rgba(var(--white-rgb), 0.7)
+  );
+  backdrop-filter: blur(var(--blur-lg)) saturate(1.6);
+  -webkit-backdrop-filter: blur(var(--blur-lg)) saturate(1.6);
+  border: 1px solid rgba(var(--white-rgb), 0.7);
+  border-bottom-color: rgba(var(--navy-900-rgb), 0.08);
+  box-shadow: var(--elevation-3), inset 0 1px 0 rgba(var(--white-rgb), 0.6);
   font-family: var(--font-family);
   text-align: left;
   cursor: pointer;
@@ -24,7 +34,7 @@
 }
 
 .toast:hover {
-  box-shadow: var(--elevation-4);
+  box-shadow: var(--elevation-4), inset 0 1px 0 rgba(var(--white-rgb), 0.6);
   transform: translateY(-2px);
 }
 
@@ -38,21 +48,37 @@
   align-items: center;
   flex-shrink: 0;
   border-radius: var(--radius-md);
-  background: var(--red-50);
+  background: rgba(var(--red-emergency-rgb), 0.1);
 }
 
 .copy {
   display: flex;
   flex-direction: column;
+  gap: 2px;
+  /* Without this a long headline pushes the box past its 274px. */
   min-width: 0;
 }
 
-/* 16px/700 from the spec. Line height is `normal` there, which is what
-   --leading-tight approximates at this size. */
+.eyebrow {
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--red-emergency);
+}
+
+/* Spec'd at 700, which at 16px on a glass surface read as shouting next to
+   everything else on the page. 600 keeps the weight relationship without
+   the density. */
 .line {
-  font-size: var(--font-size-base);
-  font-weight: 700;
-  line-height: var(--leading-tight);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+  /* One line, clipped. The headline is written for a full panel. */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 @media (max-width: 768px) {

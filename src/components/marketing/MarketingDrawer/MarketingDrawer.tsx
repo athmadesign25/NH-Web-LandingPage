@@ -1,30 +1,26 @@
 "use client";
 
 /**
- * Marketing drawer — a CMS-driven promotional panel that arrives from any
- * edge, dims and blurs the page behind it, and pauses any playing video.
+ * Marketing banner — a CMS-driven promotional panel that opens centred
+ * over the page, dims and blurs what is behind it, and pauses any playing
+ * video.
  *
- * Not a conventional drawer: it sits inset from the page edges rather than
- * flush to them, which is what makes it read as a card arriving rather than
- * a panel sliding out of the chrome.
- *
- * The image is full-bleed in both orientations, with the copy sitting on a
- * scrim that fades INTO it rather than meeting it at an edge. Which axis
- * that scrim runs along changes with the shape: a tall drawer fades from
- * the bottom, a wide one from the left.
+ * It was a drawer arriving from an edge; it is a centred modal now, with
+ * the shape as the only spatial choice. The image is full-bleed in both
+ * proportions, with the copy on a scrim that fades INTO it rather than
+ * meeting it at an edge — bottom-up when tall, left-to-right when wide.
  */
 
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { X } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import TextSweepEffect from "@/components/ui/TextSweepEffect";
 import { ease } from "@/lib/motion";
 import styles from "./MarketingDrawer.module.css";
 import {
   type BannerConfig,
   OVERLAY_RGB,
-  TEXT_COLORS,
   DESCRIPTION_COLOR,
   resolve,
 } from "./types";
@@ -35,42 +31,23 @@ type Props = {
   onClose: () => void;
   /**
    * Where the panel should shrink to on close, in viewport coordinates.
-   * null means a plain exit — the drawer retreats the way it arrived.
-   * Set, the SAME element travels and shrinks into the collapsed form, so
-   * the two read as one object changing shape rather than one leaving and
-   * another appearing.
+   * null means a plain exit. Set, the SAME element travels and shrinks
+   * into the collapsed form, so the two read as one object changing shape
+   * rather than one leaving and another appearing.
    */
   morphTo?: { x: number; y: number; width: number } | null;
 };
 
-/**
- * Entry travel, deliberately SHORT. At -100% the panel crossed its own
- * width before arriving and the scale change was invisible underneath it,
- * so the whole thing read as a plain slide. A quarter of the distance lets
- * the growth carry the movement instead.
- */
-const TRAVEL: Record<BannerConfig["side"], { x?: string; y?: string }> = {
-  left: { x: "-26%" },
-  right: { x: "26%" },
-  top: { y: "-26%" },
-  bottom: { y: "26%" },
-};
-
-/** Grow OUT of the edge it arrives from, rather than from its own middle. */
-const ORIGIN: Record<BannerConfig["side"], string> = {
-  left: "left center",
-  right: "right center",
-  top: "center top",
-  bottom: "center bottom",
-};
-
-/** The glow leads, the drawer follows. */
+/** The glow leads, the panel follows. */
 const GLOW_LEAD = 0.5;
 
 export default function MarketingDrawer({ open, config, onClose, morphTo }: Props) {
   const pausedRef = useRef<HTMLVideoElement[]>([]);
   const panelRef = useRef<HTMLDivElement>(null);
   const [sweep, setSweep] = useState(false);
+  const [panelBox, setPanelBox] = useState<
+    { left: number; top: number; width: number; height: number } | null
+  >(null);
 
   useEffect(() => {
     if (!open) {
@@ -90,37 +67,16 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
     const onKey = (e: KeyboardEvent) => e.key === "Escape" && onClose();
     document.addEventListener("keydown", onKey);
 
-    // ── Scroll lock ──────────────────────────────────────────────────
-    // Lenis owns the wheel. It cancels the native event and drives the
-    // scroll itself, so the usual overflow locks have nothing to clamp —
-    // measured: isStopped true with overflow hidden on both <html> and
-    // <body>, and the page still moved 3,199px.
-    //
-    // Fixing <body> did hold it, but fought Lenis on the way out: the page
-    // jumped to the top on close because Lenis restarted from a position it
-    // had never been told about.
-    //
-    // So the wheel is cancelled in the CAPTURE phase, before Lenis's own
-    // listener sees it, and Lenis is stopped so nothing is left driving the
-    // position. Nothing is mutated on <body>, so there is nothing to
-    // restore and no jump.
-    const lenis = (window as unknown as {
-      lenis?: { stop: () => void; start: () => void };
-    }).lenis;
+    const lenis = (window as unknown as { lenis?: { stop: () => void; start: () => void } }).lenis;
     lenis?.stop();
 
-    // Fixing <body> did freeze it, but at a cost that showed up later:
-    // it forces scrollY to 0, which made the search composer UNDOCK, and
-    // restoring the scroll on close made it dock again — so a second
-    // object flew to the FAB every time the drawer closed.
+    // The scroll position is never touched. Fixing <body> froze the page
+    // but forced scrollY to 0, which made the search composer undock and
+    // then re-dock on close — a second object flying to the FAB.
     //
-    // So the position is left exactly where it is. data-lenis-prevent on
-    // the scrim makes Lenis step aside rather than drive the scroll
-    // itself, and once it has, an ordinary preventDefault is enough to
-    // stop the native scroll underneath. Neither alone worked: Lenis
-    // cancels the event and scrolls programmatically, so preventDefault
-    // had nothing to cancel, and prevent on its own just hands the scroll
-    // back to the browser.
+    // data-lenis-prevent on the scrim makes Lenis step aside rather than
+    // drive the scroll itself, and once it has, an ordinary preventDefault
+    // stops the native scroll underneath. Neither half works alone.
     const blockScroll = (e: Event) => {
       const path = e.composedPath?.() ?? [];
       for (const node of path) {
@@ -139,7 +95,7 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
     };
     window.addEventListener("keydown", blockKeys, { passive: false });
 
-    const t = window.setTimeout(() => setSweep(true), (GLOW_LEAD + 0.55) * 1000);
+    const t = window.setTimeout(() => setSweep(true), (GLOW_LEAD + 0.45) * 1000);
 
     return () => {
       document.removeEventListener("keydown", onKey);
@@ -147,43 +103,43 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
       document.removeEventListener("wheel", blockScroll, { capture: true });
       document.removeEventListener("touchmove", blockScroll, { capture: true });
       window.removeEventListener("keydown", blockKeys);
-
       lenis?.start();
       pausedRef.current.forEach((v) => v.play().catch(() => {}));
       pausedRef.current = [];
     };
   }, [open, onClose]);
 
-  const wide = config.side === "top" || config.side === "bottom";
-  const rgb = OVERLAY_RGB[config.overlay.tone];
-  const textRamp = TEXT_COLORS[config.overlay.tone];
-  const travel = TRAVEL[config.side];
-  const art = wide ? config.image.wide : config.image.tall;
+  const wide = config.orientation === "horizontal";
+  const art = wide ? config.image.horizontal : config.image.vertical;
 
-  // The scrim runs along the long axis and fades out well before the far
-  // edge, so it reads as the image dissolving into colour rather than a
-  // panel butted against it.
   const scrimFade = wide
     ? `linear-gradient(to right,
-        rgba(${rgb}, 0.97) 0%,
-        rgba(${rgb}, 0.93) 26%,
-        rgba(${rgb}, 0.72) 44%,
-        rgba(${rgb}, 0.34) 62%,
-        rgba(${rgb}, 0) 82%)`
+        rgba(${OVERLAY_RGB}, 0.97) 0%,
+        rgba(${OVERLAY_RGB}, 0.93) 26%,
+        rgba(${OVERLAY_RGB}, 0.72) 44%,
+        rgba(${OVERLAY_RGB}, 0.34) 62%,
+        rgba(${OVERLAY_RGB}, 0) 82%)`
     : `linear-gradient(to top,
-        rgba(${rgb}, 0.97) 0%,
-        rgba(${rgb}, 0.9) 26%,
-        rgba(${rgb}, 0.6) 48%,
-        rgba(${rgb}, 0.22) 68%,
-        rgba(${rgb}, 0) 86%)`;
+        rgba(${OVERLAY_RGB}, 0.97) 0%,
+        rgba(${OVERLAY_RGB}, 0.9) 26%,
+        rgba(${OVERLAY_RGB}, 0.6) 48%,
+        rgba(${OVERLAY_RGB}, 0.22) 68%,
+        rgba(${OVERLAY_RGB}, 0) 86%)`;
 
   /**
-   * Exit. Normally the drawer retreats the way it came. When it is
-   * collapsing, it instead travels to the target and shrinks to its
-   * width — measured at close time from the real element, so the panel
-   * lands on it rather than near it.
+   * Exit. Normally the panel settles back. When collapsing, it travels to
+   * the target and shrinks to its width — measured at close time from the
+   * real element, so it lands on it rather than near it.
    */
-  const panelBox = panelRef.current?.getBoundingClientRect();
+  // Measured in an effect, not during render. `morphTo` is set one frame
+  // BEFORE `open` flips, so this runs while the panel is still mounted —
+  // which is the only moment its real box exists to be read.
+  useEffect(() => {
+    if (!morphTo || !panelRef.current) return;
+    const r = panelRef.current.getBoundingClientRect();
+    setPanelBox({ left: r.left, top: r.top, width: r.width, height: r.height });
+  }, [morphTo]);
+
   const morphExit =
     morphTo && panelBox
       ? {
@@ -191,12 +147,15 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
           y: morphTo.y - (panelBox.top + panelBox.height / 2),
           scale: Math.max(morphTo.width / panelBox.width, 0.04),
           opacity: 0,
-          filter: "blur(4px)",
+          filter: "blur(3px)",
+          // Longer and gentler than before: the morph is the moment this
+          // interaction gets judged on, and 0.62s read as a snap.
+          transition: { duration: 0.78, ease: [0.32, 0.72, 0.3, 1] as const },
         }
       : null;
 
-  const descDelay = GLOW_LEAD + 0.55 + config.headline.parts.length * 0.16 + 0.5;
-  const ctaDelay = descDelay + (config.description.enabled ? 0.18 : 0);
+  const descDelay = GLOW_LEAD + 0.45 + config.headline.parts.length * 0.14 + 0.45;
+  const ctaDelay = descDelay + (config.description.enabled ? 0.16 : 0);
 
   return (
     <AnimatePresence>
@@ -205,18 +164,13 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
           <motion.div
             className={styles.scrim}
             onClick={onClose}
-            // Lenis ignores wheel here, which is what lets the
-            // preventDefault above actually stop the page.
             data-lenis-prevent
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            exit={{ opacity: 0, transition: { duration: morphTo ? 0.45 : 0.35 } }}
-            transition={{ duration: 0.35, ease: ease.out }}
+            exit={{ opacity: 0, transition: { duration: morphTo ? 0.6 : 0.4 } }}
+            transition={{ duration: 0.4, ease: ease.out }}
           />
 
-          {/* Edge glow. Breathes around the whole viewport so the page
-              itself feels lit from outside, then concentrates on the edge
-              the drawer is about to arrive from. Fades once it has. */}
           <motion.div
             className={styles.glowFrame}
             aria-hidden
@@ -230,38 +184,28 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
             }}
           >
             <span className={styles.glowAll} />
-            <span className={`${styles.glowLead} ${styles[`glow_${config.side}`]}`} />
           </motion.div>
 
           <motion.div
-            className={`${styles.panel} ${styles[config.side]}`}
+            ref={panelRef}
+            className={`${styles.panel} ${wide ? styles.wide : styles.tall}`}
             role="dialog"
             aria-modal="true"
             aria-label="Promotional message"
-            ref={panelRef}
-            // Scaling toward a point outside the panel has to pivot on its
-            // own centre, or the travel and the shrink fight each other.
-            style={{ transformOrigin: morphExit ? "center center" : ORIGIN[config.side] }}
-            // Scale carries the entrance; travel only nudges it off the edge.
-            initial={{ ...travel, opacity: 0, scale: 0.72, filter: "blur(16px)" }}
-            animate={{ x: 0, y: 0, opacity: 1, scale: 1, filter: "blur(0px)" }}
+            style={{ transformOrigin: "center center" }}
+            // Centred, so it grows from its own middle rather than an edge.
+            initial={{ opacity: 0, scale: 0.84, y: 18, filter: "blur(16px)" }}
+            animate={{ opacity: 1, scale: 1, y: 0, filter: "blur(0px)" }}
             exit={
               morphExit ?? {
-                ...travel,
                 opacity: 0,
-                scale: 0.72,
+                scale: 0.84,
+                y: 18,
                 filter: "blur(16px)",
-                // Its own transition: the one below carries delay: GLOW_LEAD
-                // for the entrance, and framer applies that prop to the exit
-                // too — so closing sat still for half a second first.
-                transition: { duration: 0.5, ease: ease.out },
+                transition: { duration: 0.46, ease: ease.out },
               }
             }
-            transition={
-              morphExit
-                ? { duration: 0.62, ease: [0.4, 0, 0.2, 1] }
-                : { duration: 0.88, delay: GLOW_LEAD, ease: ease.spring }
-            }
+            transition={{ duration: 0.92, delay: GLOW_LEAD, ease: [0.22, 1, 0.3, 1] as const }}
           >
             <div className={styles.traceBorder} aria-hidden />
 
@@ -270,7 +214,7 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
               src={art.src}
               alt={art.alt}
               fill
-              sizes={wide ? "(max-width: 768px) 100vw, 96vw" : "(max-width: 768px) 96vw, 44vw"}
+              sizes={wide ? "(max-width: 768px) 96vw, 70vw" : "(max-width: 768px) 92vw, 34vw"}
               className={wide ? styles.imageWide : styles.imageTall}
               priority
             />
@@ -287,9 +231,9 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
                   <span key={part.id} className={styles.headlineLine}>
                     <TextSweepEffect
                       words={[part.text]}
-                      finalColor={resolve(textRamp, part.colorId)}
-                      sweepMs={1200}
-                      delayMs={i * 160}
+                      finalColor={resolve(part.colorId)}
+                      sweepMs={1100}
+                      delayMs={i * 140}
                       active={sweep}
                     />
                   </span>
@@ -299,8 +243,8 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
               {config.description.enabled && (
                 <motion.p
                   className={styles.description}
-                  style={{ color: DESCRIPTION_COLOR[config.overlay.tone] }}
-                  initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+                  style={{ color: DESCRIPTION_COLOR }}
+                  initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ delay: descDelay, duration: 0.6, ease: ease.out }}
                 >
@@ -311,10 +255,8 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
               {config.cta.enabled && (
                 <motion.a
                   href={config.cta.href}
-                  className={`${styles.cta} ${styles[config.cta.variant]} ${
-                    config.overlay.tone === "light" ? styles.onLight : styles.onDark
-                  }`}
-                  initial={{ opacity: 0, y: 14, filter: "blur(6px)" }}
+                  className={styles.cta}
+                  initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
                   animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
                   transition={{ delay: ctaDelay, duration: 0.6, ease: ease.out }}
                 >
@@ -327,16 +269,16 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
           <motion.button
             type="button"
             onClick={onClose}
-            className={`${styles.close} ${styles[`close_${config.side}`]}`}
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
+            className={styles.close}
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
             transition={{ delay: GLOW_LEAD + 0.4, duration: 0.35, ease: ease.out }}
           >
             <span className={styles.closeIcon}>
-              <X size={16} strokeWidth={2.5} />
+              <ArrowLeft size={16} strokeWidth={2.5} />
             </span>
-            <span className={styles.closeLabel}>Close Drawer</span>
+            <span className={styles.closeLabel}>Back to homepage</span>
           </motion.button>
         </>
       )}

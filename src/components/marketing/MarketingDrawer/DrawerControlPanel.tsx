@@ -17,12 +17,9 @@ import { Plus, Trash2, ArrowUp, ArrowDown } from "lucide-react";
 import styles from "./DrawerControlPanel.module.css";
 import {
   type BannerConfig,
-  type DrawerSide,
-  type OverlayTone,
-  type ButtonVariant,
+  type Orientation,
   type CollapseMode,
   TEXT_COLORS,
-  resolve,
 } from "./types";
 
 type Props = {
@@ -30,16 +27,8 @@ type Props = {
   onChange: (next: BannerConfig) => void;
 };
 
-const SIDES: DrawerSide[] = ["left", "right", "top", "bottom"];
-const VARIANTS: ButtonVariant[] = ["primary", "secondary", "link"];
+const ORIENTATIONS: Orientation[] = ["vertical", "horizontal"];
 const COLLAPSE: CollapseMode[] = ["none", "toast", "fab"];
-
-const CORNER: Record<DrawerSide, string> = {
-  left: styles.atBottomRight,
-  right: styles.atBottomLeft,
-  top: `${styles.atBottomRight} ${styles.strip}`,
-  bottom: `${styles.atTopRight} ${styles.stripTop}`,
-};
 
 function Switch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -60,18 +49,6 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
   if (process.env.NODE_ENV === "production") return null;
 
   const set = (patch: Partial<BannerConfig>) => onChange({ ...config, ...patch });
-  const textRamp = TEXT_COLORS[config.overlay.tone];
-
-  /** Tone decides the legible ramp, so switching remaps any colour whose
-      id the new ramp does not carry. */
-  const setTone = (tone: OverlayTone) => {
-    const ramp = TEXT_COLORS[tone];
-    const safe = (id: string) => (ramp.some((c) => c.id === id) ? id : ramp[0].id);
-    set({
-      overlay: { tone },
-      headline: { parts: config.headline.parts.map((p) => ({ ...p, colorId: safe(p.colorId) })) },
-    });
-  };
 
   const parts = config.headline.parts;
   const setParts = (next: typeof parts) => set({ headline: { parts: next } });
@@ -86,7 +63,9 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
 
   return (
     <motion.aside
-      className={`${styles.panel} ${CORNER[config.side]}`}
+      // The banner is always centred, so the panel no longer has an edge
+      // to dodge — it sits in the corner furthest from it.
+      className={`${styles.panel} ${styles.atBottomRight}`}
       drag
       // Drag starts from the header ONLY. On the whole panel, framer captures
       // the pointer and the scrollable body never receives it.
@@ -112,33 +91,19 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
           This is the convention the rest of the codebase uses.
           data-drawer-scrollable is ours, for the drawer's own blocker. */}
       <div className={styles.body} data-drawer-scrollable data-lenis-prevent>
+        {/* The only spatial choice left. Position (four edges) and overlay
+            tone (dark/light) were both controls; each one let two banners
+            stop looking like the same brand without buying any range. */}
         <section className={styles.row}>
-          <label className={styles.label}>Position</label>
+          <label className={styles.label}>Orientation</label>
           <div className={styles.seg}>
-            {SIDES.map((s) => (
+            {ORIENTATIONS.map((o) => (
               <button
-                key={s}
-                onClick={() => set({ side: s })}
-                className={s === config.side ? styles.segOn : styles.segOff}
+                key={o}
+                onClick={() => set({ orientation: o })}
+                className={o === config.orientation ? styles.segOn : styles.segOff}
               >
-                {s}
-              </button>
-            ))}
-          </div>
-        </section>
-
-        {/* Tone only. There is no shade picker — two banners differing only
-            in which dark they used is drift, not range. */}
-        <section className={styles.row}>
-          <label className={styles.label}>Overlay</label>
-          <div className={styles.seg}>
-            {(["dark", "light"] as OverlayTone[]).map((t) => (
-              <button
-                key={t}
-                onClick={() => setTone(t)}
-                className={t === config.overlay.tone ? styles.segOn : styles.segOff}
-              >
-                {t}
+                {o}
               </button>
             ))}
           </div>
@@ -152,7 +117,7 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
               onClick={() =>
                 setParts([
                   ...parts,
-                  { id: `h${Date.now()}`, text: "New line", colorId: textRamp[0].id },
+                  { id: `h${Date.now()}`, text: "New line", colorId: TEXT_COLORS[0].id },
                 ])
               }
             >
@@ -170,7 +135,7 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
                 }
               />
               <div className={styles.partTools}>
-                {textRamp.map((c) => (
+                {TEXT_COLORS.map((c) => (
                   <button
                     key={c.id}
                     title={c.label}
@@ -245,25 +210,15 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
               onToggle={() => set({ cta: { ...config.cta, enabled: !config.cta.enabled } })}
             />
           </div>
+          {/* Label only. Primary, secondary and link were offered and
+              removed — two of the three were weaker versions of the one
+              thing the banner wants you to do. */}
           {config.cta.enabled && (
-            <>
-              <input
-                className={styles.input}
-                value={config.cta.label}
-                onChange={(e) => set({ cta: { ...config.cta, label: e.target.value } })}
-              />
-              <div className={styles.seg}>
-                {VARIANTS.map((v) => (
-                  <button
-                    key={v}
-                    onClick={() => set({ cta: { ...config.cta, variant: v } })}
-                    className={v === config.cta.variant ? styles.segOn : styles.segOff}
-                  >
-                    {v}
-                  </button>
-                ))}
-              </div>
-            </>
+            <input
+              className={styles.input}
+              value={config.cta.label}
+              onChange={(e) => set({ cta: { ...config.cta, label: e.target.value } })}
+            />
           )}
         </section>
       </div>

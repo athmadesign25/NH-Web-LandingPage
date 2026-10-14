@@ -1,6 +1,5 @@
-/* Marketing drawer. Inset from the page edges rather than flush to them,
-   so it reads as a card arriving rather than a panel sliding out of the
-   browser chrome. */
+/* Marketing banner. A centred card over a blurred page — it was a drawer
+   arriving from a chosen edge, and the edge is no longer a choice. */
 
 @property --drawer-angle {
   syntax: "<angle>";
@@ -18,15 +17,19 @@
   position: fixed;
   inset: 0;
   z-index: 2147482000;
-  background: var(--scrim);
+  /* Lighter than the dark-overlay era: the panel is now a light surface,
+     and the old 0.44 black made the whole page read as switched off. */
+  background: rgba(var(--navy-900-rgb), 0.34);
   backdrop-filter: blur(var(--blur-md));
   -webkit-backdrop-filter: blur(var(--blur-md));
 }
 
 /* ─── Edge glow ───────────────────────────────────────────────────────────
-   Announces the entrance. Two layers: a frame that lights ALL four edges,
-   so the page itself feels lit from outside, and a stronger bloom on the
-   edge the drawer is about to arrive from. Blue and red, breathing.
+   Announces the entrance by lighting all four edges, so the page itself
+   feels lit from outside. Blue and red, breathing.
+
+   There was a second, brighter layer on the edge the drawer arrived from.
+   The banner is centred now, so there is no arrival edge for it to mark.
 
    Not blurred by `filter` any more — a 60px blur behind an already
    16px-blurred scrim is what made this read as a faint haze. The gradients
@@ -56,111 +59,56 @@
     radial-gradient(54% 16% at 50% 100%, rgba(var(--red-emergency-rgb), 0.7) 0%, rgba(255, 46, 147, 0.36) 36%, transparent 68%);
 }
 
-/* The arrival edge, brighter and tighter. */
-.glowLead {
-  position: absolute;
-  will-change: opacity;
-}
-
-.glow_left,
-.glow_right {
-  top: -5%;
-  bottom: -5%;
-  /* Was 46vw — nearly half the screen. The bloom should sit ON the edge the
-     drawer arrives from, not travel most of the way across to meet it. */
-  width: 26vw;
-}
-.glow_left {
-  left: 0;
-  background: radial-gradient(46% 54% at 0% 50%,
-    rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 22%,
-    rgba(var(--red-emergency-rgb), 0.5) 46%,
-    transparent 72%);
-}
-.glow_right {
-  right: 0;
-  background: radial-gradient(46% 54% at 100% 50%,
-    rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 22%,
-    rgba(var(--red-emergency-rgb), 0.5) 46%,
-    transparent 72%);
-}
-
-.glow_top,
-.glow_bottom {
-  left: -5%;
-  right: -5%;
-  height: 30vh;
-}
-.glow_top {
-  top: 0;
-  background: radial-gradient(56% 48% at 50% 0%,
-    rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 22%,
-    rgba(var(--red-emergency-rgb), 0.5) 46%,
-    transparent 72%);
-}
-.glow_bottom {
-  bottom: 0;
-  background: radial-gradient(56% 48% at 50% 100%,
-    rgba(var(--cyan-bright-rgb), 0.95) 0%,
-    rgba(var(--blue-brand-rgb), 0.8) 22%,
-    rgba(var(--red-emergency-rgb), 0.5) 46%,
-    transparent 72%);
-}
-
 /* ─── Panel ─────────────────────────────────────────────────────────────── */
 
 .panel {
   position: fixed;
   z-index: 2147482100;
+  /* Centred, not docked. Position was a control and is not any more. */
+  top: 50%;
+  left: 50%;
+  translate: -50% -50%;
   overflow: hidden;
   border-radius: var(--radius-md);
-  background: var(--navy-900);
+  background: var(--slate-50);
   box-shadow: var(--elevation-5);
-  /* The gap from the page edge — what separates this from a normal drawer. */
-  --drawer-inset: var(--space-24);
 }
 
-.left,
-.right {
-  top: var(--drawer-inset);
-  bottom: var(--drawer-inset);
-  width: min(560px, 44vw);
+.tall {
+  width: min(520px, 92vw);
+  height: min(760px, 86vh);
 }
-.left { left: var(--drawer-inset); }
-.right { right: var(--drawer-inset); }
 
-.top,
-.bottom {
-  left: var(--drawer-inset);
-  right: var(--drawer-inset);
-  height: min(560px, 62vh);
+.wide {
+  width: min(1040px, 92vw);
+  height: min(560px, 76vh);
 }
-.top { top: var(--drawer-inset); }
-.bottom { bottom: var(--drawer-inset); }
 
-/* Image is full-bleed in BOTH orientations now. The split was solving a
-   stretched image; two correctly-shaped assets solve it better, and keep
-   the scrim fading into the picture instead of meeting it at an edge. */
-/* Tall drawer: copy along the bottom. */
+.content {
+  position: absolute;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: var(--space-16);
+  padding: var(--space-32);
+  /* Keeps long CMS copy inside the frame instead of running to the edge. */
+  max-width: 100%;
+}
+
 .contentTall {
   left: 0;
   right: 0;
   bottom: 0;
 }
 
-/* Wide drawer: copy down the left, which is the axis that has room.
-   Deeper left padding than the tall drawer gets — a wide panel puts the
-   copy against a long edge, and the 32px that reads as generous on a
-   narrow card reads as cramped here. */
 .contentWide {
   left: 0;
   top: 0;
   bottom: 0;
-  width: min(54%, 640px);
+  width: min(56%, 560px);
   justify-content: center;
+  padding-left: var(--space-48);
 }
 
 .traceBorder {
@@ -208,25 +156,12 @@
   pointer-events: none;
 }
 
-.content {
-  position: absolute;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  gap: var(--space-16);
-  padding: var(--space-32);
-}
 
-/* Declared after .content on purpose. .content sets `padding` as a
-   shorthand, and at equal specificity the later declaration wins — so the
-   same override written beside .contentWide above was silently reset to
-   32px. */
-.contentWide {
-  padding-left: var(--space-64);
-}
 
 .headline {
+  /* A hard ceiling on line length. Without it a long CMS headline runs to
+     the panel edge and collides with the image. */
+  max-width: 18ch;
   /* Fixed. Size was a control; it is not any more — a headline that can be
      any of five sizes is five different banners. */
   font-size: var(--font-size-40);
@@ -239,13 +174,15 @@
 .headlineLine { display: block; }
 
 .description {
-  max-width: 46ch;
+  max-width: 38ch;
   font-size: var(--font-size-base);
   line-height: var(--leading-body);
 }
 
-/* ─── CTA ─────────────────────────────────────────────────────────────── */
-
+/* ─── CTA ─────────────────────────────────────────────────────────────
+   One style. Secondary and link were offered and removed — a banner has a
+   single thing it wants you to do, and a choice of button styles mostly
+   produced weaker versions of it. */
 .cta {
   display: inline-flex;
   align-items: center;
@@ -257,74 +194,25 @@
   font-weight: 600;
   text-decoration: none;
   border: 1px solid transparent;
-  transition: background var(--duration-base) var(--ease-out),
-    color var(--duration-base) var(--ease-out),
-    box-shadow var(--duration-base) var(--ease-out),
-    border-color var(--duration-base) var(--ease-out);
-}
-
-/* Brand blue, not red. Red is reserved for emergency affordances, and a
-   promotional button wearing it weakens the one place that signal needs
-   to mean something. */
-.primary {
   --shadow-rgb: var(--blue-brand-rgb);
   background: var(--blue-brand);
   color: var(--color-text-inverse);
   box-shadow: var(--elevation-2);
+  transition: background var(--duration-base) var(--ease-out),
+    box-shadow var(--duration-base) var(--ease-out);
 }
-.primary:hover {
+.cta:hover {
   background: var(--blue-700);
   box-shadow: var(--elevation-3);
 }
-
-.secondary.onDark {
-  background: rgba(var(--white-rgb), 0.12);
-  color: var(--color-text-inverse);
-  border-color: rgba(var(--white-rgb), 0.4);
-}
-.secondary.onDark:hover {
-  background: rgba(var(--white-rgb), 0.2);
-  border-color: rgba(var(--white-rgb), 0.7);
-}
-
-.secondary.onLight {
-  background: transparent;
-  color: var(--blue-brand);
-  border-color: rgba(var(--blue-brand-rgb), 0.5);
-}
-.secondary.onLight:hover {
-  background: rgba(var(--blue-brand-rgb), 0.08);
-  border-color: var(--blue-brand);
-}
-
-.link {
-  position: relative;
-  min-height: 0;
-  padding: var(--space-4) 0;
-  background: transparent;
-  box-shadow: none;
-}
-.link.onDark { color: var(--color-text-inverse); }
-.link.onLight { color: var(--blue-brand); }
-
-.link::after {
-  content: "";
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  height: 1.5px;
-  background: currentColor;
-  transform: scaleX(0);
-  transform-origin: left;
-  transition: transform var(--duration-emphasis) var(--ease-out);
-}
-.link:hover::after { transform: scaleX(1); }
 
 /* ─── Close ───────────────────────────────────────────────────────────── */
 
 .close {
   position: fixed;
+  left: 50%;
+  translate: -50% 0;
+  bottom: var(--space-32);
   z-index: 2147482200;
   display: inline-flex;
   align-items: center;
@@ -332,15 +220,19 @@
   padding: var(--space-8) var(--space-16) var(--space-8) var(--space-8);
   border: none;
   border-radius: var(--radius-full);
-  background: transparent;
-  color: var(--color-text-inverse);
+  /* The scrim is light now, so white-on-dark no longer reads. */
+  background: rgba(var(--white-rgb), 0.9);
+  backdrop-filter: blur(var(--blur-sm));
+  -webkit-backdrop-filter: blur(var(--blur-sm));
+  box-shadow: var(--elevation-2);
+  color: var(--color-text);
   font-family: var(--font-family);
-  font-size: var(--font-size-base);
-  font-weight: 500;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
   cursor: pointer;
-  transition: opacity var(--duration-base) var(--ease-out);
+  transition: box-shadow var(--duration-base) var(--ease-out);
 }
-.close:hover { opacity: 0.75; }
+.close:hover { box-shadow: var(--elevation-3); }
 
 .closeIcon {
   display: inline-flex;
@@ -349,67 +241,28 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-full);
-  background: var(--white);
-  color: var(--navy-ink);
-}
-
-.close_left {
-  top: 50%;
-  left: calc(var(--space-24) + min(560px, 44vw) + var(--space-32));
-  transform: translateY(-50%);
-}
-.close_right {
-  top: 50%;
-  right: calc(var(--space-24) + min(560px, 44vw) + var(--space-32));
-  transform: translateY(-50%);
-}
-.close_top {
-  left: 50%;
-  top: calc(var(--space-24) + min(560px, 62vh) + var(--space-24));
-  transform: translateX(-50%);
-}
-.close_bottom {
-  left: 50%;
-  bottom: calc(var(--space-24) + min(560px, 62vh) + var(--space-24));
-  transform: translateX(-50%);
+  background: var(--slate-100);
+  color: var(--color-text);
 }
 
 @media (max-width: 768px) {
-  .panel { --drawer-inset: var(--space-12); }
-  .left,
-  .right { width: calc(100vw - (2 * var(--space-12))); }
-  .top,
-  .bottom { height: min(70vh, 620px); }
-
-  /* No width for a side-by-side scrim on a phone — the wide drawer's copy
-     drops to the bottom like the tall one. */
+  .tall { width: 92vw; height: 84vh; }
+  /* No width for a side-by-side scrim on a phone, so the wide banner's
+     copy drops to the bottom like the tall one. */
+  .wide { width: 92vw; height: 70vh; }
   .contentWide {
     top: auto;
     width: auto;
     right: 0;
     justify-content: flex-end;
-    /* The deeper gutter is for a long edge on a desktop panel; on a phone
-       it just eats the line length. */
     padding-left: var(--space-20);
   }
-
   .content { padding: var(--space-20); gap: var(--space-12); }
-
-  .close,
-  .close_left,
-  .close_right,
-  .close_top,
-  .close_bottom {
-    top: calc(var(--space-12) + var(--space-16));
-    bottom: auto;
-    left: auto;
-    right: var(--space-20);
-    transform: none;
-  }
-  .closeLabel { display: none; }
+  .headline { max-width: 100%; }
+  .close { bottom: var(--space-16); }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .traceBorder { animation: none; }
-  .glow { display: none; }
+  .glowFrame { display: none; }
 }

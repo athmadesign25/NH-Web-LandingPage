@@ -1,31 +1,19 @@
 /**
- * Marketing drawer configuration.
+ * Marketing banner configuration.
  *
  * This shape is the contract. The control panel writes it locally today;
  * a headless CMS writes the same shape later, so the component does not
  * change when the source does.
  *
- * Everything a marketer can choose is a CLOSED SET — a side, a tone, a
- * named colour. Nothing is a free-text colour or an arbitrary number. The
- * sets are deliberately small: every extra option is a way for two banners
- * to stop looking like the same brand.
+ * The set of choices keeps shrinking on purpose. Position, scrim shade,
+ * headline size, line breaks and button style were all controls once.
+ * Each was a way for two banners to stop looking like the same brand, and
+ * none of them was a decision marketing actually needed to make.
  */
 
-export type DrawerSide = "left" | "right" | "top" | "bottom";
+/** The banner's shape. It is always centred; only the proportion varies. */
+export type Orientation = "horizontal" | "vertical";
 
-/** Which way the in-container scrim leans, which decides legible text. */
-export type OverlayTone = "dark" | "light";
-
-export type ButtonVariant = "primary" | "secondary" | "link";
-
-/**
- * What the banner leaves behind when it is closed.
- *   none  — it is gone
- *   toast — a small persistent alert, bottom left
- *   fab   — a fourth tile in the floating action bar
- * Neither collapsed form carries a scrim or locks scroll; they just sit
- * there until dismissed.
- */
 export type CollapseMode = "none" | "toast" | "fab";
 
 export type ColorOption = {
@@ -37,9 +25,8 @@ export type ColorOption = {
 
 /**
  * A headline is a LIST of parts, not a string, so one headline can carry
- * more than one colour — "Advanced Healthcare / Coming Soon to /
- * Banashankari" is three parts, the middle one red. Each part is its own
- * line; parts can be added, removed and reordered.
+ * more than one colour. Each part is its own line; parts can be added,
+ * removed and reordered.
  */
 export type HeadlinePart = {
   id: string;
@@ -48,93 +35,77 @@ export type HeadlinePart = {
 };
 
 export type BannerConfig = {
-  side: DrawerSide;
+  orientation: Orientation;
   /**
-   * One image per orientation. A single asset cannot serve both a tall
-   * drawer and a wide one — forcing it to is what made the wide version
-   * soft, because a near-square image had to stretch across a letterbox.
+   * One image per shape. A single asset cannot serve both proportions —
+   * forcing it to is what made the wide version soft, because a near-square
+   * image had to stretch across a letterbox.
    */
   image: {
-    tall: { src: string; alt: string };
-    wide: { src: string; alt: string };
+    vertical: { src: string; alt: string };
+    horizontal: { src: string; alt: string };
   };
-  overlay: { tone: OverlayTone };
   headline: { parts: HeadlinePart[] };
   description: { enabled: boolean; text: string };
-  cta: { enabled: boolean; label: string; variant: ButtonVariant; href: string };
+  cta: { enabled: boolean; label: string; href: string };
   collapse: CollapseMode;
 };
 
 /* ─── The closed sets ──────────────────────────────────────────────────── */
 
 /**
- * The scrim itself is just the tone — there is no colour choice. Two
- * banners differing only in which dark they used is drift, not range.
- * Light is a cool off-white rather than pure #FFF, which keeps it sitting
- * in the same family as the rest of the UI.
+ * The scrim is always light — a cool off-white rather than pure #FFF, so
+ * it sits in the same family as the rest of the UI. No dark variant, no
+ * shade picker.
  */
-export const OVERLAY_RGB: Record<OverlayTone, string> = {
-  dark: "var(--navy-900-rgb)",
-  light: "var(--slate-50-rgb)",
-};
+export const OVERLAY_RGB = "var(--slate-50-rgb)";
 
 /**
- * Headline colours, keyed by the tone they sit ON — so the panel cannot
- * produce an illegible pairing, which a free colour picker guarantees.
- * Three each: the neutral, the brand red, the brand blue.
+ * Headline colours: ink for the copy, red for the accent, nothing else.
+ * Blue was offered and removed — against a blue brand, a blue accent on a
+ * light panel reads as a link rather than emphasis.
  */
-export const TEXT_COLORS: Record<OverlayTone, ColorOption[]> = {
-  dark: [
-    { id: "white", label: "White", value: "var(--color-text-inverse)" },
-    { id: "red", label: "Red", value: "var(--red-400)" },
-    // Brand blue is too dark to read on a dark scrim, so the light step
-    // of the same family stands in for it here.
-    { id: "blue", label: "Blue", value: "var(--sky-400)" },
-  ],
-  light: [
-    { id: "black", label: "Black", value: "var(--navy-ink)" },
-    { id: "red", label: "Red", value: "var(--red-emergency)" },
-    { id: "blue", label: "Blue", value: "var(--blue-brand)" },
-  ],
-};
+export const TEXT_COLORS: ColorOption[] = [
+  { id: "black", label: "Black", value: "var(--navy-ink)" },
+  { id: "red", label: "Red", value: "var(--red-emergency)" },
+];
+
+/** Body copy takes the readable neutral. Not a choice. */
+export const DESCRIPTION_COLOR = "var(--slate-600)";
+
+export const resolve = (id: string) =>
+  (TEXT_COLORS.find((c) => c.id === id) ?? TEXT_COLORS[0]).value;
 
 /**
- * Body copy takes the obvious colour for its tone. There is no choice:
- * a description in anything other than the readable neutral is a mistake,
- * so the system does not offer the mistake.
+ * What the collapsed forms say. Generic on purpose: a headline written for
+ * a full panel is usually too long to survive at toast or tile size, and
+ * truncating it mid-phrase reads worse than a label.
  */
-export const DESCRIPTION_COLOR: Record<OverlayTone, string> = {
-  dark: "rgba(var(--white-rgb), 0.8)",
-  light: "var(--slate-600)",
-};
-
-export const resolve = (list: ColorOption[], id: string) =>
-  (list.find((c) => c.id === id) ?? list[0]).value;
+export const COLLAPSED_LABEL = "Announcement";
 
 export const DEFAULT_CONFIG: BannerConfig = {
-  side: "left",
+  orientation: "vertical",
   image: {
-    tall: {
+    vertical: {
       src: "/marketing-tall.jpg",
       alt: "A woman playing hopscotch in her apartment courtyard as neighbours watch",
     },
-    wide: {
+    horizontal: {
       src: "/marketing-wide.jpg",
       alt: "Narayana Health hospital exterior at sunset",
     },
   },
-  overlay: { tone: "dark" },
   headline: {
     parts: [
-      { id: "h1", text: "Advanced Healthcare", colorId: "white" },
+      { id: "h1", text: "Advanced Healthcare", colorId: "black" },
       { id: "h2", text: "Coming Soon to", colorId: "red" },
-      { id: "h3", text: "Banashankari", colorId: "white" },
+      { id: "h3", text: "Banashankari", colorId: "black" },
     ],
   },
   description: {
     enabled: false,
     text: "Multi-speciality care, 24x7 emergency and diagnostics — opening shortly.",
   },
-  cta: { enabled: true, label: "Book Appointment", variant: "primary", href: "/appointment" },
+  cta: { enabled: true, label: "Book Appointment", href: "/appointment" },
   collapse: "toast",
 };

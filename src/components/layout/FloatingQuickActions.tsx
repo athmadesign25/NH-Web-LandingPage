@@ -6,6 +6,7 @@ import Link from "next/link";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { useSyncExternalStore } from "react";
 import BannerBellIcon from "@/components/marketing/MarketingDrawer/BannerBellIcon";
+import { COLLAPSED_LABEL } from "@/components/marketing/MarketingDrawer/types";
 import { bannerCollapse } from "@/components/marketing/MarketingDrawer/bannerCollapse";
 import { Search } from "lucide-react";
 import calendarCheckAnimation from "../../../public/assets/calendar-check.json";
@@ -102,7 +103,11 @@ export default function FloatingQuickActions() {
       window.removeEventListener("resize", measure);
       clearTimeout(settle);
     };
-  }, []);
+    // bannerTile is a dependency because the bar's height is an INLINE value
+    // derived from this measurement. Measured once on mount, it had no room
+    // for a fourth slot, so the arriving banner tile rendered but was
+    // clipped away by the bar's own overflow.
+  }, [bannerTile]);
 
   // Opens across the composer's glide (0.54 -> 0.84), so the bar is already
   // reaching for it well before it lands.
@@ -251,7 +256,14 @@ export default function FloatingQuickActions() {
         ref={containerRef}
         role="region"
         aria-label="Quick actions and search"
-        className={`${styles.container} global-floating-quick-actions ${isQuickActionsVisible ? styles.visible : styles.hidden}`}
+        // A pending banner tile forces the bar out regardless of scroll.
+        // The bar normally hides near the top of the page — so collapsing
+        // the banner to FAB from the hero sent it to a destination that was
+        // transformed off-stage at opacity 0, and nothing appeared to
+        // receive it.
+        className={`${styles.container} global-floating-quick-actions ${
+          isQuickActionsVisible || bannerTile ? styles.visible : styles.hidden
+        }`}
         style={slotHeights ? { height: barHeight, marginTop: barMarginTop } : undefined}
       >
         {/* Action 1: Book Appointment (Primary utility) */}
@@ -318,7 +330,7 @@ export default function FloatingQuickActions() {
               onClick={() =>
                 (window as unknown as { __reopenBanner?: () => void }).__reopenBanner?.()
               }
-              aria-label="New hospital coming soon"
+              aria-label="Announcement"
               initial={{ height: 0, opacity: 0, scale: 0.6 }}
               animate={{ height: "auto", opacity: 1, scale: 1 }}
               exit={{ height: 0, opacity: 0, scale: 0.6 }}
@@ -330,7 +342,11 @@ export default function FloatingQuickActions() {
               <span className={`${styles.iconWrap} ${styles.bannerIconWrap}`}>
                 <BannerBellIcon size={26} />
               </span>
-              <span className={styles.actionLabel}>New<br />Hospital!</span>
+              {/* Generic, not the banner's own headline. A tile is ~56px
+                  wide; any campaign-specific line either wraps to three
+                  rows or gets cut, and it has to read the same for every
+                  campaign the CMS sends. */}
+              <span className={styles.actionLabel}>{COLLAPSED_LABEL}</span>
             </motion.button>
           )}
         </AnimatePresence>

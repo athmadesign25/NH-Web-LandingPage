@@ -25,7 +25,12 @@ export default function MarketingDrawerLab() {
   // going stale. A ref keeps it current without re-creating the callback,
   // which would tear down the drawer's effect on every keystroke again.
   const configRef = useRef(config);
-  configRef.current = config;
+  // Written in an effect rather than during render. `close` only ever runs
+  // from an event handler or a timer, both of which are after the commit,
+  // so it never reads a stale value.
+  useEffect(() => {
+    configRef.current = config;
+  }, [config]);
   const [mounted, setMounted] = useState(false);
   // Stable identity. As an inline arrow this changed on every render, so the
   // drawer's effect tore down and re-ran on each control-panel keystroke —
@@ -51,18 +56,28 @@ export default function MarketingDrawerLab() {
     // same values its stylesheet uses — 274px wide, 24px in from the
     // bottom-left.
     //
-    // fab: the bar is already on screen, so its real box is read directly.
-    // The tile has not been added yet, so the panel is aimed at the bottom
-    // of the bar, which is where the bar will grow.
+    // fab: the bar's RESTING box, not its current one. getBoundingClientRect
+    // includes transforms, and near the top of the page the bar is parked
+    // off-stage by translateX(50px) — so reading the rect aimed the morph
+    // 50px right of where the tile actually settles. The bar is
+    // `position: fixed; top: 50%; right: Npx` with translateY(-50%), so the
+    // resting box follows from its own size and that one offset.
     let target: { x: number; y: number; width: number };
     if (mode === "fab") {
-      const bar =
-        document.querySelector('[class*="FloatingQuickActions_container"]') ??
-        document.querySelector('[class*="FloatingQuickActions_link"]')?.parentElement;
-      const r = bar?.getBoundingClientRect();
-      target = r
-        ? { x: r.left, y: r.bottom - 40, width: r.width }
-        : { x: window.innerWidth - 110, y: window.innerHeight / 2, width: 86 };
+      const bar = document.querySelector<HTMLElement>(
+        '[class*="FloatingQuickActions_container"]',
+      );
+      if (bar) {
+        const right = parseFloat(getComputedStyle(bar).right) || 24;
+        const w = bar.offsetWidth;
+        const h = bar.offsetHeight;
+        const top = window.innerHeight / 2 - h / 2;
+        // Aimed at the bottom of the bar: that is where the new tile grows,
+        // since it is appended rather than inserted.
+        target = { x: window.innerWidth - right - w, y: top + h - 40, width: w };
+      } else {
+        target = { x: window.innerWidth - 110, y: window.innerHeight / 2, width: 86 };
+      }
     } else {
       const w = Math.min(274, window.innerWidth - 24);
       target = { x: 24, y: window.innerHeight - 24 - 36, width: w };
@@ -115,11 +130,7 @@ export default function MarketingDrawerLab() {
 
       <AnimatePresence>
         {collapsed === "toast" && (
-          <CollapsedToast
-            parts={config.headline.parts}
-            tone={config.overlay.tone}
-            onExpand={reopen}
-          />
+          <CollapsedToast parts={config.headline.parts} onExpand={reopen} />
         )}
       </AnimatePresence>
 

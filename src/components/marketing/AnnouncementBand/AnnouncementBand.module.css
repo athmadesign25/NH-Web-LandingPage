@@ -64,41 +64,57 @@
 }
 
 /* ─── Background pattern ─────────────────────────────────────────────────
-   The NH glyph lattice, from `public/band-pattern.svg`.
+   Two artworks. `band-pattern-edge.svg` holds the ends and
+   `band-pattern.svg` the middle.
 
-   The export carried 33 paths and 33 linear gradients. There are only
-   three glyph shapes, each repeated eleven times, and all 33 gradients
-   were the same two stops (#6BCCF9 to #5FC8F9 — twelve levels apart in
-   red, four in green, none in blue). Rebuilt as three <path> defs, 33
-   <use>, and one gradient spanning the whole artwork: 11.9KB to 2.3KB,
-   with a worst-case deviation of 0.01px, which is 3% of a stroke.
-
-   Three placements rather than a tile: both ends and the open stretch in
-   the middle. The artwork is a diagonal swathe inside its canvas, not a
-   repeating unit, so tiling it would read as a stamp with a gap rather
-   than as a field — placing it deliberately keeps the rhythm. */
+   Both were optimised from their exports. The middle one carried 33
+   paths and 33 linear gradients for three glyph shapes repeated eleven
+   times, all 33 gradients being the same two stops (#6BCCF9 to #5FC8F9
+   — twelve levels apart in red, four in green, none in blue): rebuilt as
+   three <path> defs, 33 <use> and one gradient, 11.9KB to 2.3KB. The
+   edge one is 15 rotations of a corner glyph rather than repeats, so
+   there was nothing to dedupe; hoisting the stroke off every path and
+   dropping a clipPath whose rect was exactly the viewBox took it from
+   4.8KB to 3.1KB. Worst deviation in either: 0.01px. */
 .pattern {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("/band-pattern.svg"), url("/band-pattern.svg"),
-    url("/band-pattern.svg");
+  /* The middle only. The ends are the pseudo-elements below. */
+  background-image: url("/band-pattern.svg");
   background-repeat: no-repeat;
-  /* Raised: the swathe sits high in the band and runs off the top edge,
-     so what shows is the lower half of the diagonal rather than the whole
-     thing floating in the middle with margins above and below. */
-  background-position: left -56px top -26px, left 52% top -26px,
-    right -56px top -26px;
+  background-position: left 52% top -26px;
   background-size: auto 124%;
   opacity: 0.9;
-  /* Only the outermost sliver fades now. The earlier 14%/84% fade existed
-     to keep the dots off the copy, but the whole point of the side
-     placements is to reach the ends. */
-  -webkit-mask-image: linear-gradient(
-    to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
-  mask-image: linear-gradient(
-    to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
+}
+
+/* The ends. The artwork is authored at exactly the band's 62px height,
+   so it sits 1:1 with no scaling and runs flush to the edge. */
+.pattern::before,
+.pattern::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 140px;
+  background-image: url("/band-pattern-edge.svg");
+  background-repeat: no-repeat;
+  background-size: auto 100%;
+}
+
+.pattern::before {
+  left: 0;
+  background-position: left center;
+}
+
+/* Mirrored, so the lattice reads outward from the right edge the way the
+   left one reads outward from the left. A background image cannot be
+   flipped, so the box is flipped and the image drawn into it. */
+.pattern::after {
+  right: 0;
+  background-position: left center;
+  transform: scaleX(-1);
 }
 
 /* ─── Arrival pulse ──────────────────────────────────────────────────────

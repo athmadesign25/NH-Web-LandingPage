@@ -40,18 +40,6 @@
   font-family: var(--font-family);
 }
 
-/* The animated ground. Sits under everything; the band's own CSS gradient
-   stays beneath it as the fallback when no canvas is created. */
-.neat {
-  position: absolute;
-  inset: 0;
-  z-index: 0;
-  width: 100%;
-  height: 100%;
-  pointer-events: none;
-  display: block;
-}
-
 /* ─── Inner edge ─────────────────────────────────────────────────────────
    An inset shading all the way round, so the band reads as a recess in the
    page rather than a rectangle laid on it. Inset box-shadow on a child,
@@ -80,29 +68,32 @@
    <use>, and one gradient spanning the whole artwork: 11.9KB to 2.3KB,
    with a worst-case deviation of 0.01px, which is 3% of a stroke.
 
-   Placed once rather than tiled. The artwork is a diagonal swathe inside
-   its canvas, not a repeating unit, so repeating it would read as a
-   stamp with a gap rather than as a field. It sits in the open stretch
-   between the copy and the actions, which is where the dot patches it
-   replaced were. */
+   Three placements rather than a tile: both ends and the open stretch in
+   the middle. The artwork is a diagonal swathe inside its canvas, not a
+   repeating unit, so tiling it would read as a stamp with a gap rather
+   than as a field — placing it deliberately keeps the rhythm. */
 .pattern {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: url("/band-pattern.svg");
+  background-image: url("/band-pattern.svg"), url("/band-pattern.svg"),
+    url("/band-pattern.svg");
   background-repeat: no-repeat;
-  background-position: 63% 50%;
-  /* Slightly taller than the band so the swathe bleeds past both edges
-     instead of floating with visible margins. */
+  /* Raised: the swathe sits high in the band and runs off the top edge,
+     so what shows is the lower half of the diagonal rather than the whole
+     thing floating in the middle with margins above and below. */
+  background-position: left -56px top -26px, left 52% top -26px,
+    right -56px top -26px;
   background-size: auto 124%;
   opacity: 0.9;
-  /* Fades out before it reaches either end, so it never collides with
-     the message on the left or the actions on the right. */
+  /* Only the outermost sliver fades now. The earlier 14%/84% fade existed
+     to keep the dots off the copy, but the whole point of the side
+     placements is to reach the ends. */
   -webkit-mask-image: linear-gradient(
-    to right, transparent 0%, #000 14%, #000 84%, transparent 100%);
+    to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
   mask-image: linear-gradient(
-    to right, transparent 0%, #000 14%, #000 84%, transparent 100%);
+    to right, transparent 0%, #000 5%, #000 95%, transparent 100%);
 }
 
 /* ─── Arrival pulse ──────────────────────────────────────────────────────

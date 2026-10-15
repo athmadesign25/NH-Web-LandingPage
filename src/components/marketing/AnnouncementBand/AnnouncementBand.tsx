@@ -16,7 +16,6 @@
 
 import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { NeatGradient } from "@firecms/neat";
 import { X } from "lucide-react";
 import { ease } from "@/lib/motion";
 import styles from "./AnnouncementBand.module.css";
@@ -40,141 +39,11 @@ const PULSE_MS = 4600;
  */
 const SCROLL_OUT = 24;
 
-/**
- * The animated ground.
- *
- * These are literals rather than var(--…) on purpose: NeatGradient feeds
- * them to a WebGL shader, and a shader cannot resolve a CSS custom
- * property. They are the palette's own values written out — white,
- * slate-50, blue-tint-50, and pale mixes of blue-brand, sky-400 and the
- * accent red over white. If the palette moves, these have to be moved
- * with it by hand.
- *
- * The reference config was built for white text on a dark ground. The
- * band carries navy ink, so every colour here is a tint rather than a
- * shade, and `backgroundColor` is the page surface rather than the
- * placeholder red.
- */
-const NEAT_COLORS = [
-  { color: "#FFFFFF", enabled: true }, // --white
-  { color: "#F8FAFC", enabled: true }, // --slate-50
-  { color: "#E0E9F4", enabled: true }, // --blue-brand over white
-  { color: "#D7F2FD", enabled: true }, // --sky-400 over white
-  { color: "#EEF2F7", enabled: true }, // --blue-tint-50
-  { color: "#FBE6E7", enabled: true }, // the accent red, barely there
-];
-
-const NEAT_CONFIG = {
-  colors: NEAT_COLORS,
-  // Slower than the reference 4. On a 62px strip the full-page speed
-  // read as flickering rather than drifting.
-  speed: 1.6,
-  horizontalPressure: 4,
-  verticalPressure: 3,
-  waveFrequencyX: 0,
-  waveFrequencyY: 0,
-  waveAmplitude: 0,
-  secondaryWaveEnabled: false,
-  secondaryWaveFrequencyX: 3,
-  secondaryWaveFrequencyY: 3,
-  secondaryWaveAmplitude: 5,
-  secondaryWaveSpeed: 0.6,
-  secondaryWaveAngle: 1,
-  shadows: 2,
-  highlights: 7,
-  colorBrightness: 1,
-  // Down from the reference 8: at full saturation the tints stopped
-  // being tints and the copy lost its ground.
-  colorSaturation: 3,
-  wireframe: false,
-  antialias: false,
-  colorBlending: 5,
-  backgroundColor: "#F8FAFC",
-  backgroundAlpha: 1,
-  grainScale: 0,
-  grainSparsity: 0,
-  grainIntensity: 0,
-  grainSpeed: 0,
-  resolution: 0.5,
-  yOffset: -7,
-  yOffsetWaveMultiplier: 1.5,
-  yOffsetColorMultiplier: 1.8,
-  yOffsetFlowMultiplier: 2,
-  flowDistortionA: 1.8,
-  flowDistortionB: 2.2,
-  flowScale: 2,
-  flowEase: 0.35,
-  flowEnabled: false,
-  enableProceduralTexture: false,
-  transparentTextureVoid: false,
-  textureMode: "bitmap",
-  bakeEdgeSoftness: 1,
-  textureVoidLikelihood: 0.29,
-  textureVoidWidthMin: 120,
-  textureVoidWidthMax: 420,
-  textureBandDensity: 2.9,
-  textureColorBlending: 0.06,
-  textureSeed: 536,
-  textureEase: 0.75,
-  proceduralBackgroundColor: "#775454",
-  textureShapeTriangles: 20,
-  textureShapeCircles: 15,
-  textureShapeBars: 15,
-  textureShapeSquiggles: 10,
-  domainWarpEnabled: false,
-  domainWarpIntensity: 0,
-  domainWarpScale: 3,
-  vignetteIntensity: 0,
-  vignetteRadius: 0.8,
-  fresnelEnabled: false,
-  fresnelPower: 2,
-  fresnelIntensity: 0.5,
-  fresnelColor: "#FFFFFF",
-  iridescenceEnabled: false,
-  iridescenceIntensity: 0.5,
-  iridescenceSpeed: 1,
-  prismEdgeEnabled: false,
-  prismEdgeIntensity: 0.5,
-  prismEdgeThinness: 3,
-  prismEdgeSpread: 1,
-  prismEdgeSpeed: 0.5,
-  prismEdgeRipple: 1,
-  bloomIntensity: 0,
-  bloomThreshold: 0.7,
-  chromaticAberration: 0,
-  shapeType: "plane",
-  shapeRotationX: 0,
-  shapeRotationY: 0,
-  shapeRotationZ: 0,
-  shapeAutoRotateSpeedX: 0,
-  shapeAutoRotateSpeedY: 0,
-  sphereRadius: 15,
-  torusRadius: 15,
-  torusTube: 5,
-  cylinderRadius: 10,
-  cylinderHeight: 40,
-  planeBend: 0,
-  planeTwist: 0,
-  silhouetteFade: 0.25,
-  cylinderFade: 0.08,
-  ribbonFade: 0.05,
-  flatShading: true,
-  cameraLock: true,
-  cameraX: 0,
-  cameraY: 0,
-  cameraZ: 0,
-  cameraRotationX: 0,
-  cameraRotationY: 0,
-  cameraRotationZ: 0,
-  cameraZoom: 1,
-};
-
 export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: BandConfig }) {
   const [open, setOpen] = useState(true);
   const [pulsing, setPulsing] = useState(true);
   const [atTop, setAtTop] = useState(true);
   const bandRef = useRef<HTMLElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   // The band belongs to the hero, not to the page. Once you are reading a
   // section it has had its turn, and the navbar is the only thing that
@@ -211,35 +80,6 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
     return () => ro.disconnect();
   }, [shown]);
 
-  /**
-   * The gradient lives and dies with the visible band.
-   *
-   * It has to be destroyed, not just hidden: the band unmounts on every
-   * scroll away from the top and remounts on the way back, and a WebGL
-   * context that is never released accumulates until the browser starts
-   * dropping the oldest one.
-   */
-  useEffect(() => {
-    if (!shown || !canvasRef.current) return;
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) return;
-
-    let gradient: NeatGradient | null = null;
-    try {
-      gradient = new NeatGradient({
-        ...(NEAT_CONFIG as unknown as Omit<
-          ConstructorParameters<typeof NeatGradient>[0],
-          "ref"
-        >),
-        ref: canvasRef.current,
-      });
-    } catch {
-      // No WebGL, or no context left to give. The CSS gradient under the
-      // canvas is already the right colour, so there is nothing to do.
-      return;
-    }
-    return () => gradient?.destroy();
-  }, [shown]);
-
   // Leave nothing behind for the next route.
   useEffect(() => {
     return () => {
@@ -266,11 +106,6 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
           exit={{ y: "-100%", transition: { duration: 0.35, ease: ease.out } }}
           transition={{ duration: 0.6, ease: ease.out }}
         >
-          {/* The animated ground. The CSS gradient on .band stays underneath
-              as the fallback — if WebGL is unavailable or reduced motion is
-              on, no canvas is created and the band still looks finished. */}
-          <canvas ref={canvasRef} className={styles.neat} aria-hidden />
-
           {/* Pattern, inner shading and pulse all sit under the copy and
               take no pointer events, so the band stays one flat row to
               click through. */}

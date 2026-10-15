@@ -122,11 +122,17 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
                 // single ramp over four seconds reads as a slow gradient
                 // rather than as something announcing itself.
                 //
-                // Halved from [0, 1, 0.55, 0.9, 0]. Running both edges at
-                // full strength turned an accent into a stripe across the
-                // top of the page.
-                animate={{ opacity: [0, 0.5, 0.28, 0.45, 0] }}
-                exit={{ opacity: 0 }}
+                // Halved from [0, 1, 0.55, 0.9, 0] when the second edge
+                // arrived — running both at full strength turned an accent
+                // into a stripe across the top of the page — then taken
+                // down another 20%.
+                animate={{ opacity: [0, 0.4, 0.22, 0.36, 0] }}
+                // Its own exit transition. Without one Framer reuses the
+                // `transition` prop below, so the span spent another 4.6s
+                // animating from 0 opacity to 0 opacity — invisible, but
+                // it kept a will-change layer alive for twice as long as
+                // the pulse itself.
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
                 transition={{
                   duration: PULSE_MS / 1000,
                   times: [0, 0.14, 0.42, 0.62, 1],

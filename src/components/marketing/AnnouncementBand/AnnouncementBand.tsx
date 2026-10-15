@@ -121,18 +121,31 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
                 // Breathes twice and leaves, rather than fading once — a
                 // single ramp over four seconds reads as a slow gradient
                 // rather than as something announcing itself.
-                animate={{ opacity: [0, 1, 0.55, 0.9, 0] }}
+                //
+                // Halved from [0, 1, 0.55, 0.9, 0]. Running both edges at
+                // full strength turned an accent into a stripe across the
+                // top of the page.
+                animate={{ opacity: [0, 0.5, 0.28, 0.45, 0] }}
                 exit={{ opacity: 0 }}
                 transition={{
                   duration: PULSE_MS / 1000,
                   times: [0, 0.14, 0.42, 0.62, 1],
                   ease: "easeInOut",
                 }}
-              />
+              >
+                <span className={styles.pulseTop} />
+                <span className={styles.pulseBottom} />
+              </motion.span>
             )}
           </AnimatePresence>
 
-          <p className={styles.message}>{config.message}</p>
+          {/* data-text duplicates the copy into a ::after that carries the
+              hover wipe. The sweep is a gradient clipped to glyphs, and a
+              gradient needs its own box to travel across — it cannot be
+              applied to the live text without replacing its colour. */}
+          <p className={styles.message} data-text={config.message}>
+            {config.message}
+          </p>
 
           <div className={styles.actions}>
             {/* Accent red, not --red-emergency: that one is reserved for

@@ -88,30 +88,33 @@
 }
 
 /* ─── Arrival pulse ──────────────────────────────────────────────────────
-   Runs along the BOTTOM edge of the band. At the two ends it was doing
-   almost nothing visible — a 24%-wide bloom on a 62px strip has very little
-   room to bloom in, and it fell where nobody was looking. The bottom edge
-   is a 1440px run right under the copy, so the same energy actually reads.
+   Runs along the top AND bottom edges of the band. At the two ENDS it was
+   doing almost nothing visible — a 24%-wide bloom on a strip this short has
+   very little room to bloom in, and it fell where nobody was looking. The
+   long edges are full-width runs either side of the copy.
 
-   One pass on load, then gone for good. */
+   Both are driven by one opacity keyframe on the wrapper, halved from the
+   single-edge version: two edges at full strength stopped reading as an
+   accent and started reading as a stripe. One pass on load, then gone. */
 .pulse {
   position: absolute;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  /* Taller than the line it sits on, so it is a glow rising off the edge
-     rather than a coloured border. */
-  height: 18px;
+  inset: 0;
   z-index: 2;
   pointer-events: none;
   will-change: opacity;
+}
+
+.pulseTop,
+.pulseBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Taller than the line it sits on, so it is a glow rising off the edge
+     rather than a coloured border. */
+  height: 18px;
+  /* The colour run is shared; only the falloff direction differs, which is
+     what the mask handles. */
   background:
-    linear-gradient(
-      to top,
-      rgba(var(--blue-brand-rgb), 0.5) 0%,
-      rgba(var(--blue-brand-rgb), 0.16) 38%,
-      transparent 100%
-    ),
     linear-gradient(
       to right,
       rgba(var(--cyan-bright-rgb), 0.9) 0%,
@@ -120,9 +123,16 @@
       rgba(var(--red-500-rgb), 0.7) 72%,
       rgba(var(--cyan-bright-rgb), 0.85) 100%
     );
-  /* Composites the colour run through the vertical falloff, so the glow is
-     strongest on the line itself and gone 18px up. */
-  background-blend-mode: multiply;
+}
+
+.pulseTop {
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+}
+
+.pulseBottom {
+  bottom: 0;
   -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 100%);
   mask-image: linear-gradient(to top, #000 0%, transparent 100%);
 }
@@ -142,6 +152,52 @@
   font-weight: 500;
   line-height: var(--leading-snug);
   color: var(--color-text);
+}
+
+/* A light sweeps across the copy once, on hover of the band.
+   The duplicate sits exactly over the live text and is clipped to the
+   glyphs, so what travels is a highlight ON the letters rather than a
+   band across the row. */
+.message::after {
+  content: attr(data-text);
+  position: absolute;
+  inset: 0;
+  /* Light blue, not white. Clipped to glyphs on a light band, a white
+     sweep does not brighten the letters — it erases them, and the effect
+     read as the copy briefly dropping out. A light blue lifts the glyphs
+     and keeps them legible the whole way across. */
+  background-image: linear-gradient(
+    100deg,
+    transparent 36%,
+    rgba(var(--sky-400-rgb), 0.95) 47%,
+    rgba(var(--cyan-bright-rgb), 0.9) 53%,
+    transparent 64%
+  );
+  background-size: 260% 100%;
+  /* 110% and -10% are the two points at which the highlight is just
+     clear of the text on either side. Wider than that and most of the
+     duration is spent travelling off-screen — at 135% the light crossed
+     the copy inside the first 40ms and the rest of the transition was
+     the gradient finishing its journey past the right edge. */
+  background-position: 110% 0;
+  background-repeat: no-repeat;
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  pointer-events: none;
+  /* No transition at rest on purpose: the wipe plays on the way IN and
+     snaps back on the way out, so it reads as one pass rather than a
+     highlight sliding back and forth with the cursor. */
+}
+
+.band:hover .message::after {
+  background-position: -10% 0;
+  /* Linear, not --ease-out. An eased curve front-loads the travel, so the
+     light shot across the copy in the first few frames and then crawled;
+     a wipe only reads as a wipe at constant speed.
+     Derived from the token rather than written as a raw duration — the
+     ramp tops out at 0.6s, and a full crossing needs about twice that. */
+  transition: background-position calc(var(--duration-slowest) * 1.8) linear;
 }
 
 .actions {
@@ -174,7 +230,7 @@
   left: var(--space-4);
   right: var(--space-4);
   bottom: var(--space-6);
-  height: 1px;
+  height: 2px;
   background: currentColor;
   transform: scaleX(0);
   transform-origin: left center;
@@ -249,10 +305,19 @@
   .pattern {
     opacity: 0.4;
   }
+  /* No hover on touch, and .message becomes a -webkit-box for the line
+     clamp — an absolutely positioned duplicate inside one is not worth
+     the risk for an effect nobody on this breakpoint can trigger. */
+  .message::after {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .pulse {
+    display: none;
+  }
+  .message::after {
     display: none;
   }
   .link::after {

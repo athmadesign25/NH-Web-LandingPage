@@ -5,7 +5,7 @@ import { motion, useTransform, useMotionValueEvent, AnimatePresence } from "fram
 import Link from "next/link";
 import Lottie, { LottieRefCurrentProps } from "lottie-react";
 import { useSyncExternalStore } from "react";
-import BannerBellIcon from "@/components/marketing/MarketingDrawer/BannerBellIcon";
+import AnnouncementIcon from "@/components/marketing/MarketingDrawer/AnnouncementIcon";
 import { COLLAPSED_LABEL } from "@/components/marketing/MarketingDrawer/types";
 import { bannerCollapse } from "@/components/marketing/MarketingDrawer/bannerCollapse";
 import { Search } from "lucide-react";
@@ -340,7 +340,7 @@ export default function FloatingQuickActions() {
               {/* Red plate rather than the blue candy fill the other three
                   carry — this one is an alert, not a utility. */}
               <span className={`${styles.iconWrap} ${styles.bannerIconWrap}`}>
-                <BannerBellIcon size={26} />
+                <AnnouncementIcon size={24} />
               </span>
               {/* Generic, not the banner's own headline. A tile is ~56px
                   wide; any campaign-specific line either wraps to three

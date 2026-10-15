@@ -8,16 +8,18 @@
  * toward, so the two read as one movement rather than a disappearance
  * followed by an arrival.
  *
- * The copy is a generic label plus the headline on ONE line. Stacking the
- * headline's parts here meant a three-line banner headline became a
- * three-line toast, which overran the 274px box the spec fixes.
+ * The copy is the banner's own headline, one part per line and in each
+ * part's own colour. The parts are where the writer already decided the
+ * line breaks, so the toast inherits them rather than guessing at a
+ * wrap — which is what keeps it inside its 274px without a hyphen in a
+ * bad place.
  */
 
 import { motion } from "framer-motion";
 import { ease } from "@/lib/motion";
-import BannerBellIcon from "./BannerBellIcon";
+import AnnouncementIcon from "./AnnouncementIcon";
 import styles from "./CollapsedToast.module.css";
-import { type HeadlinePart, COLLAPSED_LABEL } from "./types";
+import { type HeadlinePart, resolve } from "./types";
 
 type Props = {
   parts: HeadlinePart[];
@@ -25,11 +27,6 @@ type Props = {
 };
 
 export default function CollapsedToast({ parts, onExpand }: Props) {
-  // One line, not one per part. The toast is a light surface regardless of
-  // what the panel looked like — the previous version carried the panel's
-  // ramp across, so a dark banner left white text on a white toast.
-  const summary = parts.map((p) => p.text).join(" ");
-
   return (
     <motion.button
       type="button"
@@ -41,13 +38,14 @@ export default function CollapsedToast({ parts, onExpand }: Props) {
       transition={{ duration: 0.5, ease: ease.spring }}
     >
       <span className={styles.iconWrap}>
-        {/* Swap point for the announcement Lottie once the asset exists —
-            same box, same 32px mark. */}
-        <BannerBellIcon size={32} />
+        <AnnouncementIcon size={28} />
       </span>
       <span className={styles.copy}>
-        <span className={styles.eyebrow}>{COLLAPSED_LABEL}</span>
-        <span className={styles.line}>{summary}</span>
+        {parts.map((p) => (
+          <span key={p.id} className={styles.line} style={{ color: resolve(p.colorId) }}>
+            {p.text}
+          </span>
+        ))}
       </span>
     </motion.button>
   );

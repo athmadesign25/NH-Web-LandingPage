@@ -77,11 +77,11 @@ export const resolve = (id: string) =>
   (TEXT_COLORS.find((c) => c.id === id) ?? TEXT_COLORS[0]).value;
 
 /**
- * What the collapsed forms say. Generic on purpose: a headline written for
- * a full panel is usually too long to survive at toast or tile size, and
- * truncating it mid-phrase reads worse than a label.
+ * What the FAB tile says. Generic on purpose: a tile is about 56px wide,
+ * so any campaign-specific line either wraps to three rows or gets cut.
+ * The toast has room for the real headline and uses that instead.
  */
-export const COLLAPSED_LABEL = "Announcement";
+export const COLLAPSED_LABEL = "News!";
 
 export const DEFAULT_CONFIG: BannerConfig = {
   orientation: "vertical",

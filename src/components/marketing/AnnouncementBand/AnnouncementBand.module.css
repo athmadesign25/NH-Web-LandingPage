@@ -14,23 +14,16 @@
   gap: var(--space-24);
   height: 62px;
   overflow: hidden;
-  /* Opaque base FIRST, tint layered on top. As a single gradient running
-     from a low-alpha blue to an opaque white, the top edge of the band was
-     almost fully transparent and the hero video played through it.
-     
-     Three stops rather than two: a cool wash at the left, barely anything
-     through the middle where the copy sits, and a second lift at the right
-     behind the actions. Flat white read as a system notification. */
-  background-color: var(--color-surface);
-  background-image: linear-gradient(
-      100deg,
-      rgba(var(--blue-brand-rgb), 0.1) 0%,
-      rgba(var(--blue-500-rgb), 0.05) 26%,
-      rgba(var(--blue-brand-rgb), 0.02) 52%,
-      rgba(var(--sky-400-rgb), 0.07) 78%,
-      rgba(var(--blue-brand-rgb), 0.11) 100%
-    ),
-    linear-gradient(180deg, rgba(var(--white-rgb), 0.5), rgba(var(--white-rgb), 0));
+  /* Supplied as a design value, so the stops are literals rather than
+     palette tokens. Opaque in its own right — an earlier version layered
+     a low-alpha tint over a white base and the top edge came out almost
+     transparent, with the hero video playing through it. */
+  background: linear-gradient(
+    90deg,
+    hsl(211.0345deg 93.8758% 93.5979%) 0%,
+    hsl(211.519deg 100% 86.5554%) 50.68%,
+    #dfeefe 100%
+  );
   /* The gutter the navbar's own container uses, so the message's first
      character lines up with the left edge of the logo. The right side is
      deliberately NOT symmetrical — the close sits closer to the edge than
@@ -41,50 +34,42 @@
 }
 
 /* ─── Inner edge ─────────────────────────────────────────────────────────
-   An inset shading all the way round, so the band reads as a recess in the
-   page rather than a rectangle laid on it. Inset box-shadow on a child,
-   not on .band itself, because the band's own overflow clip would cut the
-   shadow off against the pattern. */
+   The supplied inset shadow. It stays on a child rather than on .band
+   itself because an element's own inset shadow paints beneath its
+   children — on .band the pattern would sit on top of it, which is the
+   wrong way round for an edge treatment. */
 .innerEdge {
   position: absolute;
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  /* Shading only — no hairlines. There were three: a 0.75-alpha white
-     inset along the top, a light inset along the bottom, and the band's
-     own border-bottom. Together they drew a bright rule around the band
-     that read as a seam rather than as an edge. What is left is the soft
-     blue falloff on all four sides, which still seats the band without
-     outlining it. */
-  box-shadow:
-    inset 0 10px 18px -12px rgba(var(--blue-brand-rgb), 0.3),
-    inset 0 -10px 18px -12px rgba(var(--blue-brand-rgb), 0.24),
-    inset 12px 0 22px -14px rgba(var(--blue-brand-rgb), 0.28),
-    inset -12px 0 22px -14px rgba(var(--blue-brand-rgb), 0.28);
+  box-shadow: 0 -4px 34px 0 hsl(220deg 83.2238% 40.8541% / 0.24) inset;
 }
 
 /* ─── Background pattern ─────────────────────────────────────────────────
    Two artworks. `band-pattern-edge.svg` holds the ends and
-   `band-pattern.svg` the middle.
+   `band-pattern-mid.svg` the middle.
 
-   Both were optimised from their exports. The middle one carried 33
-   paths and 33 linear gradients for three glyph shapes repeated eleven
-   times, all 33 gradients being the same two stops (#6BCCF9 to #5FC8F9
-   — twelve levels apart in red, four in green, none in blue): rebuilt as
-   three <path> defs, 33 <use> and one gradient, 11.9KB to 2.3KB. The
-   edge one is 15 rotations of a corner glyph rather than repeats, so
-   there was nothing to dedupe; hoisting the stroke off every path and
-   dropping a clipPath whose rect was exactly the viewBox took it from
-   4.8KB to 3.1KB. Worst deviation in either: 0.01px. */
+   Both were optimised from their exports, by hoisting the single stroke
+   colour and width off every path, dropping a clipPath whose rect was
+   exactly the viewBox (the outer svg already clips to it), rounding
+   coordinates to 2dp, and collapsing repeated glyphs into <defs> plus
+   <use> where any repeat exists. Middle: 6.7KB to 3.8KB, 44%. Edge:
+   4.8KB to 3.1KB, 36% — less, because its 15 glyphs are rotations of a
+   corner rather than repeats of one, and rotations cannot be deduped by
+   translation. Worst coordinate deviation in either: 0.01px. */
 .pattern {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
   /* The middle only. The ends are the pseudo-elements below. */
-  background-image: url("/band-pattern.svg");
+  background-image: url("/band-pattern-mid.svg");
   background-repeat: no-repeat;
-  background-position: left 52% top -26px;
+  /* Authored at 82px against a 62px band, so it is scaled to 124% and
+     hangs off the top — what shows is the lower part of the lattice
+     rather than the whole thing boxed inside the band. */
+  background-position: left 50% top -26px;
   background-size: auto 124%;
   opacity: 0.9;
 }

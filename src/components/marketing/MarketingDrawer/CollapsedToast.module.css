@@ -10,7 +10,7 @@
   width: 274px;
   padding: var(--space-12) var(--space-14);
   align-items: center;
-  gap: var(--space-10);
+  gap: var(--space-12);
   border-radius: var(--radius-md);
   /* Glass, not a flat card. A translucent surface over a real blur, with a
      light top border and a darker bottom one so the edge catches — the
@@ -38,47 +38,41 @@
   transform: translateY(-2px);
 }
 
-/* 48px plate holding the 32px mark, per the spec. */
+/* 44px plate holding the 28px mark. */
 .iconWrap {
   display: flex;
-  width: 48px;
-  height: 48px;
+  width: 44px;
+  height: 44px;
   padding: var(--space-8);
   justify-content: center;
   align-items: center;
   flex-shrink: 0;
   border-radius: var(--radius-md);
   background: rgba(var(--red-emergency-rgb), 0.1);
+  color: var(--red-emergency);
 }
 
 .copy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
   /* Without this a long headline pushes the box past its 274px. */
   min-width: 0;
 }
 
-.eyebrow {
-  font-size: var(--font-size-2xs);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--red-emergency);
-}
+/* One line per headline part, in that part's own colour, so the toast
+   carries the banner's wording and its emphasis.
 
-/* Spec'd at 700, which at 16px on a glass surface read as shouting next to
-   everything else on the page. 600 keeps the weight relationship without
-   the density. */
+   Spec'd at 700/16px, which on a glass surface read as shouting. 600 at
+   14px keeps the weight relationship without the density, and three
+   stacked lines at 14 still clear the 48px icon beside them. No clipping
+   or nowrap: the parts already carry the writer's line breaks, so there
+   is nothing to truncate. */
 .line {
+  display: block;
   font-size: var(--font-size-sm);
   font-weight: 600;
-  line-height: var(--leading-snug);
-  color: var(--color-text);
-  /* One line, clipped. The headline is written for a full panel. */
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  line-height: var(--leading-tight);
+  letter-spacing: -0.01em;
 }
 
 @media (max-width: 768px) {

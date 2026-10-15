@@ -12,23 +12,50 @@
   align-items: center;
   justify-content: space-between;
   gap: var(--space-24);
-  height: 82px;
+  height: 62px;
   overflow: hidden;
   /* Opaque base FIRST, tint layered on top. As a single gradient running
-     from a 4%-alpha blue to an opaque white, the top edge of the band was
-     96% transparent and the hero video played straight through it. */
+     from a low-alpha blue to an opaque white, the top edge of the band was
+     almost fully transparent and the hero video played through it.
+     
+     Three stops rather than two: a cool wash at the left, barely anything
+     through the middle where the copy sits, and a second lift at the right
+     behind the actions. Flat white read as a system notification. */
   background-color: var(--color-surface);
   background-image: linear-gradient(
-    180deg,
-    rgba(var(--blue-brand-rgb), 0.06),
-    rgba(var(--blue-brand-rgb), 0)
-  );
-  border-bottom: 1px solid var(--color-border-light);
+      100deg,
+      rgba(var(--blue-brand-rgb), 0.1) 0%,
+      rgba(var(--blue-500-rgb), 0.05) 26%,
+      rgba(var(--blue-brand-rgb), 0.02) 52%,
+      rgba(var(--sky-400-rgb), 0.07) 78%,
+      rgba(var(--blue-brand-rgb), 0.11) 100%
+    ),
+    linear-gradient(180deg, rgba(var(--white-rgb), 0.5), rgba(var(--white-rgb), 0));
   /* The gutter the navbar's own container uses, so the message's first
-     character lines up with the left edge of the logo. */
+     character lines up with the left edge of the logo. The right side is
+     deliberately NOT symmetrical — the close sits closer to the edge than
+     the grid would put it. */
   padding-left: max(4vw, 40px);
-  padding-right: max(4vw, 40px);
+  padding-right: var(--space-12);
   font-family: var(--font-family);
+}
+
+/* ─── Inner edge ─────────────────────────────────────────────────────────
+   An inset shading all the way round, so the band reads as a recess in the
+   page rather than a rectangle laid on it. Inset box-shadow on a child,
+   not on .band itself, because the band's own overflow clip would cut the
+   shadow off against the pattern. */
+.innerEdge {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  box-shadow:
+    inset 0 1px 0 rgba(var(--white-rgb), 0.75),
+    inset 0 10px 18px -12px rgba(var(--blue-brand-rgb), 0.3),
+    inset 12px 0 22px -14px rgba(var(--blue-brand-rgb), 0.28),
+    inset -12px 0 22px -14px rgba(var(--blue-brand-rgb), 0.28),
+    inset 0 -1px 0 var(--color-border-light);
 }
 
 /* ─── Background pattern ─────────────────────────────────────────────────
@@ -61,47 +88,43 @@
 }
 
 /* ─── Arrival pulse ──────────────────────────────────────────────────────
-   The L1 drawer lights all four edges of the page. The band only has two
-   ends, so the same blue-and-red bloom runs in from left and right. One
-   pass on load, then gone for good. */
+   Runs along the BOTTOM edge of the band. At the two ends it was doing
+   almost nothing visible — a 24%-wide bloom on a 62px strip has very little
+   room to bloom in, and it fell where nobody was looking. The bottom edge
+   is a 1440px run right under the copy, so the same energy actually reads.
+
+   One pass on load, then gone for good. */
 .pulse {
   position: absolute;
-  inset: 0;
-  z-index: 1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  /* Taller than the line it sits on, so it is a glow rising off the edge
+     rather than a coloured border. */
+  height: 18px;
+  z-index: 2;
   pointer-events: none;
   will-change: opacity;
-}
-
-.pulseLeft,
-.pulseRight {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  /* Tight to the ends. Wider than this and the two meet in the middle,
-     which is the mistake the L1 glow made first time round. */
-  width: 24%;
-}
-
-.pulseLeft {
-  left: 0;
-  background: radial-gradient(
-    64% 120% at 0% 50%,
-    rgba(var(--cyan-bright-rgb), 0.5) 0%,
-    rgba(var(--blue-brand-rgb), 0.34) 26%,
-    rgba(var(--red-500-rgb), 0.18) 52%,
-    transparent 78%
-  );
-}
-
-.pulseRight {
-  right: 0;
-  background: radial-gradient(
-    64% 120% at 100% 50%,
-    rgba(var(--cyan-bright-rgb), 0.5) 0%,
-    rgba(var(--blue-brand-rgb), 0.34) 26%,
-    rgba(var(--red-500-rgb), 0.18) 52%,
-    transparent 78%
-  );
+  background:
+    linear-gradient(
+      to top,
+      rgba(var(--blue-brand-rgb), 0.5) 0%,
+      rgba(var(--blue-brand-rgb), 0.16) 38%,
+      transparent 100%
+    ),
+    linear-gradient(
+      to right,
+      rgba(var(--cyan-bright-rgb), 0.9) 0%,
+      rgba(var(--blue-brand-rgb), 0.75) 22%,
+      rgba(var(--violet-600-rgb), 0.6) 45%,
+      rgba(var(--red-500-rgb), 0.7) 72%,
+      rgba(var(--cyan-bright-rgb), 0.85) 100%
+    );
+  /* Composites the colour run through the vertical falloff, so the glow is
+     strongest on the line itself and gone 18px up. */
+  background-blend-mode: multiply;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 100%);
 }
 
 /* ─── Copy ──────────────────────────────────────────────────────────── */
@@ -114,6 +137,9 @@
   min-width: 0;
   margin: 0;
   font-size: var(--font-size-base);
+  /* 500, not 400. At 400 on a tinted ground the line sat behind the
+     background rather than on it. */
+  font-weight: 500;
   line-height: var(--leading-snug);
   color: var(--color-text);
 }
@@ -164,15 +190,17 @@
   transform: scaleX(1);
 }
 
-/* ─── Close ──────────────────────────────────────────────────────────────
-   Icon only, on the right end inside the same gutter as the nav. The box
-   is 44px for the touch target while the glyph stays 18px. */
+/* ─── Close ──────────────────────────────────────────────────────────── */
 .close {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 44px;
-  height: 44px;
+  /* Smaller than the 44px rule and sitting outside the content gutter:
+     this is a dismiss, not a destination, and it should not read as
+     equal in weight to the link beside it. The band's own 62px height
+     keeps the hit area tall enough to be comfortable. */
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: none;
   border-radius: var(--radius-full);
@@ -202,9 +230,9 @@
     /* Height goes auto so a wrapped message is not clipped. The navbar
        follows it, because --band-height is measured rather than assumed. */
     height: auto;
-    min-height: 82px;
-    gap: var(--space-12);
-    padding: var(--space-12) var(--space-16);
+    min-height: 62px;
+    gap: var(--space-8);
+    padding: var(--space-10) var(--space-8) var(--space-10) var(--space-16);
   }
   .message {
     /* Two lines, then ellipsis. A four-line band is a page, not a band. */

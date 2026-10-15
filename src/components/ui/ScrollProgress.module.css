@@ -11,6 +11,16 @@
   justify-content: flex-end;
   cursor: pointer;
   touch-action: none;
+  opacity: 1;
+  transition: opacity var(--duration-base) var(--ease-out);
+}
+
+/* At the very top there is nothing to indicate progress through yet, and
+   the track was crossing the announcement band's right edge. It fades in
+   on the first scroll instead. */
+.idle {
+  opacity: 0;
+  pointer-events: none;
 }
 
 .track {

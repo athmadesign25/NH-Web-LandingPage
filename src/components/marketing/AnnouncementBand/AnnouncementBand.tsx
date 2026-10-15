@@ -33,34 +33,59 @@ export const DEFAULT_BAND: BandConfig = {
 /** How long the arrival pulse lives, start to gone. */
 const PULSE_MS = 4600;
 
+/**
+ * How far down the page the band survives. Past this it is gone, and
+ * scrolling back up anywhere below the hero brings back the navbar alone.
+ */
+const SCROLL_OUT = 24;
+
 export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: BandConfig }) {
   const [open, setOpen] = useState(true);
   const [pulsing, setPulsing] = useState(true);
+  const [atTop, setAtTop] = useState(true);
   const bandRef = useRef<HTMLElement>(null);
+
+  // The band belongs to the hero, not to the page. Once you are reading a
+  // section it has had its turn, and the navbar is the only thing that
+  // should come back on the way up.
+  useEffect(() => {
+    const onScroll = () => setAtTop(window.scrollY <= SCROLL_OUT);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
+  const shown = open && atTop;
 
   // The navbar is fixed at `top: var(--band-height, 0px)`. Publishing the
   // height from here rather than hard-coding it there keeps every route
   // without a band at 0 with no second rule.
   //
-  // Measured, not assumed: the band is 82px on desktop but grows when the
-  // message wraps on a narrow screen, and a fixed 82px would have left the
+  // Measured, not assumed: the band is 62px on desktop but grows when the
+  // message wraps on a narrow screen, and a fixed 62px would have left the
   // navbar overlapping the second line.
   useEffect(() => {
     const root = document.documentElement;
     const el = bandRef.current;
-    if (!open || !el) {
-      root.style.removeProperty("--band-height");
+    if (!shown || !el) {
+      // Not removed — set to 0, so the navbar glides up with the band
+      // instead of jumping the moment it unmounts.
+      root.style.setProperty("--band-height", "0px");
       return;
     }
     const publish = () => root.style.setProperty("--band-height", `${el.offsetHeight}px`);
     publish();
     const ro = new ResizeObserver(publish);
     ro.observe(el);
+    return () => ro.disconnect();
+  }, [shown]);
+
+  // Leave nothing behind for the next route.
+  useEffect(() => {
     return () => {
-      ro.disconnect();
-      root.style.removeProperty("--band-height");
+      document.documentElement.style.removeProperty("--band-height");
     };
-  }, [open]);
+  }, []);
 
   // Once, on mount. Not on close, not on reopen — there is no reopen.
   useEffect(() => {
@@ -70,7 +95,7 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
 
   return (
     <AnimatePresence>
-      {open && (
+      {shown && (
         <motion.aside
           ref={bandRef}
           className={styles.band}
@@ -78,12 +103,14 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
           aria-label="Announcement"
           initial={{ y: "-100%" }}
           animate={{ y: 0 }}
-          exit={{ y: "-100%", transition: { duration: 0.4, ease: ease.out } }}
+          exit={{ y: "-100%", transition: { duration: 0.35, ease: ease.out } }}
           transition={{ duration: 0.6, ease: ease.out }}
         >
-          {/* Pattern and pulse both sit under the copy and take no pointer
-              events, so the band stays one flat row to click through. */}
+          {/* Pattern, inner shading and pulse all sit under the copy and
+              take no pointer events, so the band stays one flat row to
+              click through. */}
           <span className={styles.pattern} aria-hidden />
+          <span className={styles.innerEdge} aria-hidden />
 
           <AnimatePresence>
             {pulsing && (
@@ -101,10 +128,7 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
                   times: [0, 0.14, 0.42, 0.62, 1],
                   ease: "easeInOut",
                 }}
-              >
-                <span className={styles.pulseLeft} />
-                <span className={styles.pulseRight} />
-              </motion.span>
+              />
             )}
           </AnimatePresence>
 
@@ -123,7 +147,7 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
               onClick={() => setOpen(false)}
               aria-label="Dismiss announcement"
             >
-              <X size={18} strokeWidth={2} />
+              <X size={16} strokeWidth={2} />
             </button>
           </div>
         </motion.aside>

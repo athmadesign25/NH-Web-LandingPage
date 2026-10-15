@@ -182,7 +182,11 @@ export default function Navbar() {
         zIndex: isMobileMenuOpen ? 10000000 : 1000,
         width: "100%",
         transform: isVisible ? "translateY(0)" : "translateY(-100%)",
-        transition: "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1)",
+        // `top` transitions too, so when the announcement band scrolls away
+        // the navbar rides up with it instead of snapping the instant the
+        // band's height drops to 0.
+        transition:
+          "transform 0.6s cubic-bezier(0.16, 1, 0.3, 1), top 0.35s cubic-bezier(0.22, 1, 0.36, 1)",
         "--nav-fg-color": (!isMobileMenuOpen && isOverLightBackground) ? "var(--color-text, var(--slate-900))" : "var(--white)"
       } as React.CSSProperties}
     >

@@ -1,0 +1,233 @@
+/* L2 announcement band. Sits above the navbar, full bleed, light. */
+
+.band {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  /* One above the navbar's 1000 — the navbar moves down to meet it rather
+     than sliding under it, but the band still owns the top edge. */
+  z-index: 1001;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-24);
+  height: 82px;
+  overflow: hidden;
+  /* Opaque base FIRST, tint layered on top. As a single gradient running
+     from a 4%-alpha blue to an opaque white, the top edge of the band was
+     96% transparent and the hero video played straight through it. */
+  background-color: var(--color-surface);
+  background-image: linear-gradient(
+    180deg,
+    rgba(var(--blue-brand-rgb), 0.06),
+    rgba(var(--blue-brand-rgb), 0)
+  );
+  border-bottom: 1px solid var(--color-border-light);
+  /* The gutter the navbar's own container uses, so the message's first
+     character lines up with the left edge of the logo. */
+  padding-left: max(4vw, 40px);
+  padding-right: max(4vw, 40px);
+  font-family: var(--font-family);
+}
+
+/* ─── Background pattern ─────────────────────────────────────────────────
+   A dot field, but not a wallpaper. The dots are painted everywhere and
+   then masked down to two soft patches — one just right of the copy, one
+   behind the actions — so the band has texture where the eye travels and
+   clean ground under the text itself.
+
+   Both layers are gradients, so this costs one paint and no image
+   request. The placeholder stays until the brand pattern file lands;
+   swapping it means replacing background-image and keeping the mask. */
+.pattern {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    circle,
+    rgba(var(--blue-brand-rgb), 0.3) 1.1px,
+    transparent 1.1px
+  );
+  background-size: 15px 15px;
+  /* Deliberately off-centre and uneven: a symmetrical pair reads as a
+     mistake, two patches of different size and softness read as texture. */
+  -webkit-mask-image: radial-gradient(23% 140% at 53% 50%, #000 0%, transparent 70%),
+    radial-gradient(14% 120% at 85% 38%, #000 0%, transparent 74%);
+  mask-image: radial-gradient(23% 140% at 53% 50%, #000 0%, transparent 70%),
+    radial-gradient(14% 120% at 85% 38%, #000 0%, transparent 74%);
+  opacity: 0.55;
+}
+
+/* ─── Arrival pulse ──────────────────────────────────────────────────────
+   The L1 drawer lights all four edges of the page. The band only has two
+   ends, so the same blue-and-red bloom runs in from left and right. One
+   pass on load, then gone for good. */
+.pulse {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  will-change: opacity;
+}
+
+.pulseLeft,
+.pulseRight {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  /* Tight to the ends. Wider than this and the two meet in the middle,
+     which is the mistake the L1 glow made first time round. */
+  width: 24%;
+}
+
+.pulseLeft {
+  left: 0;
+  background: radial-gradient(
+    64% 120% at 0% 50%,
+    rgba(var(--cyan-bright-rgb), 0.5) 0%,
+    rgba(var(--blue-brand-rgb), 0.34) 26%,
+    rgba(var(--red-500-rgb), 0.18) 52%,
+    transparent 78%
+  );
+}
+
+.pulseRight {
+  right: 0;
+  background: radial-gradient(
+    64% 120% at 100% 50%,
+    rgba(var(--cyan-bright-rgb), 0.5) 0%,
+    rgba(var(--blue-brand-rgb), 0.34) 26%,
+    rgba(var(--red-500-rgb), 0.18) 52%,
+    transparent 78%
+  );
+}
+
+/* ─── Copy ──────────────────────────────────────────────────────────── */
+
+.message {
+  position: relative;
+  z-index: 2;
+  /* min-width: 0 so a long message truncates instead of pushing the
+     actions off the right edge. */
+  min-width: 0;
+  margin: 0;
+  font-size: var(--font-size-base);
+  line-height: var(--leading-snug);
+  color: var(--color-text);
+}
+
+.actions {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  gap: var(--space-8);
+  flex-shrink: 0;
+}
+
+/* ─── Link ───────────────────────────────────────────────────────────────
+   Underline wipes in from the left on hover rather than appearing whole,
+   and lives on a pseudo-element so the band's line-height never shifts. */
+.link {
+  position: relative;
+  padding: var(--space-8) var(--space-4);
+  font-size: var(--font-size-base);
+  font-weight: 500;
+  line-height: var(--leading-snug);
+  color: var(--red-600);
+  text-decoration: none;
+  white-space: nowrap;
+  transition: color var(--duration-fast) var(--ease-out);
+}
+
+.link::after {
+  content: "";
+  position: absolute;
+  left: var(--space-4);
+  right: var(--space-4);
+  bottom: var(--space-6);
+  height: 1px;
+  background: currentColor;
+  transform: scaleX(0);
+  transform-origin: left center;
+  transition: transform var(--duration-base) var(--ease-out);
+}
+
+.link:hover {
+  color: var(--red-500);
+}
+
+.link:hover::after,
+.link:focus-visible::after {
+  transform: scaleX(1);
+}
+
+/* ─── Close ──────────────────────────────────────────────────────────────
+   Icon only, on the right end inside the same gutter as the nav. The box
+   is 44px for the touch target while the glyph stays 18px. */
+.close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--duration-fast) var(--ease-out),
+    color var(--duration-fast) var(--ease-out);
+}
+
+.close:hover {
+  background: rgba(var(--blue-brand-rgb), 0.07);
+  color: var(--color-text);
+}
+
+@media (max-width: 1024px) {
+  .band {
+    gap: var(--space-16);
+  }
+  .message {
+    font-size: var(--font-size-sm);
+  }
+}
+
+@media (max-width: 768px) {
+  .band {
+    /* Height goes auto so a wrapped message is not clipped. The navbar
+       follows it, because --band-height is measured rather than assumed. */
+    height: auto;
+    min-height: 82px;
+    gap: var(--space-12);
+    padding: var(--space-12) var(--space-16);
+  }
+  .message {
+    /* Two lines, then ellipsis. A four-line band is a page, not a band. */
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  /* The link drops below the fold of a narrow band; the message itself
+     carries the announcement and the close stays reachable. */
+  .link {
+    display: none;
+  }
+  .pattern {
+    opacity: 0.4;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pulse {
+    display: none;
+  }
+  .link::after {
+    transition: none;
+  }
+}

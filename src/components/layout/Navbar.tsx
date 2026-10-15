@@ -30,7 +30,11 @@ const MOCK_FAMILY_MEMBERS = [
 
 export default function Navbar() {
   const pathname = usePathname();
-  const isHomePage = pathname === "/";
+  // /L2banner renders the same landing page with a different marketing
+  // surface, so it is a homepage for every purpose the navbar cares about.
+  // Without this it counted as an interior page and painted solid over the
+  // hero from the first frame.
+  const isHomePage = pathname === "/" || pathname === "/L2banner";
   const [activeDropdown, setActiveDropdown] = useState<string | null>(null);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -171,7 +175,10 @@ export default function Navbar() {
     <nav
       style={{
         position: "fixed",
-        top: "0px",
+        // An announcement band, where one is present, publishes its measured
+        // height as --band-height on <html> and the navbar drops below it.
+        // Routes without a band never set it, so they stay at 0.
+        top: "var(--band-height, 0px)",
         zIndex: isMobileMenuOpen ? 10000000 : 1000,
         width: "100%",
         transform: isVisible ? "translateY(0)" : "translateY(-100%)",

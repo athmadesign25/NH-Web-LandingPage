@@ -71,32 +71,38 @@
 }
 
 /* ─── Background pattern ─────────────────────────────────────────────────
-   A dot field, but not a wallpaper. The dots are painted everywhere and
-   then masked down to two soft patches — one just right of the copy, one
-   behind the actions — so the band has texture where the eye travels and
-   clean ground under the text itself.
+   The NH glyph lattice, from `public/band-pattern.svg`.
 
-   Both layers are gradients, so this costs one paint and no image
-   request. The placeholder stays until the brand pattern file lands;
-   swapping it means replacing background-image and keeping the mask. */
+   The export carried 33 paths and 33 linear gradients. There are only
+   three glyph shapes, each repeated eleven times, and all 33 gradients
+   were the same two stops (#6BCCF9 to #5FC8F9 — twelve levels apart in
+   red, four in green, none in blue). Rebuilt as three <path> defs, 33
+   <use>, and one gradient spanning the whole artwork: 11.9KB to 2.3KB,
+   with a worst-case deviation of 0.01px, which is 3% of a stroke.
+
+   Placed once rather than tiled. The artwork is a diagonal swathe inside
+   its canvas, not a repeating unit, so repeating it would read as a
+   stamp with a gap rather than as a field. It sits in the open stretch
+   between the copy and the actions, which is where the dot patches it
+   replaced were. */
 .pattern {
   position: absolute;
   inset: 0;
   z-index: 0;
   pointer-events: none;
-  background-image: radial-gradient(
-    circle,
-    rgba(var(--blue-brand-rgb), 0.3) 1.1px,
-    transparent 1.1px
-  );
-  background-size: 15px 15px;
-  /* Deliberately off-centre and uneven: a symmetrical pair reads as a
-     mistake, two patches of different size and softness read as texture. */
-  -webkit-mask-image: radial-gradient(23% 140% at 53% 50%, #000 0%, transparent 70%),
-    radial-gradient(14% 120% at 85% 38%, #000 0%, transparent 74%);
-  mask-image: radial-gradient(23% 140% at 53% 50%, #000 0%, transparent 70%),
-    radial-gradient(14% 120% at 85% 38%, #000 0%, transparent 74%);
-  opacity: 0.55;
+  background-image: url("/band-pattern.svg");
+  background-repeat: no-repeat;
+  background-position: 63% 50%;
+  /* Slightly taller than the band so the swathe bleeds past both edges
+     instead of floating with visible margins. */
+  background-size: auto 124%;
+  opacity: 0.9;
+  /* Fades out before it reaches either end, so it never collides with
+     the message on the left or the actions on the right. */
+  -webkit-mask-image: linear-gradient(
+    to right, transparent 0%, #000 14%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(
+    to right, transparent 0%, #000 14%, #000 84%, transparent 100%);
 }
 
 /* ─── Arrival pulse ──────────────────────────────────────────────────────

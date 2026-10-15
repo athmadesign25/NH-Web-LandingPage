@@ -87,29 +87,54 @@
   opacity: 0.55;
 }
 
-/* ─── Entry wipe ────────────────────────────────────────────────────────
-   A light crossing the band once, on arrival. Full width, so the gradient
-   inside it is a soft wide sweep rather than a hard bar, and translated
-   from one band-width left to one band-width right.
+/* ─── Arrival pulse ──────────────────────────────────────────────────────
+   Runs along the top AND bottom edges of the band. At the two ENDS it was
+   doing almost nothing visible — a 24%-wide bloom on a strip this short has
+   very little room to bloom in, and it fell where nobody was looking. The
+   long edges are full-width runs either side of the copy.
 
-   This replaced a glow on the top and bottom edges. The edges outlined
-   the band; they never moved across it, so the band announced its shape
-   rather than its arrival. */
-.entryWipe {
+   Both are driven by one opacity keyframe on the wrapper, halved from the
+   single-edge version: two edges at full strength stopped reading as an
+   accent and started reading as a stripe. One pass on load, then gone. */
+.pulse {
   position: absolute;
   inset: 0;
   z-index: 2;
   pointer-events: none;
-  will-change: transform;
-  background: linear-gradient(
-    100deg,
-    transparent 0%,
-    rgba(var(--sky-400-rgb), 0.16) 32%,
-    rgba(var(--cyan-bright-rgb), 0.3) 46%,
-    rgba(var(--white-rgb), 0.5) 52%,
-    rgba(var(--sky-400-rgb), 0.16) 66%,
-    transparent 100%
-  );
+  will-change: opacity;
+}
+
+.pulseTop,
+.pulseBottom {
+  position: absolute;
+  left: 0;
+  right: 0;
+  /* Taller than the line it sits on, so it is a glow rising off the edge
+     rather than a coloured border. */
+  height: 18px;
+  /* The colour run is shared; only the falloff direction differs, which is
+     what the mask handles. */
+  background:
+    linear-gradient(
+      to right,
+      rgba(var(--cyan-bright-rgb), 0.9) 0%,
+      rgba(var(--blue-brand-rgb), 0.75) 22%,
+      rgba(var(--violet-600-rgb), 0.6) 45%,
+      rgba(var(--red-500-rgb), 0.7) 72%,
+      rgba(var(--cyan-bright-rgb), 0.85) 100%
+    );
+}
+
+.pulseTop {
+  top: 0;
+  -webkit-mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to bottom, #000 0%, transparent 100%);
+}
+
+.pulseBottom {
+  bottom: 0;
+  -webkit-mask-image: linear-gradient(to top, #000 0%, transparent 100%);
+  mask-image: linear-gradient(to top, #000 0%, transparent 100%);
 }
 
 /* ─── Copy ──────────────────────────────────────────────────────────── */
@@ -289,7 +314,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .entryWipe {
+  .pulse {
     display: none;
   }
   .message::after {

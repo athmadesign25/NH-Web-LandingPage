@@ -9,9 +9,9 @@
  * publishes its own height as `--band-height` on <html>, which is the one
  * value the navbar reads to move down.
  *
- * Entrance is a single pulse at the two ends, then nothing. It runs once
- * per page load and is not repeatable from the UI — the band is an object
- * that was already there, not one that keeps arriving.
+ * Entrance is a single light wipe across the band, then nothing. It runs
+ * once per page load and is not repeatable from the UI — the band is an
+ * object that was already there, not one that keeps arriving.
  */
 
 import { useEffect, useRef, useState } from "react";
@@ -30,8 +30,12 @@ export const DEFAULT_BAND: BandConfig = {
   link: { label: "Talk to our team", href: "/appointment" },
 };
 
-/** How long the arrival pulse lives, start to gone. */
-const PULSE_MS = 4600;
+/**
+ * The entry wipe: how long the light takes to cross the band, and how
+ * long to wait first so the band has finished dropping in.
+ */
+const WIPE_MS = 1300;
+const WIPE_DELAY_MS = 420;
 
 /**
  * How far down the page the band survives. Past this it is gone, and
@@ -41,7 +45,7 @@ const SCROLL_OUT = 24;
 
 export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: BandConfig }) {
   const [open, setOpen] = useState(true);
-  const [pulsing, setPulsing] = useState(true);
+  const [wiping, setWiping] = useState(true);
   const [atTop, setAtTop] = useState(true);
   const bandRef = useRef<HTMLElement>(null);
 
@@ -89,7 +93,7 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
 
   // Once, on mount. Not on close, not on reopen — there is no reopen.
   useEffect(() => {
-    const t = window.setTimeout(() => setPulsing(false), PULSE_MS);
+    const t = window.setTimeout(() => setWiping(false), WIPE_DELAY_MS + WIPE_MS);
     return () => window.clearTimeout(t);
   }, []);
 
@@ -106,36 +110,37 @@ export default function AnnouncementBand({ config = DEFAULT_BAND }: { config?: B
           exit={{ y: "-100%", transition: { duration: 0.35, ease: ease.out } }}
           transition={{ duration: 0.6, ease: ease.out }}
         >
-          {/* Pattern, inner shading and pulse all sit under the copy and
+          {/* Pattern, inner shading and wipe all sit under the copy and
               take no pointer events, so the band stays one flat row to
               click through. */}
           <span className={styles.pattern} aria-hidden />
           <span className={styles.innerEdge} aria-hidden />
 
+          {/* Entry wipe. A light crosses the band once as it arrives — the
+              same gesture as the hover wipe on the copy, at the scale of
+              the whole surface. It replaces an edge pulse, which announced
+              the band by outlining it rather than by moving across it.
+
+              Transform, not background-position: this one spans the full
+              width, and a composited translate is cheaper than repainting
+              a gradient every frame. */}
           <AnimatePresence>
-            {pulsing && (
+            {wiping && (
               <motion.span
-                className={styles.pulse}
+                className={styles.entryWipe}
                 aria-hidden
-                initial={{ opacity: 0 }}
-                // Breathes twice and leaves, rather than fading once — a
-                // single ramp over four seconds reads as a slow gradient
-                // rather than as something announcing itself.
-                //
-                // Halved from [0, 1, 0.55, 0.9, 0]. Running both edges at
-                // full strength turned an accent into a stripe across the
-                // top of the page.
-                animate={{ opacity: [0, 0.5, 0.28, 0.45, 0] }}
-                exit={{ opacity: 0 }}
+                initial={{ x: "-100%" }}
+                animate={{ x: "100%" }}
+                exit={{ opacity: 0, transition: { duration: 0.2 } }}
                 transition={{
-                  duration: PULSE_MS / 1000,
-                  times: [0, 0.14, 0.42, 0.62, 1],
-                  ease: "easeInOut",
+                  duration: WIPE_MS / 1000,
+                  delay: WIPE_DELAY_MS / 1000,
+                  // Linear, for the same reason the copy's wipe is: an
+                  // eased curve front-loads the travel and the light is
+                  // past before the eye has found it.
+                  ease: "linear",
                 }}
-              >
-                <span className={styles.pulseTop} />
-                <span className={styles.pulseBottom} />
-              </motion.span>
+              />
             )}
           </AnimatePresence>
 

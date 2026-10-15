@@ -20,9 +20,9 @@
      transparent, with the hero video playing through it. */
   background: linear-gradient(
     90deg,
-    hsl(211.0345deg 93.8758% 93.5979%) 0%,
+    hsl(211.0345deg 93.8758% 93.5979%) 23.08%,
     hsl(211.519deg 100% 86.5554%) 50.68%,
-    #dfeefe 100%
+    #dfeefe 87.5%
   );
   /* The gutter the navbar's own container uses, so the message's first
      character lines up with the left edge of the logo. The right side is
@@ -43,7 +43,10 @@
   inset: 0;
   z-index: 1;
   pointer-events: none;
-  box-shadow: 0 -4px 34px 0 hsl(220deg 83.2238% 40.8541% / 0.24) inset;
+  /* Alpha 0, so this currently paints nothing. Kept as a declaration
+     rather than deleted: the geometry is the design's, and turning the
+     treatment back on is a change to one number. */
+  box-shadow: 0 -4px 34px 0 hsl(220deg 83.2238% 40.8541% / 0) inset;
 }
 
 /* ─── Background pattern ─────────────────────────────────────────────────

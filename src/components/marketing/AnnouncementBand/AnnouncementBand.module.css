@@ -40,6 +40,18 @@
   font-family: var(--font-family);
 }
 
+/* The animated ground. Sits under everything; the band's own CSS gradient
+   stays beneath it as the fallback when no canvas is created. */
+.neat {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  display: block;
+}
+
 /* ─── Inner edge ─────────────────────────────────────────────────────────
    An inset shading all the way round, so the band reads as a recess in the
    page rather than a rectangle laid on it. Inset box-shadow on a child,

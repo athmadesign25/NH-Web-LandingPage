@@ -50,14 +50,20 @@
    Two artworks. `band-pattern-edge.svg` holds the ends and
    `band-pattern-mid.svg` the middle.
 
-   Both were optimised from their exports, by hoisting the single stroke
-   colour and width off every path, dropping a clipPath whose rect was
-   exactly the viewBox (the outer svg already clips to it), rounding
-   coordinates to 2dp, and collapsing repeated glyphs into <defs> plus
-   <use> where any repeat exists. Middle: 6.7KB to 3.8KB, 44%. Edge:
-   4.8KB to 3.1KB, 36% — less, because its 15 glyphs are rotations of a
-   corner rather than repeats of one, and rotations cannot be deduped by
-   translation. Worst coordinate deviation in either: 0.01px. */
+   Both were optimised from their exports: the single stroke colour and
+   width hoisted off every path, a clipPath whose rect was exactly the
+   viewBox dropped (the outer svg already clips to it), and numbers
+   rounded to 2dp. Middle 6.7KB to 4.6KB, edge 4.8KB to 3.1KB.
+
+   Numbers are rounded one at a time and never shifted. An earlier pass
+   tried to dedupe repeated glyphs into <defs> plus <use>, which meant
+   re-expressing each path relative to its own origin — subtracting dx
+   from the even-indexed numbers and dy from the odd. That is only valid
+   if the data is all coordinate pairs. These paths use V and H, which
+   take a single value, so every number after the first one of those got
+   the wrong offset and the lattice came out as a tangle of diagonals.
+   Verified by pixel diff now, not by arithmetic: 0.12% of pixels differ
+   between export and optimised file, all of it anti-aliasing. */
 .pattern {
   position: absolute;
   inset: 0;

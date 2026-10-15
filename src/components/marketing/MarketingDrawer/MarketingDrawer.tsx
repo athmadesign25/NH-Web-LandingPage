@@ -14,7 +14,6 @@
 import { useEffect, useRef, useState } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
 import TextSweepEffect from "@/components/ui/TextSweepEffect";
 import { ease } from "@/lib/motion";
 import styles from "./MarketingDrawer.module.css";
@@ -37,6 +36,23 @@ type Props = {
    */
   morphTo?: { x: number; y: number; width: number } | null;
 };
+
+/** Supplied mark for the return action. */
+function ReturnIcon({ size = 18 }: { size?: number }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      width={size}
+      height={size}
+      viewBox="0 0 256 256"
+      fill="currentColor"
+      aria-hidden
+      focusable="false"
+    >
+      <path d="M232,144a64.07,64.07,0,0,1-64,64H80a8,8,0,0,1,0-16h88a48,48,0,0,0,0-96H88v40a8,8,0,0,1-13.66,5.66l-48-48a8,8,0,0,1,0-11.32l48-48A8,8,0,0,1,88,40V80h80A64.07,64.07,0,0,1,232,144Z" />
+    </svg>
+  );
+}
 
 /** The glow leads, the panel follows. */
 const GLOW_LEAD = 0.5;
@@ -269,15 +285,13 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
           <motion.button
             type="button"
             onClick={onClose}
-            className={styles.close}
+            className={`${styles.close} ${wide ? styles.closeWide : styles.closeTall}`}
             initial={{ opacity: 0, y: 8 }}
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={{ delay: GLOW_LEAD + 0.4, duration: 0.35, ease: ease.out }}
           >
-            <span className={styles.closeIcon}>
-              <ArrowLeft size={16} strokeWidth={2.5} />
-            </span>
+            <ReturnIcon size={18} />
             <span className={styles.closeLabel}>Back to homepage</span>
           </motion.button>
         </>

@@ -19,7 +19,7 @@ import { motion } from "framer-motion";
 import { ease } from "@/lib/motion";
 import AnnouncementIcon from "./AnnouncementIcon";
 import styles from "./CollapsedToast.module.css";
-import { type HeadlinePart, resolve } from "./types";
+import { type HeadlinePart, COLLAPSED_LABEL, resolve } from "./types";
 
 type Props = {
   parts: HeadlinePart[];
@@ -27,6 +27,13 @@ type Props = {
 };
 
 export default function CollapsedToast({ parts, onExpand }: Props) {
+  // A banner whose artwork carries its own type has no headline to lend
+  // the toast, so the toast falls back to the generic label rather than
+  // collapsing to an icon with nothing beside it.
+  const lines = parts.length
+    ? parts
+    : [{ id: "fallback", text: COLLAPSED_LABEL, colorId: "black" }];
+
   return (
     <motion.button
       type="button"
@@ -41,7 +48,7 @@ export default function CollapsedToast({ parts, onExpand }: Props) {
         <AnnouncementIcon size={28} />
       </span>
       <span className={styles.copy}>
-        {parts.map((p) => (
+        {lines.map((p) => (
           <span key={p.id} className={styles.line} style={{ color: resolve(p.colorId) }}>
             {p.text}
           </span>

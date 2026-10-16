@@ -79,10 +79,19 @@
    consumers — a second copy in the close rules would drift. */
 .panel,
 .close {
+  /* The caps. Each is a ceiling in px and a ceiling against the viewport,
+     so the panel never outgrows either the design or the screen. The
+     image is rendered with `fill`, which needs a definite box, so these
+     are the box — content that exceeds it scrolls inside .content rather
+     than stretching the panel. */
   --tall-w: min(520px, 92vw);
   --tall-h: min(760px, 86vh);
   --wide-w: min(1040px, 92vw);
   --wide-h: min(560px, 76vh);
+  /* Mobile has one shape, so one pair. Taller than the desktop vertical
+     in viewport terms because there is no room beside anything. */
+  --mob-w: min(440px, 92vw);
+  --mob-h: min(640px, 86dvh);
 }
 
 .tall {
@@ -191,9 +200,9 @@
 }
 
 /* ─── CTA ─────────────────────────────────────────────────────────────
-   One style. Secondary and link were offered and removed — a banner has a
-   single thing it wants you to do, and a choice of button styles mostly
-   produced weaker versions of it. */
+   Two at most, and never two of these. The style is not a choice the
+   writer makes: the first button is filled, the second is outlined, and
+   which is which follows from the slot it sits in. */
 .cta {
   display: inline-flex;
   align-items: center;
@@ -215,6 +224,99 @@
 .cta:hover {
   background: var(--blue-700);
   box-shadow: var(--elevation-3);
+}
+
+/* The quieter half of the pair: same size and same alignment, no fill.
+   Two filled buttons side by side is two buttons nobody presses. */
+.ctaSecondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 var(--space-24);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(var(--white-rgb), 0.7);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  text-decoration: none;
+  transition: background var(--duration-base) var(--ease-out),
+    border-color var(--duration-base) var(--ease-out);
+}
+
+.ctaSecondary:hover {
+  background: var(--white);
+  border-color: var(--slate-400);
+}
+
+/* ─── Form and buttons ───────────────────────────────────────────────────
+   One block. The buttons submit the form, so a gap between them would
+   read as two unrelated things sharing a corner. */
+.actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-16);
+  width: 100%;
+  min-width: 0;
+}
+
+.fields {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-12);
+  width: 100%;
+  /* Two short fields never need the full width of a wide panel, and a
+     60ch input next to a 18ch headline looks like a different page. */
+  max-width: 320px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-6);
+}
+
+/* A real label, above the input and bound to it. The placeholder repeats
+   it for the sighted, but a placeholder alone disappears on focus and is
+   not an accessible name. */
+.fieldLabel {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: var(--leading-snug);
+  letter-spacing: 0.02em;
+  color: var(--color-text-secondary);
+}
+
+.input {
+  width: 100%;
+  min-height: 48px;
+  padding: 0 var(--space-14);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: rgba(var(--white-rgb), 0.92);
+  color: var(--color-text);
+  font-family: var(--font-family);
+  font-size: var(--font-size-base);
+  transition: border-color var(--duration-fast) var(--ease-out),
+    box-shadow var(--duration-fast) var(--ease-out);
+}
+
+.input::placeholder {
+  color: var(--slate-400);
+}
+
+.input:focus {
+  outline: none;
+  border-color: var(--blue-brand);
+  box-shadow: var(--shadow-focus-ring);
+}
+
+.ctaRow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-12);
+  flex-wrap: wrap;
 }
 
 /* ─── Close ───────────────────────────────────────────────────────────── */
@@ -276,23 +378,48 @@
   top: calc(50% - var(--wide-h) / 2 - var(--space-40));
 }
 
+/* ─── Mobile ─────────────────────────────────────────────────────────────
+   One layout, stacked. The component forces `wide` to false below this
+   width, so .wide is never applied here and the horizontal banner arrives
+   as the vertical one — same content, one shape. The rules for .wide stay
+   only so a desktop window dragged narrow does not flash the old
+   side-by-side mid-resize. */
 @media (max-width: 768px) {
-  .tall { width: 92vw; height: 84vh; }
-  /* No width for a side-by-side scrim on a phone, so the wide banner's
-     copy drops to the bottom like the tall one. */
-  .wide { width: 92vw; height: 70vh; }
-  .contentWide {
-    top: auto;
-    width: auto;
-    right: 0;
-    justify-content: flex-end;
-    padding-left: var(--space-20);
+  .tall,
+  .wide {
+    width: var(--mob-w);
+    height: var(--mob-h);
   }
-  .content { padding: var(--space-20); gap: var(--space-12); }
-  .headline { max-width: 100%; }
-  /* The panel is 92vw here, so there is no flank to stand beside and no
-     room above it either. Both orientations put the control in the
-     viewport's top-right. */
+
+  .contentTall,
+  .contentWide {
+    left: 0;
+    right: 0;
+    top: auto;
+    bottom: 0;
+    width: auto;
+    justify-content: flex-end;
+    padding: var(--space-20);
+  }
+
+  .content { gap: var(--space-12); }
+  .headline {
+    max-width: 100%;
+    /* The desktop size would take four lines of a 92vw panel and leave
+       no room for anything under it. */
+    font-size: var(--font-size-2xl);
+  }
+  .description { font-size: var(--font-size-sm); }
+
+  /* Full width and stacked, so a thumb has the whole row to hit and the
+     two never end up sharing one cramped line. */
+  .fields { max-width: 100%; }
+  .ctaRow { flex-direction: column; align-items: stretch; width: 100%; }
+  .cta,
+  .ctaSecondary { width: 100%; }
+
+  /* No flank to stand beside and no room above, so the control goes to
+     the viewport's top-right. */
   .closeTall,
   .closeWide {
     left: auto;

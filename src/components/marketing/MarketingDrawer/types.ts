@@ -34,6 +34,26 @@ export type HeadlinePart = {
   colorId: string;
 };
 
+/**
+ * A form field. `kind` chooses the input's behaviour — its type, its
+ * autofill hint, its keyboard and its length cap — while `label` stays
+ * free text, so "Phone" can become "WhatsApp number" without the field
+ * stopping being a phone number as far as the browser is concerned.
+ */
+export type FieldKind = "name" | "phone" | "custom";
+
+export type FormField = {
+  id: string;
+  kind: FieldKind;
+  label: string;
+};
+
+export type CtaConfig = {
+  enabled: boolean;
+  label: string;
+  href: string;
+};
+
 export type BannerConfig = {
   orientation: Orientation;
   /**
@@ -45,11 +65,32 @@ export type BannerConfig = {
     vertical: { src: string; alt: string };
     horizontal: { src: string; alt: string };
   };
-  headline: { parts: HeadlinePart[] };
+  /**
+   * The headline can be switched off entirely, for artwork that carries
+   * its own typography. See `needsScrim` for what that does to the panel.
+   */
+  headline: { enabled: boolean; parts: HeadlinePart[] };
   description: { enabled: boolean; text: string };
-  cta: { enabled: boolean; label: string; href: string };
+  /** At most MAX_FIELDS. A banner is not a registration page. */
+  form: { enabled: boolean; fields: FormField[] };
+  /**
+   * Two at most, and the second is always the quieter one. A pair of
+   * equally loud buttons is a pair of buttons nobody presses.
+   */
+  cta: { primary: CtaConfig; secondary: CtaConfig };
   collapse: CollapseMode;
 };
+
+/**
+ * Whether the panel paints its readability scrim over the image.
+ *
+ * Derived, not configured. The scrim exists so type can sit on artwork;
+ * with no type there is nothing to make readable, and an image that was
+ * composed with its own text baked in gets covered up by one. A CTA does
+ * not count — a filled button carries its own ground.
+ */
+export const needsScrim = (c: BannerConfig) =>
+  c.headline.enabled || c.description.enabled || c.form.enabled;
 
 /* ─── The closed sets ──────────────────────────────────────────────────── */
 
@@ -72,6 +113,38 @@ export const TEXT_COLORS: ColorOption[] = [
 
 /** Body copy takes the readable neutral. Not a choice. */
 export const DESCRIPTION_COLOR = "var(--slate-600)";
+
+/** Two is the ceiling. Past that it stops being a banner. */
+export const MAX_FIELDS = 2;
+
+/**
+ * What each field kind means to the browser. The label is editable; none
+ * of this is — a field labelled "Mobile" still has to autofill as a
+ * phone number and still has to open a numeric keypad.
+ */
+export const FIELD_PRESETS: Record<
+  FieldKind,
+  {
+    label: string;
+    type: string;
+    autoComplete: string;
+    inputMode?: "text" | "numeric" | "tel";
+    maxLength?: number;
+    pattern?: string;
+  }
+> = {
+  name: { label: "Name", type: "text", autoComplete: "name", inputMode: "text", maxLength: 60 },
+  phone: {
+    label: "Phone",
+    type: "tel",
+    autoComplete: "tel",
+    inputMode: "numeric",
+    // Ten digits, which is what an Indian mobile number is.
+    maxLength: 10,
+    pattern: "[0-9]{10}",
+  },
+  custom: { label: "Label", type: "text", autoComplete: "off", inputMode: "text", maxLength: 60 },
+};
 
 export const resolve = (id: string) =>
   (TEXT_COLORS.find((c) => c.id === id) ?? TEXT_COLORS[0]).value;
@@ -96,6 +169,7 @@ export const DEFAULT_CONFIG: BannerConfig = {
     },
   },
   headline: {
+    enabled: true,
     parts: [
       { id: "h1", text: "Advanced Healthcare", colorId: "black" },
       { id: "h2", text: "Coming Soon to", colorId: "red" },
@@ -106,6 +180,16 @@ export const DEFAULT_CONFIG: BannerConfig = {
     enabled: false,
     text: "Multi-speciality care, 24x7 emergency and diagnostics — opening shortly.",
   },
-  cta: { enabled: true, label: "Book Appointment", href: "/appointment" },
+  form: {
+    enabled: false,
+    fields: [
+      { id: "f1", kind: "name", label: "Name" },
+      { id: "f2", kind: "phone", label: "Phone" },
+    ],
+  },
+  cta: {
+    primary: { enabled: true, label: "Book Appointment", href: "/appointment" },
+    secondary: { enabled: false, label: "Know more", href: "/specialities" },
+  },
   collapse: "toast",
 };

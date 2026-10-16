@@ -21,8 +21,11 @@ import {
   type BannerConfig,
   OVERLAY_RGB,
   DESCRIPTION_COLOR,
+  FIELD_PRESETS,
+  needsScrim,
   resolve,
 } from "./types";
+import { useIsMobile } from "./useIsMobile";
 
 type Props = {
   open: boolean;
@@ -125,8 +128,20 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
     };
   }, [open, onClose]);
 
-  const wide = config.orientation === "horizontal";
+  // One layout below 768px, whatever the orientation says. A letterbox
+  // asset on a phone is mostly crop, so mobile always takes the vertical
+  // image and the stacked arrangement that goes with it.
+  const isMobile = useIsMobile();
+  const wide = config.orientation === "horizontal" && !isMobile;
   const art = wide ? config.image.horizontal : config.image.vertical;
+
+  const scrim = needsScrim(config);
+
+  // How far up the panel the readable area has to reach. A headline alone
+  // occupies the bottom third; add a description, two fields and two
+  // buttons and it is most of the panel. With the short ramp, the form's
+  // labels ended up sitting on bare photograph.
+  const tallContent = config.form.enabled || config.description.enabled;
 
   const scrimFade = wide
     ? `linear-gradient(to right,
@@ -135,7 +150,14 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
         rgba(${OVERLAY_RGB}, 0.72) 44%,
         rgba(${OVERLAY_RGB}, 0.34) 62%,
         rgba(${OVERLAY_RGB}, 0) 82%)`
-    : `linear-gradient(to top,
+    : tallContent
+      ? `linear-gradient(to top,
+        rgba(${OVERLAY_RGB}, 0.98) 0%,
+        rgba(${OVERLAY_RGB}, 0.96) 42%,
+        rgba(${OVERLAY_RGB}, 0.82) 62%,
+        rgba(${OVERLAY_RGB}, 0.4) 80%,
+        rgba(${OVERLAY_RGB}, 0) 97%)`
+      : `linear-gradient(to top,
         rgba(${OVERLAY_RGB}, 0.97) 0%,
         rgba(${OVERLAY_RGB}, 0.9) 26%,
         rgba(${OVERLAY_RGB}, 0.6) 48%,
@@ -170,8 +192,18 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
         }
       : null;
 
-  const descDelay = GLOW_LEAD + 0.45 + config.headline.parts.length * 0.14 + 0.45;
-  const ctaDelay = descDelay + (config.description.enabled ? 0.16 : 0);
+  // Each block waits for the one above it. With the headline off there is
+  // no sweep to wait for, so everything starts as soon as the panel lands.
+  const headlineLines = config.headline.enabled ? config.headline.parts.length : 0;
+  const descDelay = config.headline.enabled
+    ? GLOW_LEAD + 0.45 + headlineLines * 0.14 + 0.45
+    : GLOW_LEAD + 0.25;
+  const formDelay = descDelay + (config.description.enabled ? 0.16 : 0);
+  const ctaDelay = formDelay + (config.form.enabled ? 0.16 : 0);
+
+  const fields = config.form.fields.slice(0, 2);
+  const ctas = [config.cta.primary, config.cta.secondary];
+  const hasCta = ctas.some((c) => c.enabled);
 
   return (
     <AnimatePresence>
@@ -235,26 +267,32 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
               priority
             />
 
-            <div className={styles.innerOverlay} style={{ background: scrimFade }} aria-hidden />
+            {/* No type on the panel means nothing to make readable, and an
+                image composed with its own copy only gets obscured. */}
+            {scrim && (
+              <div className={styles.innerOverlay} style={{ background: scrimFade }} aria-hidden />
+            )}
 
             <div
               className={`${styles.content} ${wide ? styles.contentWide : styles.contentTall}`}
               data-drawer-scrollable
               data-lenis-prevent
             >
-              <div className={styles.headline}>
-                {config.headline.parts.map((part, i) => (
-                  <span key={part.id} className={styles.headlineLine}>
-                    <TextSweepEffect
-                      words={[part.text]}
-                      finalColor={resolve(part.colorId)}
-                      sweepMs={1100}
-                      delayMs={i * 140}
-                      active={sweep}
-                    />
-                  </span>
-                ))}
-              </div>
+              {config.headline.enabled && (
+                <div className={styles.headline}>
+                  {config.headline.parts.map((part, i) => (
+                    <span key={part.id} className={styles.headlineLine}>
+                      <TextSweepEffect
+                        words={[part.text]}
+                        finalColor={resolve(part.colorId)}
+                        sweepMs={1100}
+                        delayMs={i * 140}
+                        active={sweep}
+                      />
+                    </span>
+                  ))}
+                </div>
+              )}
 
               {config.description.enabled && (
                 <motion.p
@@ -268,17 +306,78 @@ export default function MarketingDrawer({ open, config, onClose, morphTo }: Prop
                 </motion.p>
               )}
 
-              {config.cta.enabled && (
-                <motion.a
-                  href={config.cta.href}
-                  className={styles.cta}
-                  initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
-                  animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
-                  transition={{ delay: ctaDelay, duration: 0.6, ease: ease.out }}
-                >
-                  {config.cta.label}
-                </motion.a>
-              )}
+              {/* Form and buttons are one block, because the buttons are
+                  what submits the form — a gap between them would read as
+                  two unrelated things. */}
+              <form
+                className={styles.actions}
+                // Prototype: there is no endpoint yet, and nothing here is
+                // persisted. Values live in the inputs and die with the
+                // panel — no state, no storage, nothing written down.
+                onSubmit={(e) => e.preventDefault()}
+              >
+                {config.form.enabled && fields.length > 0 && (
+                  <motion.div
+                    className={styles.fields}
+                    initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{ delay: formDelay, duration: 0.6, ease: ease.out }}
+                  >
+                    {fields.map((f) => {
+                      const preset = FIELD_PRESETS[f.kind];
+                      const id = `banner-field-${f.id}`;
+                      return (
+                        <div key={f.id} className={styles.field}>
+                          <label className={styles.fieldLabel} htmlFor={id}>
+                            {f.label || preset.label}
+                          </label>
+                          <input
+                            id={id}
+                            name={f.kind}
+                            className={styles.input}
+                            type={preset.type}
+                            autoComplete={preset.autoComplete}
+                            inputMode={preset.inputMode}
+                            maxLength={preset.maxLength}
+                            pattern={preset.pattern}
+                            placeholder={f.label || preset.label}
+                            required
+                          />
+                        </div>
+                      );
+                    })}
+                  </motion.div>
+                )}
+
+                {hasCta && (
+                  <motion.div
+                    className={styles.ctaRow}
+                    initial={{ opacity: 0, y: 12, filter: "blur(6px)" }}
+                    animate={{ opacity: 1, y: 0, filter: "blur(0px)" }}
+                    transition={{ delay: ctaDelay, duration: 0.6, ease: ease.out }}
+                  >
+                    {config.cta.primary.enabled &&
+                      // With a form present the primary button submits it,
+                      // so it has to be a button. Without one it is a plain
+                      // link to wherever the campaign points.
+                      (config.form.enabled ? (
+                        <button type="submit" className={styles.cta}>
+                          {config.cta.primary.label}
+                        </button>
+                      ) : (
+                        <a href={config.cta.primary.href} className={styles.cta}>
+                          {config.cta.primary.label}
+                        </a>
+                      ))}
+
+                    {config.cta.secondary.enabled && (
+                      <a href={config.cta.secondary.href} className={styles.ctaSecondary}>
+                        {config.cta.secondary.label}
+                      </a>
+                    )}
+                  </motion.div>
+                )}
+              </form>
             </div>
           </motion.div>
 

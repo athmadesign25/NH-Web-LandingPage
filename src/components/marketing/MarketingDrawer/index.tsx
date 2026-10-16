@@ -130,7 +130,10 @@ export default function MarketingDrawerLab() {
 
       <AnimatePresence>
         {collapsed === "toast" && (
-          <CollapsedToast parts={config.headline.parts} onExpand={reopen} />
+          <CollapsedToast
+            parts={config.headline.enabled ? config.headline.parts : []}
+            onExpand={reopen}
+          />
         )}
       </AnimatePresence>
 

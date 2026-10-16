@@ -19,8 +19,12 @@ import {
   type BannerConfig,
   type Orientation,
   type CollapseMode,
+  type FieldKind,
+  FIELD_PRESETS,
+  MAX_FIELDS,
   TEXT_COLORS,
 } from "./types";
+import { useIsMobile } from "./useIsMobile";
 
 type Props = {
   config: BannerConfig;
@@ -29,6 +33,7 @@ type Props = {
 
 const ORIENTATIONS: Orientation[] = ["vertical", "horizontal"];
 const COLLAPSE: CollapseMode[] = ["none", "toast", "fab"];
+const KINDS: FieldKind[] = ["name", "phone", "custom"];
 
 function Switch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
   return (
@@ -46,12 +51,20 @@ function Switch({ on, onToggle }: { on: boolean; onToggle: () => void }) {
 
 export default function DrawerControlPanel({ config, onChange }: Props) {
   const controls = useDragControls();
+  const isMobile = useIsMobile();
   if (process.env.NODE_ENV === "production") return null;
+  // There is no room for it beside a 92vw panel, and mobile is a preview
+  // of what desktop produced rather than its own thing to configure.
+  if (isMobile) return null;
 
   const set = (patch: Partial<BannerConfig>) => onChange({ ...config, ...patch });
 
   const parts = config.headline.parts;
-  const setParts = (next: typeof parts) => set({ headline: { parts: next } });
+  const setParts = (next: typeof parts) =>
+    set({ headline: { ...config.headline, parts: next } });
+
+  const fields = config.form.fields;
+  const setFields = (next: typeof fields) => set({ form: { ...config.form, fields: next } });
 
   const movePart = (i: number, dir: -1 | 1) => {
     const j = i + dir;
@@ -112,6 +125,18 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
         <section className={styles.row}>
           <div className={styles.labelRow}>
             <label className={styles.label}>Headline</label>
+            <Switch
+              on={config.headline.enabled}
+              onToggle={() =>
+                set({ headline: { ...config.headline, enabled: !config.headline.enabled } })
+              }
+            />
+          </div>
+          {/* Off means the artwork carries its own type, and the panel
+              drops its readability scrim to stop covering it up. */}
+          {config.headline.enabled && (
+          <div className={styles.labelRow}>
+            <span className={styles.hint}>lines</span>
             <button
               className={styles.add}
               onClick={() =>
@@ -124,8 +149,10 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
               <Plus size={12} /> add
             </button>
           </div>
+          )}
 
-          {parts.map((p, i) => (
+          {config.headline.enabled &&
+            parts.map((p, i) => (
             <div key={p.id} className={styles.part}>
               <input
                 className={styles.input}
@@ -162,7 +189,7 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
                 </button>
               </div>
             </div>
-          ))}
+            ))}
         </section>
 
         {/* No colour control: body copy takes the readable neutral for its
@@ -202,22 +229,143 @@ export default function DrawerControlPanel({ config, onChange }: Props) {
           </div>
         </section>
 
+        {/* Sits directly above the buttons in the panel, because the
+            buttons are what submit it. Two fields maximum. */}
         <section className={styles.row}>
           <div className={styles.labelRow}>
-            <label className={styles.label}>Button</label>
+            <label className={styles.label}>Form</label>
             <Switch
-              on={config.cta.enabled}
-              onToggle={() => set({ cta: { ...config.cta, enabled: !config.cta.enabled } })}
+              on={config.form.enabled}
+              onToggle={() => set({ form: { ...config.form, enabled: !config.form.enabled } })}
             />
           </div>
-          {/* Label only. Primary, secondary and link were offered and
-              removed — two of the three were weaker versions of the one
-              thing the banner wants you to do. */}
-          {config.cta.enabled && (
+
+          {config.form.enabled && (
+            <>
+              {fields.map((f) => (
+                <div key={f.id} className={styles.part}>
+                  <input
+                    className={styles.input}
+                    value={f.label}
+                    placeholder={FIELD_PRESETS[f.kind].label}
+                    onChange={(e) =>
+                      setFields(
+                        fields.map((x) => (x.id === f.id ? { ...x, label: e.target.value } : x)),
+                      )
+                    }
+                  />
+                  <div className={styles.partTools}>
+                    <div className={styles.seg}>
+                      {KINDS.map((k) => (
+                        <button
+                          key={k}
+                          // Switching kind renames the field too, unless it
+                          // has been renamed by hand already.
+                          onClick={() =>
+                            setFields(
+                              fields.map((x) =>
+                                x.id === f.id
+                                  ? {
+                                      ...x,
+                                      kind: k,
+                                      label:
+                                        x.label === FIELD_PRESETS[x.kind].label
+                                          ? FIELD_PRESETS[k].label
+                                          : x.label,
+                                    }
+                                  : x,
+                              ),
+                            )
+                          }
+                          className={k === f.kind ? styles.segOn : styles.segOff}
+                        >
+                          {k}
+                        </button>
+                      ))}
+                    </div>
+                    <span className={styles.spacer} />
+                    <button
+                      className={styles.icon}
+                      onClick={() => setFields(fields.filter((x) => x.id !== f.id))}
+                      title="remove"
+                    >
+                      <Trash2 size={12} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+
+              {fields.length < MAX_FIELDS && (
+                <button
+                  className={styles.add}
+                  onClick={() =>
+                    setFields([...fields, { id: `f${Date.now()}`, kind: "custom", label: "Label" }])
+                  }
+                >
+                  <Plus size={12} /> add field
+                </button>
+              )}
+            </>
+          )}
+        </section>
+
+        <section className={styles.row}>
+          <div className={styles.labelRow}>
+            <label className={styles.label}>Primary button</label>
+            <Switch
+              on={config.cta.primary.enabled}
+              onToggle={() =>
+                set({
+                  cta: {
+                    ...config.cta,
+                    primary: { ...config.cta.primary, enabled: !config.cta.primary.enabled },
+                  },
+                })
+              }
+            />
+          </div>
+          {config.cta.primary.enabled && (
             <input
               className={styles.input}
-              value={config.cta.label}
-              onChange={(e) => set({ cta: { ...config.cta, label: e.target.value } })}
+              value={config.cta.primary.label}
+              onChange={(e) =>
+                set({
+                  cta: { ...config.cta, primary: { ...config.cta.primary, label: e.target.value } },
+                })
+              }
+            />
+          )}
+        </section>
+
+        {/* The second one is always the quieter of the two. A pair of
+            equally loud buttons is a pair nobody presses. */}
+        <section className={styles.row}>
+          <div className={styles.labelRow}>
+            <label className={styles.label}>Secondary button</label>
+            <Switch
+              on={config.cta.secondary.enabled}
+              onToggle={() =>
+                set({
+                  cta: {
+                    ...config.cta,
+                    secondary: { ...config.cta.secondary, enabled: !config.cta.secondary.enabled },
+                  },
+                })
+              }
+            />
+          </div>
+          {config.cta.secondary.enabled && (
+            <input
+              className={styles.input}
+              value={config.cta.secondary.label}
+              onChange={(e) =>
+                set({
+                  cta: {
+                    ...config.cta,
+                    secondary: { ...config.cta.secondary, label: e.target.value },
+                  },
+                })
+              }
             />
           )}
         </section>
